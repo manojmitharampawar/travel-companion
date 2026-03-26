@@ -1,0 +1,248 @@
+// Metro and local train station seed data for Indian cities
+// station_type: 'metro' or 'local'
+
+List<Map<String, dynamic>> getMetroStationSeedData() {
+  return [
+    // ========== DELHI METRO ==========
+    // Yellow Line
+    {'code': 'DM-HUDA', 'name': 'HUDA City Centre', 'latitude': 28.4594, 'longitude': 77.0726, 'state': 'Haryana', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-IFFCO', 'name': 'IFFCO Chowk', 'latitude': 28.4718, 'longitude': 77.0722, 'state': 'Haryana', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-MGRD', 'name': 'MG Road', 'latitude': 28.4796, 'longitude': 77.0710, 'state': 'Haryana', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-SKAN', 'name': 'Sikanderpur', 'latitude': 28.4820, 'longitude': 77.0688, 'state': 'Haryana', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-GURU', 'name': 'Guru Dronacharya', 'latitude': 28.4833, 'longitude': 77.0641, 'state': 'Haryana', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-ARNA', 'name': 'Arjangarh', 'latitude': 28.4930, 'longitude': 77.0640, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-GHIT', 'name': 'Ghitorni', 'latitude': 28.4943, 'longitude': 77.1485, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-SULT', 'name': 'Sultanpur', 'latitude': 28.4998, 'longitude': 77.1572, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-CHHA', 'name': 'Chhattarpur', 'latitude': 28.5083, 'longitude': 77.1746, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-QUTB', 'name': 'Qutab Minar', 'latitude': 28.5133, 'longitude': 77.1860, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-SAKET', 'name': 'Saket', 'latitude': 28.5224, 'longitude': 77.2014, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-MALA', 'name': 'Malviya Nagar', 'latitude': 28.5285, 'longitude': 77.2069, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-HAUZ', 'name': 'Hauz Khas', 'latitude': 28.5434, 'longitude': 77.2069, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-GKPT', 'name': 'Green Park', 'latitude': 28.5588, 'longitude': 77.2069, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-AIIMS', 'name': 'AIIMS', 'latitude': 28.5672, 'longitude': 77.2081, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-INA', 'name': 'INA', 'latitude': 28.5742, 'longitude': 77.2098, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-JLNM', 'name': 'Jor Bagh', 'latitude': 28.5825, 'longitude': 77.2153, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-RACE', 'name': 'Race Course', 'latitude': 28.5896, 'longitude': 77.2115, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-UDYG', 'name': 'Udyog Bhawan', 'latitude': 28.5967, 'longitude': 77.2115, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-CENT', 'name': 'Central Secretariat', 'latitude': 28.6148, 'longitude': 77.2115, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-PTLC', 'name': 'Patel Chowk', 'latitude': 28.6224, 'longitude': 77.2115, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-RJCH', 'name': 'Rajiv Chowk', 'latitude': 28.6328, 'longitude': 77.2195, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-NDEL', 'name': 'New Delhi Metro', 'latitude': 28.6424, 'longitude': 77.2194, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-CHCH', 'name': 'Chawri Bazar', 'latitude': 28.6503, 'longitude': 77.2263, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-CHNC', 'name': 'Chandni Chowk', 'latitude': 28.6560, 'longitude': 77.2300, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-KASHMG', 'name': 'Kashmere Gate', 'latitude': 28.6674, 'longitude': 77.2281, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-VISH', 'name': 'Vishwavidyalaya', 'latitude': 28.6889, 'longitude': 77.2100, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-GTBN', 'name': 'GTB Nagar', 'latitude': 28.6981, 'longitude': 77.2093, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-MODL', 'name': 'Model Town', 'latitude': 28.7139, 'longitude': 77.1935, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-JAHS', 'name': 'Jahangirpuri', 'latitude': 28.7255, 'longitude': 77.1712, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+    {'code': 'DM-SMYR', 'name': 'Samaypur Badli', 'latitude': 28.7448, 'longitude': 77.1376, 'state': 'Delhi', 'zone': 'Yellow Line', 'station_type': 'metro'},
+
+    // Blue Line (key stations)
+    {'code': 'DM-DWRK', 'name': 'Dwarka', 'latitude': 28.5821, 'longitude': 77.0500, 'state': 'Delhi', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'DM-JNKP', 'name': 'Janakpuri West', 'latitude': 28.6209, 'longitude': 77.0816, 'state': 'Delhi', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'DM-RJRI', 'name': 'Rajouri Garden', 'latitude': 28.6492, 'longitude': 77.1214, 'state': 'Delhi', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'DM-KRTI', 'name': 'Kirti Nagar', 'latitude': 28.6530, 'longitude': 77.1449, 'state': 'Delhi', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'DM-RJDR', 'name': 'Rajendra Place', 'latitude': 28.6427, 'longitude': 77.1776, 'state': 'Delhi', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'DM-KRLB', 'name': 'Karol Bagh', 'latitude': 28.6448, 'longitude': 77.1903, 'state': 'Delhi', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'DM-BRKT', 'name': 'Barakhamba Road', 'latitude': 28.6339, 'longitude': 77.2275, 'state': 'Delhi', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'DM-MNDH', 'name': 'Mandi House', 'latitude': 28.6254, 'longitude': 77.2345, 'state': 'Delhi', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'DM-PRGR', 'name': 'Pragati Maidan', 'latitude': 28.6194, 'longitude': 77.2478, 'state': 'Delhi', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'DM-YMNB', 'name': 'Yamuna Bank', 'latitude': 28.6221, 'longitude': 77.2683, 'state': 'Delhi', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'DM-NOID', 'name': 'Noida City Centre', 'latitude': 28.5760, 'longitude': 77.3562, 'state': 'Uttar Pradesh', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'DM-NOES', 'name': 'Noida Electronic City', 'latitude': 28.5910, 'longitude': 77.3195, 'state': 'Uttar Pradesh', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'DM-VAIP', 'name': 'Vaishali', 'latitude': 28.6444, 'longitude': 77.3370, 'state': 'Uttar Pradesh', 'zone': 'Blue Line', 'station_type': 'metro'},
+
+    // Red Line (key stations)
+    {'code': 'DM-DLSR', 'name': 'Dilshad Garden', 'latitude': 28.6807, 'longitude': 77.3194, 'state': 'Delhi', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'DM-WLCM', 'name': 'Welcome', 'latitude': 28.6730, 'longitude': 77.2967, 'state': 'Delhi', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'DM-SHDR', 'name': 'Shahdara', 'latitude': 28.6741, 'longitude': 77.2880, 'state': 'Delhi', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'DM-TSLM', 'name': 'Tis Hazari', 'latitude': 28.6631, 'longitude': 77.2282, 'state': 'Delhi', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'DM-RTHK', 'name': 'Rithala', 'latitude': 28.7209, 'longitude': 77.1129, 'state': 'Delhi', 'zone': 'Red Line', 'station_type': 'metro'},
+
+    // ========== MUMBAI METRO ==========
+    {'code': 'MM-VERS', 'name': 'Versova', 'latitude': 19.1307, 'longitude': 72.8205, 'state': 'Maharashtra', 'zone': 'Line 1', 'station_type': 'metro'},
+    {'code': 'MM-ANDR', 'name': 'Andheri Metro', 'latitude': 19.1196, 'longitude': 72.8464, 'state': 'Maharashtra', 'zone': 'Line 1', 'station_type': 'metro'},
+    {'code': 'MM-WRST', 'name': 'Western Express Highway', 'latitude': 19.1090, 'longitude': 72.8570, 'state': 'Maharashtra', 'zone': 'Line 1', 'station_type': 'metro'},
+    {'code': 'MM-CHKL', 'name': 'Chakala', 'latitude': 19.1015, 'longitude': 72.8605, 'state': 'Maharashtra', 'zone': 'Line 1', 'station_type': 'metro'},
+    {'code': 'MM-AIRP', 'name': 'Airport Road', 'latitude': 19.0978, 'longitude': 72.8660, 'state': 'Maharashtra', 'zone': 'Line 1', 'station_type': 'metro'},
+    {'code': 'MM-MROL', 'name': 'Marol Naka', 'latitude': 19.0940, 'longitude': 72.8770, 'state': 'Maharashtra', 'zone': 'Line 1', 'station_type': 'metro'},
+    {'code': 'MM-SAKI', 'name': 'Saki Naka', 'latitude': 19.0870, 'longitude': 72.8870, 'state': 'Maharashtra', 'zone': 'Line 1', 'station_type': 'metro'},
+    {'code': 'MM-ASMN', 'name': 'Asalpha', 'latitude': 19.0805, 'longitude': 72.8920, 'state': 'Maharashtra', 'zone': 'Line 1', 'station_type': 'metro'},
+    {'code': 'MM-JAGL', 'name': 'Jagruti Nagar', 'latitude': 19.0750, 'longitude': 72.8990, 'state': 'Maharashtra', 'zone': 'Line 1', 'station_type': 'metro'},
+    {'code': 'MM-GHTK', 'name': 'Ghatkopar Metro', 'latitude': 19.0866, 'longitude': 72.9085, 'state': 'Maharashtra', 'zone': 'Line 1', 'station_type': 'metro'},
+
+    // ========== BANGALORE (NAMMA) METRO ==========
+    // Purple Line
+    {'code': 'BM-BYWH', 'name': 'Baiyappanahalli', 'latitude': 12.9917, 'longitude': 77.6520, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-SWMI', 'name': 'Swami Vivekananda Road', 'latitude': 12.9850, 'longitude': 77.6410, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-INDN', 'name': 'Indiranagar', 'latitude': 12.9784, 'longitude': 77.6406, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-HALL', 'name': 'Halasuru', 'latitude': 12.9765, 'longitude': 77.6200, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-TRNM', 'name': 'Trinity', 'latitude': 12.9715, 'longitude': 77.6146, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-MGRD', 'name': 'MG Road Bangalore', 'latitude': 12.9756, 'longitude': 77.6066, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-CUBP', 'name': 'Cubbon Park', 'latitude': 12.9791, 'longitude': 77.5942, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-VJNR', 'name': 'Vidhana Soudha', 'latitude': 12.9790, 'longitude': 77.5906, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-SJPN', 'name': 'Sir M Visvesvaraya', 'latitude': 12.9770, 'longitude': 77.5747, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-MJES', 'name': 'Majestic', 'latitude': 12.9757, 'longitude': 77.5719, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-CRPT', 'name': 'City Railway Station', 'latitude': 12.9788, 'longitude': 77.5700, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-MGTR', 'name': 'Magadi Road', 'latitude': 12.9763, 'longitude': 77.5553, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-MYSR', 'name': 'Mysore Road', 'latitude': 12.9625, 'longitude': 77.5389, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+    {'code': 'BM-KNGL', 'name': 'Kengeri', 'latitude': 12.9138, 'longitude': 77.4834, 'state': 'Karnataka', 'zone': 'Purple Line', 'station_type': 'metro'},
+
+    // Green Line
+    {'code': 'BM-NGSR', 'name': 'Nagasandra', 'latitude': 13.0385, 'longitude': 77.5157, 'state': 'Karnataka', 'zone': 'Green Line', 'station_type': 'metro'},
+    {'code': 'BM-DSHP', 'name': 'Dasarahalli', 'latitude': 13.0303, 'longitude': 77.5188, 'state': 'Karnataka', 'zone': 'Green Line', 'station_type': 'metro'},
+    {'code': 'BM-YLLK', 'name': 'Yeshwanthpur', 'latitude': 13.0224, 'longitude': 77.5451, 'state': 'Karnataka', 'zone': 'Green Line', 'station_type': 'metro'},
+    {'code': 'BM-SNDR', 'name': 'Sandal Soap Factory', 'latitude': 13.0157, 'longitude': 77.5544, 'state': 'Karnataka', 'zone': 'Green Line', 'station_type': 'metro'},
+    {'code': 'BM-RJKM', 'name': 'Rajajinagar', 'latitude': 12.9990, 'longitude': 77.5575, 'state': 'Karnataka', 'zone': 'Green Line', 'station_type': 'metro'},
+    {'code': 'BM-SRNG', 'name': 'Srirampura', 'latitude': 12.9916, 'longitude': 77.5614, 'state': 'Karnataka', 'zone': 'Green Line', 'station_type': 'metro'},
+    {'code': 'BM-JYNR', 'name': 'Jayanagar', 'latitude': 12.9307, 'longitude': 77.5824, 'state': 'Karnataka', 'zone': 'Green Line', 'station_type': 'metro'},
+    {'code': 'BM-BNSW', 'name': 'Banashankari', 'latitude': 12.9124, 'longitude': 77.5746, 'state': 'Karnataka', 'zone': 'Green Line', 'station_type': 'metro'},
+    {'code': 'BM-YELC', 'name': 'Yelachenahalli', 'latitude': 12.8962, 'longitude': 77.5691, 'state': 'Karnataka', 'zone': 'Green Line', 'station_type': 'metro'},
+    {'code': 'BM-SILK', 'name': 'Silk Institute', 'latitude': 12.8743, 'longitude': 77.5598, 'state': 'Karnataka', 'zone': 'Green Line', 'station_type': 'metro'},
+
+    // ========== KOLKATA METRO ==========
+    {'code': 'KM-DKSH', 'name': 'Dakshineswar', 'latitude': 22.6553, 'longitude': 88.3575, 'state': 'West Bengal', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KM-DUMM', 'name': 'Dum Dum', 'latitude': 22.6210, 'longitude': 88.4305, 'state': 'West Bengal', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KM-BELG', 'name': 'Belgachia', 'latitude': 22.5952, 'longitude': 88.3775, 'state': 'West Bengal', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KM-SHYB', 'name': 'Shyambazar', 'latitude': 22.5930, 'longitude': 88.3700, 'state': 'West Bengal', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KM-GIRH', 'name': 'Girish Park', 'latitude': 22.5843, 'longitude': 88.3653, 'state': 'West Bengal', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KM-MHTN', 'name': 'Mahatma Gandhi Road', 'latitude': 22.5784, 'longitude': 88.3630, 'state': 'West Bengal', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KM-CENT', 'name': 'Central Metro Kolkata', 'latitude': 22.5729, 'longitude': 88.3599, 'state': 'West Bengal', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KM-ESPL', 'name': 'Esplanade', 'latitude': 22.5630, 'longitude': 88.3522, 'state': 'West Bengal', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KM-PARK', 'name': 'Park Street', 'latitude': 22.5522, 'longitude': 88.3518, 'state': 'West Bengal', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KM-RBBR', 'name': 'Rabindra Sarobar', 'latitude': 22.5195, 'longitude': 88.3510, 'state': 'West Bengal', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KM-KAVI', 'name': 'Kavi Subhash', 'latitude': 22.4785, 'longitude': 88.3765, 'state': 'West Bengal', 'zone': 'Blue Line', 'station_type': 'metro'},
+
+    // ========== CHENNAI METRO ==========
+    {'code': 'CM-WNMD', 'name': 'Wimco Nagar', 'latitude': 13.1575, 'longitude': 80.3018, 'state': 'Tamil Nadu', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'CM-WASH', 'name': 'Washermanpet', 'latitude': 13.1253, 'longitude': 80.2824, 'state': 'Tamil Nadu', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'CM-HIGH', 'name': 'High Court', 'latitude': 13.0874, 'longitude': 80.2847, 'state': 'Tamil Nadu', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'CM-GOVT', 'name': 'Government Estate', 'latitude': 13.0720, 'longitude': 80.2720, 'state': 'Tamil Nadu', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'CM-AGLR', 'name': 'AG-DMS', 'latitude': 13.0615, 'longitude': 80.2516, 'state': 'Tamil Nadu', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'CM-NGMB', 'name': 'Nungambakkam', 'latitude': 13.0586, 'longitude': 80.2424, 'state': 'Tamil Nadu', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'CM-EKAT', 'name': 'Ekatuthangal', 'latitude': 13.0277, 'longitude': 80.2025, 'state': 'Tamil Nadu', 'zone': 'Green Line', 'station_type': 'metro'},
+    {'code': 'CM-ALAND', 'name': 'Alandur', 'latitude': 13.0147, 'longitude': 80.2026, 'state': 'Tamil Nadu', 'zone': 'Green Line', 'station_type': 'metro'},
+    {'code': 'CM-AIRP', 'name': 'Chennai Airport Metro', 'latitude': 12.9790, 'longitude': 80.1694, 'state': 'Tamil Nadu', 'zone': 'Green Line', 'station_type': 'metro'},
+
+    // ========== HYDERABAD METRO ==========
+    {'code': 'HM-MIYP', 'name': 'Miyapur', 'latitude': 17.4965, 'longitude': 78.3574, 'state': 'Telangana', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'HM-JNTU', 'name': 'JNTU College', 'latitude': 17.4925, 'longitude': 78.3828, 'state': 'Telangana', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'HM-KPHT', 'name': 'KPHB Colony', 'latitude': 17.4830, 'longitude': 78.3962, 'state': 'Telangana', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'HM-KUKT', 'name': 'Kukatpally', 'latitude': 17.4830, 'longitude': 78.3962, 'state': 'Telangana', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'HM-ERRA', 'name': 'Erragadda', 'latitude': 17.4710, 'longitude': 78.4277, 'state': 'Telangana', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'HM-AMPT', 'name': 'Ameerpet', 'latitude': 17.4357, 'longitude': 78.4483, 'state': 'Telangana', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'HM-PNJG', 'name': 'Panjagutta', 'latitude': 17.4296, 'longitude': 78.4509, 'state': 'Telangana', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'HM-IRML', 'name': 'Irrum Manzil', 'latitude': 17.4245, 'longitude': 78.4574, 'state': 'Telangana', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'HM-LKDN', 'name': 'Lakdi-ka-Pul', 'latitude': 17.4112, 'longitude': 78.4609, 'state': 'Telangana', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'HM-ASBL', 'name': 'Assembly', 'latitude': 17.4048, 'longitude': 78.4741, 'state': 'Telangana', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'HM-NGPL', 'name': 'Nagole', 'latitude': 17.3870, 'longitude': 78.5559, 'state': 'Telangana', 'zone': 'Blue Line', 'station_type': 'metro'},
+
+    // Red Line
+    {'code': 'HM-LBNG', 'name': 'LB Nagar', 'latitude': 17.3487, 'longitude': 78.5508, 'state': 'Telangana', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'HM-CHDI', 'name': 'Chaitanyapuri', 'latitude': 17.3665, 'longitude': 78.5234, 'state': 'Telangana', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'HM-MLPT', 'name': 'Malakpet', 'latitude': 17.3768, 'longitude': 78.4992, 'state': 'Telangana', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'HM-MGBS', 'name': 'MG Bus Station', 'latitude': 17.3843, 'longitude': 78.4891, 'state': 'Telangana', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'HM-SLTL', 'name': 'Sultan Bazaar', 'latitude': 17.3892, 'longitude': 78.4783, 'state': 'Telangana', 'zone': 'Red Line', 'station_type': 'metro'},
+
+    // ========== KOCHI METRO ==========
+    {'code': 'KCM-ALUA', 'name': 'Aluva', 'latitude': 10.1057, 'longitude': 76.3499, 'state': 'Kerala', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KCM-COMP', 'name': 'Companypady', 'latitude': 10.0879, 'longitude': 76.3406, 'state': 'Kerala', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KCM-EDAP', 'name': 'Edapally', 'latitude': 10.0252, 'longitude': 76.3085, 'state': 'Kerala', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KCM-ERNK', 'name': 'Ernakulam South', 'latitude': 9.9819, 'longitude': 76.2995, 'state': 'Kerala', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KCM-MGRD', 'name': 'MG Road Kochi', 'latitude': 9.9714, 'longitude': 76.2885, 'state': 'Kerala', 'zone': 'Blue Line', 'station_type': 'metro'},
+    {'code': 'KCM-THYK', 'name': 'Thykoodam', 'latitude': 9.9601, 'longitude': 76.3097, 'state': 'Kerala', 'zone': 'Blue Line', 'station_type': 'metro'},
+
+    // ========== JAIPUR METRO ==========
+    {'code': 'JM-MNSR', 'name': 'Mansarovar', 'latitude': 26.8674, 'longitude': 75.7614, 'state': 'Rajasthan', 'zone': 'Pink Line', 'station_type': 'metro'},
+    {'code': 'JM-NWAT', 'name': 'New Aatish Market', 'latitude': 26.8730, 'longitude': 75.7690, 'state': 'Rajasthan', 'zone': 'Pink Line', 'station_type': 'metro'},
+    {'code': 'JM-VDNR', 'name': 'Vivek Vihar', 'latitude': 26.8810, 'longitude': 75.7765, 'state': 'Rajasthan', 'zone': 'Pink Line', 'station_type': 'metro'},
+    {'code': 'JM-CNDP', 'name': 'Chandpole', 'latitude': 26.9144, 'longitude': 75.8049, 'state': 'Rajasthan', 'zone': 'Pink Line', 'station_type': 'metro'},
+    {'code': 'JM-BNPK', 'name': 'Badi Chaupar', 'latitude': 26.9230, 'longitude': 75.8267, 'state': 'Rajasthan', 'zone': 'Pink Line', 'station_type': 'metro'},
+
+    // ========== LUCKNOW METRO ==========
+    {'code': 'LM-MNKN', 'name': 'Munshipulia', 'latitude': 26.8941, 'longitude': 81.0499, 'state': 'Uttar Pradesh', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'LM-INDR', 'name': 'Indira Nagar', 'latitude': 26.8808, 'longitude': 81.0281, 'state': 'Uttar Pradesh', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'LM-HZRT', 'name': 'Hazratganj', 'latitude': 26.8560, 'longitude': 80.9550, 'state': 'Uttar Pradesh', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'LM-CHRB', 'name': 'Charbagh Metro', 'latitude': 26.8469, 'longitude': 80.9461, 'state': 'Uttar Pradesh', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'LM-TRPT', 'name': 'Transport Nagar', 'latitude': 26.8395, 'longitude': 80.9231, 'state': 'Uttar Pradesh', 'zone': 'Red Line', 'station_type': 'metro'},
+    {'code': 'LM-CKNC', 'name': 'CCS Airport', 'latitude': 26.7635, 'longitude': 80.8892, 'state': 'Uttar Pradesh', 'zone': 'Red Line', 'station_type': 'metro'},
+  ];
+}
+
+List<Map<String, dynamic>> getLocalTrainStationSeedData() {
+  return [
+    // ========== MUMBAI LOCAL - WESTERN LINE ==========
+    {'code': 'ML-CRCL', 'name': 'Churchgate', 'latitude': 18.9354, 'longitude': 72.8272, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-MRNE', 'name': 'Marine Lines', 'latitude': 18.9438, 'longitude': 72.8237, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-CHRD', 'name': 'Charni Road', 'latitude': 18.9514, 'longitude': 72.8195, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-GRNT', 'name': 'Grant Road', 'latitude': 18.9629, 'longitude': 72.8151, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-MMBC', 'name': 'Mumbai Central Local', 'latitude': 18.9690, 'longitude': 72.8197, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-ELPH', 'name': 'Elphinstone Road', 'latitude': 18.9845, 'longitude': 72.8261, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-DADR', 'name': 'Dadar Local', 'latitude': 19.0178, 'longitude': 72.8423, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-MTNG', 'name': 'Matunga Road', 'latitude': 19.0270, 'longitude': 72.8457, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-MHIM', 'name': 'Mahim', 'latitude': 19.0436, 'longitude': 72.8419, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-BNDR', 'name': 'Bandra', 'latitude': 19.0544, 'longitude': 72.8397, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-KHAR', 'name': 'Khar Road', 'latitude': 19.0713, 'longitude': 72.8370, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-SNTZ', 'name': 'Santacruz', 'latitude': 19.0808, 'longitude': 72.8408, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-VILP', 'name': 'Vile Parle', 'latitude': 19.0980, 'longitude': 72.8435, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-ANDH', 'name': 'Andheri Local', 'latitude': 19.1196, 'longitude': 72.8464, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-JOGW', 'name': 'Jogeshwari', 'latitude': 19.1360, 'longitude': 72.8486, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-RAMY', 'name': 'Ram Mandir', 'latitude': 19.1435, 'longitude': 72.8490, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-GORL', 'name': 'Goregaon', 'latitude': 19.1620, 'longitude': 72.8455, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-MLAD', 'name': 'Malad', 'latitude': 19.1856, 'longitude': 72.8448, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-KNDV', 'name': 'Kandivali', 'latitude': 19.2043, 'longitude': 72.8550, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-BRVI', 'name': 'Borivali', 'latitude': 19.2280, 'longitude': 72.8564, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-DAHI', 'name': 'Dahisar', 'latitude': 19.2502, 'longitude': 72.8597, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-MIRA', 'name': 'Mira Road', 'latitude': 19.2813, 'longitude': 72.8682, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-BHYR', 'name': 'Bhayandar', 'latitude': 19.3003, 'longitude': 72.8517, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-NASK', 'name': 'Naigaon', 'latitude': 19.3505, 'longitude': 72.8501, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-VASAI', 'name': 'Vasai Road', 'latitude': 19.3620, 'longitude': 72.8302, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+    {'code': 'ML-VIRAR', 'name': 'Virar', 'latitude': 19.4559, 'longitude': 72.8118, 'state': 'Maharashtra', 'zone': 'Western', 'station_type': 'local'},
+
+    // ========== MUMBAI LOCAL - CENTRAL LINE ==========
+    {'code': 'ML-CSTM', 'name': 'CSMT Local', 'latitude': 18.9398, 'longitude': 72.8355, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-MSJI', 'name': 'Masjid', 'latitude': 18.9474, 'longitude': 72.8392, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-SNHD', 'name': 'Sandhurst Road', 'latitude': 18.9569, 'longitude': 72.8416, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-BYCU', 'name': 'Byculla', 'latitude': 18.9777, 'longitude': 72.8331, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-PREL', 'name': 'Parel', 'latitude': 18.9922, 'longitude': 72.8395, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-DDRC', 'name': 'Dadar Central', 'latitude': 19.0178, 'longitude': 72.8423, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-MTGC', 'name': 'Matunga Central', 'latitude': 19.0270, 'longitude': 72.8545, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-SION', 'name': 'Sion', 'latitude': 19.0403, 'longitude': 72.8622, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-KURLA', 'name': 'Kurla', 'latitude': 19.0659, 'longitude': 72.8794, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-GHTK', 'name': 'Ghatkopar', 'latitude': 19.0866, 'longitude': 72.9085, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-VIKR', 'name': 'Vikhroli', 'latitude': 19.1067, 'longitude': 72.9272, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-BHNP', 'name': 'Bhandup', 'latitude': 19.1490, 'longitude': 72.9370, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-MULD', 'name': 'Mulund', 'latitude': 19.1726, 'longitude': 72.9567, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-THNE', 'name': 'Thane', 'latitude': 19.1860, 'longitude': 72.9752, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-DLBS', 'name': 'Dombivli', 'latitude': 19.2183, 'longitude': 73.0862, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+    {'code': 'ML-KLYN', 'name': 'Kalyan', 'latitude': 19.2351, 'longitude': 73.1293, 'state': 'Maharashtra', 'zone': 'Central', 'station_type': 'local'},
+
+    // ========== MUMBAI LOCAL - HARBOUR LINE ==========
+    {'code': 'ML-GSRD', 'name': 'Guru Tegh Bahadur Nagar', 'latitude': 18.9599, 'longitude': 72.8404, 'state': 'Maharashtra', 'zone': 'Harbour', 'station_type': 'local'},
+    {'code': 'ML-REAY', 'name': 'Reay Road', 'latitude': 18.9694, 'longitude': 72.8441, 'state': 'Maharashtra', 'zone': 'Harbour', 'station_type': 'local'},
+    {'code': 'ML-WDLH', 'name': 'Wadala Road', 'latitude': 19.0166, 'longitude': 72.8613, 'state': 'Maharashtra', 'zone': 'Harbour', 'station_type': 'local'},
+    {'code': 'ML-CHRH', 'name': 'Chembur', 'latitude': 19.0529, 'longitude': 72.8953, 'state': 'Maharashtra', 'zone': 'Harbour', 'station_type': 'local'},
+    {'code': 'ML-MNKD', 'name': 'Mankhurd', 'latitude': 19.0453, 'longitude': 72.9244, 'state': 'Maharashtra', 'zone': 'Harbour', 'station_type': 'local'},
+    {'code': 'ML-VASH', 'name': 'Vashi', 'latitude': 19.0660, 'longitude': 72.9988, 'state': 'Maharashtra', 'zone': 'Harbour', 'station_type': 'local'},
+    {'code': 'ML-NERM', 'name': 'Nerul', 'latitude': 19.0358, 'longitude': 73.0168, 'state': 'Maharashtra', 'zone': 'Harbour', 'station_type': 'local'},
+    {'code': 'ML-BELA', 'name': 'Belapur', 'latitude': 19.0235, 'longitude': 73.0391, 'state': 'Maharashtra', 'zone': 'Harbour', 'station_type': 'local'},
+    {'code': 'ML-PNVL', 'name': 'Panvel', 'latitude': 18.9920, 'longitude': 73.1094, 'state': 'Maharashtra', 'zone': 'Harbour', 'station_type': 'local'},
+
+    // ========== CHENNAI LOCAL (MRTS) ==========
+    {'code': 'CL-BCHM', 'name': 'Beach', 'latitude': 13.0935, 'longitude': 80.2874, 'state': 'Tamil Nadu', 'zone': 'MRTS', 'station_type': 'local'},
+    {'code': 'CL-FRTP', 'name': 'Fort', 'latitude': 13.0797, 'longitude': 80.2874, 'state': 'Tamil Nadu', 'zone': 'MRTS', 'station_type': 'local'},
+    {'code': 'CL-CHPK', 'name': 'Chepauk', 'latitude': 13.0680, 'longitude': 80.2775, 'state': 'Tamil Nadu', 'zone': 'MRTS', 'station_type': 'local'},
+    {'code': 'CL-MYLD', 'name': 'Mylapore', 'latitude': 13.0357, 'longitude': 80.2666, 'state': 'Tamil Nadu', 'zone': 'MRTS', 'station_type': 'local'},
+    {'code': 'CL-TRMB', 'name': 'Thiruvanmiyur', 'latitude': 12.9854, 'longitude': 80.2629, 'state': 'Tamil Nadu', 'zone': 'MRTS', 'station_type': 'local'},
+    {'code': 'CL-VELK', 'name': 'Velachery', 'latitude': 12.9799, 'longitude': 80.2212, 'state': 'Tamil Nadu', 'zone': 'MRTS', 'station_type': 'local'},
+
+    // ========== KOLKATA LOCAL ==========
+    {'code': 'KL-SEAL', 'name': 'Sealdah', 'latitude': 22.5645, 'longitude': 88.3740, 'state': 'West Bengal', 'zone': 'Eastern', 'station_type': 'local'},
+    {'code': 'KL-BIDB', 'name': 'Bidhan Nagar', 'latitude': 22.5817, 'longitude': 88.4101, 'state': 'West Bengal', 'zone': 'Eastern', 'station_type': 'local'},
+    {'code': 'KL-DUMK', 'name': 'Dum Dum Local', 'latitude': 22.6210, 'longitude': 88.4305, 'state': 'West Bengal', 'zone': 'Eastern', 'station_type': 'local'},
+    {'code': 'KL-BRRK', 'name': 'Barrackpore', 'latitude': 22.7666, 'longitude': 88.3702, 'state': 'West Bengal', 'zone': 'Eastern', 'station_type': 'local'},
+    {'code': 'KL-NAIH', 'name': 'Naihati', 'latitude': 22.8904, 'longitude': 88.4123, 'state': 'West Bengal', 'zone': 'Eastern', 'station_type': 'local'},
+    {'code': 'KL-HWHL', 'name': 'Howrah Local', 'latitude': 22.5839, 'longitude': 88.3428, 'state': 'West Bengal', 'zone': 'Howrah', 'station_type': 'local'},
+    {'code': 'KL-SNTR', 'name': 'Santragachi', 'latitude': 22.5800, 'longitude': 88.2801, 'state': 'West Bengal', 'zone': 'Howrah', 'station_type': 'local'},
+  ];
+}

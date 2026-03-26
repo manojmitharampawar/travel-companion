@@ -1,0 +1,5 @@
+For train tracking journey screen show train stations as routes as well.
+Implement functionality to add journey for public and private bus where source and destination location can be search and locate on map as well. and when journey start in track show road map as well.
+The destination tracking should work offline mode in both cases and by frequently check geo location optimize battery usages as well.
+Existing journey should be editable mainly and set repeatable for daily as well as road journey map it should editable along with setting time as well
+Also add locals and metro trips and public-private bus as well where pre schedule or reservation journey is not possible

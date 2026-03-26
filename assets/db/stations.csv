@@ -1,0 +1,570 @@
+code,name,latitude,longitude,state,zone
+NDLS,New Delhi,28.6424,77.2194,Delhi,NR
+BCT,Mumbai Central,18.9690,72.8197,Maharashtra,WR
+CSMT,Chhatrapati Shivaji Maharaj Terminus,18.9398,72.8355,Maharashtra,CR
+HWH,Howrah Junction,22.5839,88.3428,West Bengal,ER
+MAS,Chennai Central,13.0827,80.2707,Tamil Nadu,SR
+SBC,KSR Bengaluru,12.9784,77.5710,Karnataka,SWR
+HYB,Hyderabad Deccan,17.3616,78.4747,Telangana,SCR
+PUNE,Pune Junction,18.5285,73.8743,Maharashtra,CR
+ADI,Ahmedabad Junction,23.0258,72.6003,Gujarat,WR
+JP,Jaipur Junction,26.9196,75.7878,Rajasthan,NWR
+LKO,Lucknow Charbagh,26.8322,80.9167,Uttar Pradesh,NR
+PNBE,Patna Junction,25.6053,85.1347,Bihar,ECR
+BPL,Bhopal Junction,23.2687,77.4119,Madhya Pradesh,WCR
+NGP,Nagpur Junction,21.1503,79.0903,Maharashtra,CR
+GWL,Gwalior Junction,26.2118,78.1823,Madhya Pradesh,NCR
+AGC,Agra Cantt,27.1631,78.0081,Uttar Pradesh,NCR
+CNB,Kanpur Central,26.4535,80.3508,Uttar Pradesh,NCR
+ALD,Prayagraj Junction,25.4284,81.8371,Uttar Pradesh,NCR
+BSB,Varanasi Junction,25.3148,83.0120,Uttar Pradesh,NER
+CDG,Chandigarh,30.6942,76.7838,Chandigarh,NR
+DHN,Dhanbad Junction,23.7903,86.4199,Jharkhand,ECR
+RNC,Ranchi,23.3139,85.3220,Jharkhand,SER
+BBS,Bhubaneswar,20.2710,85.8395,Odisha,ECoR
+VSKP,Visakhapatnam,17.7215,83.2897,Andhra Pradesh,ECoR
+TVC,Thiruvananthapuram Central,8.4894,76.9516,Kerala,SR
+ERS,Ernakulam Junction,9.9681,76.2880,Kerala,SR
+CBE,Coimbatore Junction,11.0019,76.9671,Tamil Nadu,SR
+MDU,Madurai Junction,9.9174,78.1196,Tamil Nadu,SR
+GHY,Guwahati,26.1445,91.7362,Assam,NFR
+DBRG,Dibrugarh,27.4728,94.9120,Assam,NFR
+JAT,Jammu Tawi,32.7304,74.8671,Jammu & Kashmir,NR
+UDZ,Udaipur City,24.5781,73.6834,Rajasthan,NWR
+JU,Jodhpur Junction,26.2860,73.0198,Rajasthan,NWR
+AII,Ajmer Junction,26.4546,74.6298,Rajasthan,NWR
+KGP,Kharagpur Junction,22.3460,87.3236,West Bengal,SER
+ROU,Rourkela,22.2270,84.8514,Odisha,SER
+BZA,Vijayawada Junction,16.5175,80.6186,Andhra Pradesh,SCR
+SC,Secunderabad Junction,17.4344,78.5013,Telangana,SCR
+LTT,Lokmanya Tilak Terminus,19.0680,72.8892,Maharashtra,CR
+SNSI,Sainagar Shirdi,19.7754,74.4779,Maharashtra,CR
+KOL,Kolhapur,16.6916,74.2299,Maharashtra,CR
+SUR,Solapur,17.6585,75.9100,Maharashtra,CR
+NED,Hazur Sahib Nanded,19.1545,77.3210,Maharashtra,SCR
+ST,Surat,21.2055,72.8397,Gujarat,WR
+BRC,Vadodara Junction,22.3101,73.1812,Gujarat,WR
+RTM,Ratlam Junction,23.3305,75.0417,Madhya Pradesh,WR
+INDB,Indore Junction,22.7196,75.8008,Madhya Pradesh,WR
+JBP,Jabalpur Junction,23.1688,79.9340,Madhya Pradesh,WCR
+BSP,Bilaspur Junction,22.0757,82.1393,Chhattisgarh,SECR
+R,Raipur Junction,21.2089,81.6296,Chhattisgarh,SECR
+MTJ,Mathura Junction,27.4924,77.6737,Uttar Pradesh,NCR
+KOTA,Kota Junction,25.1800,75.8648,Rajasthan,WCR
+DDU,Pt Deen Dayal Upadhyaya Junction,25.2800,83.0050,Uttar Pradesh,NER
+MGS,Mughal Sarai Junction,25.2800,83.1100,Uttar Pradesh,ECR
+DHNE,Dhanbad,23.7903,86.4199,Jharkhand,ECR
+ASN,Asansol Junction,23.6813,86.9553,West Bengal,ER
+BWN,Barddhaman Junction,23.2415,87.8649,West Bengal,ER
+JHS,Jhansi Junction,25.4446,78.5682,Uttar Pradesh,NCR
+NZM,Hazrat Nizamuddin,28.5893,77.2507,Delhi,NR
+DLI,Old Delhi Junction,28.6615,77.2295,Delhi,NR
+PURI,Puri,19.8065,85.8312,Odisha,ECoR
+CTC,Cuttack Junction,20.4671,85.8788,Odisha,ECoR
+NJP,New Jalpaiguri Junction,26.6981,88.4268,West Bengal,NFR
+KIR,Katihar Junction,25.5478,87.5712,Bihar,NFR
+BGP,Bhagalpur,25.2523,86.9643,Bihar,ER
+SPJ,Samastipur Junction,25.8595,85.7791,Bihar,ECR
+MFP,Muzaffarpur Junction,26.1197,85.3910,Bihar,ECR
+RXL,Raxaul Junction,26.9798,84.8537,Bihar,ECR
+GKP,Gorakhpur Junction,26.7502,83.3644,Uttar Pradesh,NER
+MB,Moradabad Junction,28.8319,78.7732,Uttar Pradesh,NR
+BE,Bareilly Junction,28.3625,79.4113,Uttar Pradesh,NR
+LJN,Lucknow Junction,26.8467,80.9462,Uttar Pradesh,NR
+UMB,Ambala Cantt Junction,30.3602,76.8194,Haryana,NR
+SRE,Saharsa Junction,25.8782,86.6003,Bihar,ECR
+PTA,Patliputra,25.6220,85.0894,Bihar,ECR
+GAYA,Gaya Junction,24.7960,84.9997,Bihar,ECR
+KOAA,Kolkata Terminal,22.5626,88.3615,West Bengal,ER
+SDAH,Sealdah,22.5652,88.3710,West Bengal,ER
+RJT,Rajkot Junction,22.3036,70.8016,Gujarat,WR
+DEE,Delhi Sarai Rohilla,28.6606,77.1768,Delhi,NR
+ASR,Amritsar Junction,31.6340,74.8723,Punjab,NR
+BTI,Bathinda Junction,30.2109,74.9405,Punjab,NR
+FZR,Firozpur Cantt Junction,30.9263,74.6209,Punjab,NR
+HSR,Hisar,29.1672,75.7241,Haryana,NWR
+SVDK,Shri Mata Vaishno Devi Katra,32.9915,74.9318,Jammu & Kashmir,NR
+YPR,Yesvantpur Junction,13.0235,77.5536,Karnataka,SWR
+GTL,Guntakal Junction,15.1711,77.3773,Andhra Pradesh,SCR
+AMD,Ahmedabad,23.0258,72.6003,Gujarat,WR
+MYS,Mysuru Junction,12.3003,76.6556,Karnataka,SWR
+TN,Thane,19.1860,72.9753,Maharashtra,CR
+KYN,Kalyan Junction,19.2289,73.1299,Maharashtra,CR
+DD,Daund Junction,18.4629,74.5832,Maharashtra,CR
+WL,Wadi Junction,17.0518,76.9933,Karnataka,SCR
+GR,Gulbarga,17.3402,76.8299,Karnataka,SCR
+TPTY,Tirupati,13.6333,79.4190,Andhra Pradesh,SCR
+RU,Renigunta Junction,13.6510,79.5134,Andhra Pradesh,SCR
+JTJ,Jolarpettai Junction,12.5685,78.5716,Tamil Nadu,SR
+KPD,Katpadi Junction,12.9666,79.1478,Tamil Nadu,SR
+SA,Salem Junction,11.6613,78.1445,Tamil Nadu,SR
+TPJ,Tiruchchirappalli Junction,10.8196,78.6912,Tamil Nadu,SR
+MS,Chennai Egmore,13.0780,80.2619,Tamil Nadu,SR
+TCR,Thrissur,10.5257,76.2144,Kerala,SR
+CLT,Kozhikode,11.2531,75.7690,Kerala,SR
+CAN,Kannur,11.8688,75.3552,Kerala,SR
+MAQ,Mangaluru Central,12.8661,74.8435,Karnataka,SWR
+MAJN,Mangaluru Junction,12.8683,74.8417,Karnataka,SWR
+UD,Udupi,13.3432,74.7465,Karnataka,KR
+SL,Shoranur Junction,10.7640,76.2712,Kerala,SR
+PGT,Palakkad Junction,10.7747,76.6511,Kerala,SR
+ED,Erode Junction,11.3410,77.7172,Tamil Nadu,SR
+AWB,Aurangabad,19.8762,75.3433,Maharashtra,SCR
+MMR,Manmad Junction,20.2512,74.4396,Maharashtra,CR
+BSL,Bhusaval Junction,21.0452,75.7714,Maharashtra,CR
+IGP,Igatpuri,19.6983,73.5600,Maharashtra,CR
+NK,Nasik Road,19.9837,73.8107,Maharashtra,CR
+KZJ,Kazipet Junction,17.9801,79.5221,Telangana,SCR
+WL,Warangal,17.9689,79.5941,Telangana,SCR
+RDM,Ramagundam,18.7558,79.4747,Telangana,SCR
+BPQ,Ballarshah,19.8425,79.3484,Maharashtra,SCR
+SVJR,Sewagram,20.7313,78.9425,Maharashtra,CR
+ET,Itarsi Junction,22.6090,77.7517,Madhya Pradesh,WCR
+HBJ,Habibganj - Rani Kamlapati,23.2294,77.4385,Madhya Pradesh,WCR
+KTE,Katni Junction,23.8337,80.3942,Madhya Pradesh,WCR
+SGO,Satna,24.5751,80.8230,Madhya Pradesh,WCR
+RWR,Rewari Junction,28.1926,76.6163,Haryana,NWR
+DPA,Durgapur,23.5215,87.3119,West Bengal,ER
+BDC,Bandel Junction,22.9313,88.3870,West Bengal,ER
+SHM,Shalimar,22.5451,88.3345,West Bengal,SER
+MLDT,Malda Town,25.0100,88.1200,West Bengal,ER
+TNA,Thane Junction,19.1860,72.9753,Maharashtra,CR
+PNV,Panvel,18.9894,73.1175,Maharashtra,CR
+RIG,Raigarh,21.8967,83.3929,Chhattisgarh,SECR
+G,Gondia Junction,21.4563,80.2021,Maharashtra,SECR
+DURG,Durg Junction,21.1900,81.2800,Chhattisgarh,SECR
+SBP,Sambalpur,21.4479,83.9778,Odisha,ECoR
+TLHR,Titlagarh Junction,20.2888,83.1553,Odisha,ECoR
+BAM,Baramula,34.2000,74.3500,Jammu & Kashmir,NR
+SGNR,Sri Ganganagar,29.9094,73.8793,Rajasthan,NWR
+BKN,Bikaner Junction,28.0167,73.3150,Rajasthan,NWR
+JSM,Jaisalmer,26.9157,70.9083,Rajasthan,NWR
+ABR,Abu Road,24.4828,72.7705,Rajasthan,NWR
+AWR,Aravali,24.5000,73.0500,Rajasthan,NWR
+MJ,Marwar Junction,25.8750,73.6600,Rajasthan,NWR
+DWK,Dwarka,22.2394,68.9678,Gujarat,WR
+PBR,Porbandar,21.6350,69.6577,Gujarat,WR
+VRL,Veraval,20.9158,70.3629,Gujarat,WR
+BVP,Bhavnagar Terminus,21.7645,72.1519,Gujarat,WR
+BDTS,Bandra Terminus,19.0544,72.8401,Maharashtra,WR
+ADH,Andheri,19.1197,72.8464,Maharashtra,WR
+BVI,Borivali,19.2296,72.8580,Maharashtra,WR
+DR,Dadar,19.0184,72.8427,Maharashtra,CR
+LDH,Ludhiana Junction,30.8840,75.8524,Punjab,NR
+PTK,Pathankot Junction,32.2680,75.6420,Punjab,NR
+JRC,Jalandhar City,31.3244,75.5762,Punjab,NR
+JUC,Jalandhar Cantt,31.3050,75.5875,Punjab,NR
+RPJ,Rajpura Junction,30.4838,76.5926,Punjab,NR
+SIR,Sirhind Junction,30.6496,76.3850,Punjab,NR
+KNL,Karnal,29.6856,76.9718,Haryana,NR
+PNP,Panipat Junction,29.3909,76.9700,Haryana,NR
+ROK,Rohtak Junction,28.8984,76.5898,Haryana,NR
+GGN,Gurgaon,28.4595,77.0266,Haryana,NR
+FDB,Faridabad,28.3670,77.3106,Haryana,NR
+KKDE,Kurukshetra Junction,29.9570,76.8470,Haryana,NR
+TKJ,Tundla Junction,27.2058,78.2357,Uttar Pradesh,NCR
+SBB,Shahjahanpur,27.8800,79.9093,Uttar Pradesh,NR
+FD,Faizabad Junction,26.7782,82.1491,Uttar Pradesh,NR
+AY,Ayodhya Junction,26.8029,82.2003,Uttar Pradesh,NR
+GD,Gonda Junction,27.1332,81.9646,Uttar Pradesh,NER
+BST,Basti,26.8000,82.7350,Uttar Pradesh,NER
+DLN,Deoria Sadar,26.5024,83.7907,Uttar Pradesh,NER
+AZM,Azamgarh,26.0684,83.1849,Uttar Pradesh,NER
+MZP,Mirzapur,25.1470,82.5684,Uttar Pradesh,NCR
+JNP,Jaunpur Junction,25.7345,82.6798,Uttar Pradesh,NR
+MEE,Meerut City,28.9845,77.7064,Uttar Pradesh,NR
+HW,Haridwar Junction,29.9450,78.1620,Uttarakhand,NR
+RKSH,Rishikesh,30.1083,78.2950,Uttarakhand,NR
+DDN,Dehradun,30.3165,78.0322,Uttarakhand,NR
+RMR,Roorkee,29.8673,77.8792,Uttarakhand,NR
+KGM,Kathgodam,29.2747,79.5216,Uttarakhand,NER
+RMU,Ramnagar,29.3919,79.1234,Uttarakhand,NER
+SRJ,Saharanpur,29.9641,77.5467,Uttar Pradesh,NR
+ALJN,Aligarh Junction,27.8890,78.0771,Uttar Pradesh,NCR
+ETW,Etawah,26.7752,79.0205,Uttar Pradesh,NCR
+FTP,Fatehpur,25.9280,80.8135,Uttar Pradesh,NCR
+RAE,Rae Bareli Junction,26.2216,81.2358,Uttar Pradesh,NR
+PBH,Pratapgarh Junction,25.8920,81.9419,Uttar Pradesh,NR
+BJU,Barauni Junction,25.4559,86.0185,Bihar,ECR
+KGG,Khagaria Junction,25.4932,86.4847,Bihar,ECR
+BKP,Bakhtiyarpur Junction,25.4636,85.5412,Bihar,ECR
+JMP,Jamalpur Junction,25.3113,86.4856,Bihar,ECR
+DGR,Danapur,25.6312,85.0540,Bihar,ECR
+ARA,Ara Junction,25.5560,84.6692,Bihar,ECR
+BXR,Buxar,25.5784,83.9822,Bihar,ECR
+SSM,Sasaram,24.9486,84.0233,Bihar,ECR
+JSME,Jasidih Junction,24.5189,86.6506,Jharkhand,ECR
+BRKA,Barka Kana Junction,23.6244,85.9697,Jharkhand,ECR
+HTE,Hatia,23.3687,85.3179,Jharkhand,SER
+BKSC,Bokaro Steel City,23.6699,86.1522,Jharkhand,SER
+GMO,Gomoh Junction,23.8760,86.1641,Jharkhand,ECR
+MDP,Madhupur Junction,24.2610,86.6540,Jharkhand,ECR
+TAT,Tatanagar Junction,22.7883,86.1663,Jharkhand,SER
+CKR,Chakradharpur,22.7000,85.6270,Jharkhand,SER
+JSG,Jharsuguda Junction,21.8554,84.0063,Odisha,SER
+BRMP,Brahmapur,19.3108,84.7909,Odisha,ECoR
+KUR,Khurda Road Junction,20.1828,85.8336,Odisha,ECoR
+BAL,Balasore,21.4934,86.9316,Odisha,SER
+BHC,Bhadrak,21.0484,86.4853,Odisha,ECoR
+JAJ,Jajpur Keonjhar Road,21.0612,86.3462,Odisha,ECoR
+ANGL,Angul,20.8427,85.0963,Odisha,ECoR
+RKL,Rayagada,19.1711,83.4118,Odisha,ECoR
+KRPU,Koraput,18.8163,82.7230,Odisha,ECoR
+MKA,Midnapore,22.4245,87.3199,West Bengal,SER
+PUU,Purulia,23.3330,86.3642,West Bengal,SER
+BHP,Bolpur Shantiniketan,23.6675,87.6916,West Bengal,ER
+RPH,Rampurhat,24.1753,87.7834,West Bengal,ER
+AZ,Azimganj Junction,24.2201,88.2481,West Bengal,ER
+ALU,Alipurduar Junction,26.4885,89.5270,West Bengal,NFR
+DKGN,Dankuni Junction,22.6843,88.2918,West Bengal,ER
+BRR,Berhampore Court,24.1047,88.2600,West Bengal,ER
+KNE,Kishanganj,26.0974,87.9544,Bihar,NFR
+PKR,Purnea Junction,25.7782,87.4677,Bihar,NFR
+DBG,Darbhanga Junction,26.1420,85.8980,Bihar,ECR
+JYG,Jaynagar,26.5894,86.1379,Bihar,ECR
+NKA,Narkatiaganj Junction,27.0939,84.4518,Bihar,ECR
+CPR,Chhapra Junction,25.7762,84.7373,Bihar,ECR
+SEE,Sonpur Junction,25.6758,85.1804,Bihar,ECR
+HJP,Hajipur Junction,25.6926,85.2237,Bihar,ECR
+SCL,Silchar,24.8293,92.7987,Assam,NFR
+LMG,Lumding Junction,25.7509,93.1670,Assam,NFR
+TSK,Tinsukia Junction,27.4887,95.3451,Assam,NFR
+RNY,Rangiya Junction,26.4441,91.6126,Assam,NFR
+NBQ,New Bongaigaon,26.5001,90.5581,Assam,NFR
+KYQ,Kamakhya Junction,26.1657,91.7086,Assam,NFR
+AGTL,Agartala,23.8863,91.2759,Tripura,NFR
+DPH,Dimapur,25.9097,93.7257,Nagaland,NFR
+SGUJ,Siliguri Junction,26.7090,88.4342,West Bengal,NFR
+ALLP,Alappuzha,9.4898,76.3382,Kerala,SR
+QLN,Kollam Junction,8.8793,76.6087,Kerala,SR
+KGQ,Kasaragod,12.4961,74.9839,Kerala,SR
+KTYM,Kottayam,9.5851,76.5222,Kerala,SR
+AWY,Aluva,10.1094,76.3504,Kerala,SR
+NCJ,Nagercoil Junction,8.1799,77.4202,Tamil Nadu,SR
+KJD,Kanniyakumari,8.0785,77.5726,Tamil Nadu,SR
+AJJ,Arakkonam Junction,13.0802,79.6671,Tamil Nadu,SR
+TBM,Tambaram,12.9249,80.1000,Tamil Nadu,SR
+CGL,Chengalpattu Junction,12.6819,80.0004,Tamil Nadu,SR
+VM,Villupuram Junction,11.9393,79.4988,Tamil Nadu,SR
+RMM,Rameswaram,9.2876,79.3129,Tamil Nadu,SR
+DG,Dindigul Junction,10.3556,77.9751,Tamil Nadu,SR
+TEN,Tirunelveli Junction,8.7280,77.7080,Tamil Nadu,SR
+TCN,Tuticorin,8.7831,78.1281,Tamil Nadu,SR
+VPT,Virudhunagar Junction,9.5930,77.9530,Tamil Nadu,SR
+DVG,Davangere,14.4644,75.9218,Karnataka,SWR
+UBL,Hubballi Junction,15.3451,75.1185,Karnataka,SWR
+BGM,Belagavi,15.8520,74.5076,Karnataka,SWR
+BYL,Ballari Junction,15.1412,76.9306,Karnataka,SWR
+HPT,Hosapete Junction,15.2777,76.3787,Karnataka,SWR
+HAS,Hassan,13.0002,76.1027,Karnataka,SWR
+GDG,Gadag Junction,15.4189,75.6294,Karnataka,SWR
+RBY,Raichur,16.2063,77.3561,Karnataka,SCR
+OGL,Ongole,15.5050,80.0517,Andhra Pradesh,SCR
+NLDA,Nellore,14.4426,79.9865,Andhra Pradesh,SCR
+GDR,Gudur Junction,14.1485,79.8490,Andhra Pradesh,SCR
+GNT,Guntur Junction,16.3064,80.4365,Andhra Pradesh,SCR
+TNKU,Tenali Junction,16.2380,80.6440,Andhra Pradesh,SCR
+CLX,Chirala,15.8241,80.3482,Andhra Pradesh,SCR
+RGDA,Rajamahendravaram,17.0005,81.7840,Andhra Pradesh,SCR
+SLO,Samalkot Junction,17.0556,82.1753,Andhra Pradesh,SCR
+CCT,Chittoor,13.2025,79.1009,Andhra Pradesh,SCR
+ATP,Anantapur,14.6819,77.6006,Andhra Pradesh,SCR
+KRNL,Kurnool City,15.8309,78.0373,Andhra Pradesh,SCR
+MSH,Mahesana Junction,23.5881,72.3833,Gujarat,WR
+PTN,Palanpur Junction,24.1684,72.4258,Gujarat,WR
+OKHA,Okha,22.4673,69.0689,Gujarat,WR
+GIMB,Gandhidham Junction,23.0681,70.1335,Gujarat,WR
+BL,Bhuj,23.2504,69.6693,Gujarat,WR
+JND,Jind Junction,29.3154,76.3145,Haryana,NWR
+BHL,Bhiwani Junction,28.7781,76.1329,Haryana,NWR
+SPN,Sonipat,28.9889,77.0167,Haryana,NR
+KLK,Kalka,30.8458,76.9477,Haryana,NR
+SMQL,Shimla,31.1048,77.1734,Himachal Pradesh,NR
+UHL,Una Himachal,31.4699,76.2782,Himachal Pradesh,NR
+PGW,Pathankot Cantt,32.2869,75.6410,Punjab,NR
+BEAS,Beas,31.5161,75.3822,Punjab,NR
+UJN,Ujjain Junction,23.1865,75.7886,Madhya Pradesh,WR
+KNW,Khandwa Junction,21.8194,76.3488,Madhya Pradesh,CR
+AK,Akola Junction,20.7094,77.0122,Maharashtra,CR
+BQR,Badnera Junction,20.8580,77.6938,Maharashtra,CR
+WRR,Wardha Junction,20.7235,78.5830,Maharashtra,CR
+CND,Chandrapur,19.9615,79.2961,Maharashtra,SCR
+MCI,Mancherial,18.8801,79.4619,Telangana,SCR
+PDPL,Peddapalli Junction,18.6201,79.3769,Telangana,SCR
+PRTN,Parbhani Junction,19.2616,76.7857,Maharashtra,SCR
+JL,Jalna,19.8411,75.8842,Maharashtra,SCR
+KCG,Kacheguda,17.3616,78.4934,Telangana,SCR
+NAD,Nadiad Junction,22.6916,72.8634,Gujarat,WR
+ANK,Ankleshwar Junction,21.6337,72.9822,Gujarat,WR
+BH,Bharuch Junction,21.7073,72.9962,Gujarat,WR
+VAPI,Vapi,20.3893,72.9106,Gujarat,WR
+BLD,Valsad,20.5992,72.9342,Gujarat,WR
+PLL,Palghar,19.6944,72.7686,Maharashtra,WR
+VR,Virar,19.4563,72.8111,Maharashtra,WR
+VSNR,Vasai Road,19.3647,72.8403,Maharashtra,WR
+GDA,Godhra Junction,22.7788,73.6143,Gujarat,WR
+SEG,Surendranagar,22.7267,71.6369,Gujarat,WR
+JM,Jamnagar,22.4707,70.0577,Gujarat,WR
+SBI,Sabarmati Junction,23.0648,72.5960,Gujarat,WR
+BRLY,Bharatpur Junction,27.2176,77.4864,Rajasthan,WCR
+SWM,Sawai Madhopur Junction,26.0173,76.3440,Rajasthan,WCR
+MRJ,Miraj Junction,16.8352,74.6395,Maharashtra,CR
+KRMI,Karmali,15.4833,73.9086,Goa,KR
+MAO,Madgaon Junction,15.3055,73.9473,Goa,KR
+THVM,Thivim,15.5976,73.9384,Goa,KR
+VSG,Vasco da Gama,15.3983,73.8125,Goa,SWR
+RN,Ratnagiri,16.9945,73.3120,Maharashtra,KR
+LD,Londa Junction,15.4668,74.5154,Karnataka,SWR
+KAWR,Karwar,14.8073,74.1329,Karnataka,SWR
+BWT,Bangarapet Junction,12.9856,78.1749,Karnataka,SWR
+KPN,Krishnarajapuram,12.9975,77.6908,Karnataka,SWR
+TK,Tumakuru,13.3379,77.0986,Karnataka,SWR
+VGN,Vikarabad Junction,17.3375,77.9050,Telangana,SCR
+DKN,Dhone Junction,15.3951,77.8728,Andhra Pradesh,SCR
+PDY,Pondicherry,11.9337,79.8353,Puducherry,SR
+BIM,Bhimavaram Town,16.5449,81.5212,Andhra Pradesh,SCR
+LUR,Latur,18.3984,76.5716,Maharashtra,SCR
+PR,Pandharpur,17.6766,75.3252,Maharashtra,CR
+DVM,Devlali,19.9462,73.7955,Maharashtra,CR
+UDNA,Udhna Junction,21.1753,72.8489,Gujarat,WR
+SV,Siwan Junction,26.2140,84.3600,Bihar,ECR
+NKE,Narkatiyaganj,27.0939,84.4518,Bihar,ECR
+MVL,Mau Junction,25.9300,83.5600,Uttar Pradesh,NER
+MUV,Manduadih,25.3100,83.0300,Uttar Pradesh,NER
+HRI,Hardoi,27.3945,80.1313,Uttar Pradesh,NR
+PBE,Pilibhit Junction,28.6362,79.8057,Uttar Pradesh,NER
+SLN,Sultanpur,26.2670,82.0788,Uttar Pradesh,NR
+RMN,Rampur Junction,28.8120,79.0145,Uttar Pradesh,NR
+MBD,Muzaffarnagar,29.4676,77.7039,Uttar Pradesh,NR
+KSJ,Kasganj Junction,27.8068,78.6461,Uttar Pradesh,NR
+FBD,Farrukhabad Junction,27.3934,79.5747,Uttar Pradesh,NR
+HPU,Hathras Junction,27.5884,78.0478,Uttar Pradesh,NCR
+BHS,Bulandshahr,28.4003,77.8498,Uttar Pradesh,NR
+DTI,Datia,25.6655,78.4613,Madhya Pradesh,NCR
+SSN,Sehore,23.2023,77.0854,Madhya Pradesh,WCR
+HRD,Harda,22.3443,77.0973,Madhya Pradesh,WCR
+BIA,Burhanpur,21.3178,76.2232,Madhya Pradesh,CR
+CPH,Champa Junction,22.0269,82.6575,Chhattisgarh,SECR
+DGG,Dongargarh,21.1862,80.7584,Chhattisgarh,SECR
+MSB,Mahasamund,21.1056,82.0983,Chhattisgarh,SECR
+JGD,Jagdalpur,19.0831,82.0294,Chhattisgarh,SECR
+BYT,Badarpur Junction,24.8670,92.5960,Assam,NFR
+BXD,Bongaigaon,26.4737,90.5561,Assam,NFR
+FKG,Furkating Junction,26.4166,93.9166,Assam,NFR
+MZS,Mariani Junction,26.6500,94.3200,Assam,NFR
+DBRT,Dibrugarh Town,27.4728,94.9120,Assam,NFR
+NGA,Nangal Dam,31.3764,76.3728,Punjab,NR
+SGRL,Sangrur,30.2498,75.8413,Punjab,NR
+MV,Mayiladuthurai Junction,11.1036,79.6537,Tamil Nadu,SR
+KMU,Kumbakonam,10.9586,79.3773,Tamil Nadu,SR
+TNJ,Thanjavur Junction,10.7870,79.1378,Tamil Nadu,SR
+KRR,Karur Junction,10.9601,78.0766,Tamil Nadu,SR
+VRI,Vridhachalam Junction,11.5157,79.3319,Tamil Nadu,SR
+MEJ,Mettupalayam,11.2960,76.9400,Tamil Nadu,SR
+TMU,Thalassery,11.7485,75.4897,Kerala,SR
+CKI,Chalakudy,10.3105,76.3310,Kerala,SR
+KTU,Kottarakkara,8.9918,76.7818,Kerala,SR
+CHY,Cherthala,9.6800,76.3350,Kerala,SR
+PYD,Payyanur,12.0893,75.2049,Kerala,SR
+SRR,Shivamogga Town,13.9307,75.5705,Karnataka,SWR
+ASK,Arsikere Junction,13.3145,76.2570,Karnataka,SWR
+BJP,Bijapur,16.8289,75.7121,Karnataka,SWR
+SPR,Sambalpur Road,21.4900,83.9900,Odisha,ECoR
+NHT,New Cooch Behar,26.3315,89.4501,West Bengal,NFR
+BQY,Bankura,23.2344,87.0700,West Bengal,SER
+KSN,Krishnanagar City Junction,23.4029,88.5034,West Bengal,ER
+RGD,Rajgir,25.0246,85.4175,Bihar,ECR
+RGK,Rajendra Nagar Terminal,25.6078,85.1055,Bihar,ECR
+KNO,Kanpur Anwarganj,26.4610,80.3367,Uttar Pradesh,NCR
+MKC,Mankapur Junction,27.0528,82.1183,Uttar Pradesh,NER
+CHC,Chitrakootdham Karwi,25.2024,80.8457,Uttar Pradesh,NCR
+LKSR,Laksar Junction,29.7548,78.0351,Uttarakhand,NR
+JNA,Jiribam,24.7935,93.1150,Manipur,NFR
+SDB,Shahabad,17.1276,76.9437,Karnataka,SWR
+KIG,Karaikudi Junction,10.0667,78.7833,Tamil Nadu,SR
+RNR,Ramanathapuram,9.3639,78.8395,Tamil Nadu,SR
+GKK,Gokarna Road,14.5434,74.3152,Karnataka,SWR
+HAD,Harihar,14.5167,75.8063,Karnataka,SWR
+HSRA,Hosur,12.7321,77.8321,Tamil Nadu,SWR
+DXN,Dharmapuri,12.1310,78.1586,Tamil Nadu,SR
+KQR,Koppal,15.3547,76.1515,Karnataka,SWR
+WFD,Whitefield,12.9763,77.7455,Karnataka,SWR
+FM,Falaknuma,17.3268,78.4842,Telangana,SCR
+MBN,Mahbubnagar,16.7353,77.9838,Telangana,SCR
+KRN,Kakinada Town,16.9601,82.2404,Andhra Pradesh,SCR
+MTPK,Machilipatnam,16.1870,81.1364,Andhra Pradesh,SCR
+BVRM,Bhimavaram Junction,16.5419,81.5209,Andhra Pradesh,SCR
+PRLI,Parli Vaijnath,18.8520,76.5282,Maharashtra,SCR
+UGN,Udgir,18.3950,77.1189,Maharashtra,SCR
+NPL,Nagpur Itwari,21.1561,79.0897,Maharashtra,CR
+STR,Satara,17.6805,73.9973,Maharashtra,CR
+CLR,Castle Rock,15.4136,74.3335,Karnataka,SWR
+BAY,Bagalkot,16.1679,75.6968,Karnataka,SWR
+NDGJ,Narasaraopet,16.2362,80.0486,Andhra Pradesh,SCR
+HX,Himatnagar,23.5988,72.9636,Gujarat,WR
+PNU,Patan,23.8515,72.1165,Gujarat,WR
+MOR,Morbi,22.8173,70.8370,Gujarat,WR
+DRD,Dahod,22.8365,74.2631,Gujarat,WR
+VBA,Viramgam Junction,23.1194,72.0370,Gujarat,WR
+JHL,Jakhal Junction,29.7843,75.8293,Haryana,NWR
+BSDI,Banda Junction,25.4759,80.3424,Uttar Pradesh,NCR
+STG,Sitapur City,27.5625,80.6816,Uttar Pradesh,NR
+LMP,Lakhimpur,27.9467,80.7707,Uttar Pradesh,NER
+BNZ,Bahraich,27.5751,81.5974,Uttar Pradesh,NER
+USLL,Uslapur,22.0800,82.1300,Chhattisgarh,SECR
+APR,Akaltara,22.0233,82.4290,Chhattisgarh,SECR
+KRBA,Korba,22.3595,82.7501,Chhattisgarh,SECR
+ABK,Ambikapur,23.1182,83.1977,Chhattisgarh,SECR
+DMD,Dhamtari,20.7048,81.5483,Chhattisgarh,SECR
+KHS,Kondagaon,19.5974,81.6610,Chhattisgarh,SECR
+JOG,Jogighopa,26.2261,90.5736,Assam,NFR
+BPB,Barpeta Road,26.5038,90.9682,Assam,NFR
+KKD,Kokrajhar,26.3966,90.2746,Assam,NFR
+DHU,Dhubri,26.0166,89.9749,Assam,NFR
+NHK,Naharkatiya,27.2833,95.3500,Assam,NFR
+MYR,Murkongselek,27.5281,95.0260,Assam,NFR
+AGT,Asarva Junction,23.0502,72.6071,Gujarat,WR
+HPA,Hapa Junction,22.4708,70.0900,Gujarat,WR
+WNKD,Wankaner Junction,22.6119,71.0049,Gujarat,WR
+UNA,Una Diu,20.8215,71.0326,Gujarat,WR
+PKM,Pollachi Junction,10.6572,77.0042,Tamil Nadu,SR
+MANI,Manamadurai Junction,9.7307,78.4669,Tamil Nadu,SR
+ABU,Ambur,12.7876,78.7147,Tamil Nadu,SR
+PBN,Perambur,13.1132,80.2389,Tamil Nadu,SR
+SY,Sivakasi,9.4533,77.7983,Tamil Nadu,SR
+PUK,Pudukkottai,10.3802,78.8173,Tamil Nadu,SR
+OTP,Ottappidaram,8.8090,78.0242,Tamil Nadu,SR
+NMT,Namakkal,11.2187,78.1673,Tamil Nadu,SR
+CJB,Coimbatore North,11.0185,76.9563,Tamil Nadu,SR
+KRJT,Karad,17.2928,74.1816,Maharashtra,CR
+DVL,Devlali Camp,20.2000,74.4500,Maharashtra,CR
+BBK,Barnala,30.3839,75.5470,Punjab,NR
+FKA,Fazilka,30.4050,74.0255,Punjab,NR
+SGD,Sunam,30.1310,75.8000,Punjab,NR
+ABS,Abohar,30.1443,74.1950,Punjab,NR
+BTT,Bettiah,26.8000,84.5200,Bihar,ECR
+SGJ,Sugauli,26.7500,84.7300,Bihar,ECR
+OBC,Obra Dam,24.4450,82.9900,Uttar Pradesh,NCR
+PKA,Parasnath,24.0112,86.1259,Jharkhand,ECR
+CRP,Chandrapura Junction,23.7120,86.2432,Jharkhand,ECR
+KCF,Koch Bihar,26.3315,89.4501,West Bengal,NFR
+JTTN,Jalpaiguri Town,26.5290,88.7300,West Bengal,NFR
+HDB,Haldibari,26.3290,88.7607,West Bengal,NFR
+SHG,Shahgarh,24.2800,83.0800,Madhya Pradesh,WCR
+RBG,Raibag,16.4975,74.7709,Karnataka,SWR
+AHR,Athani,16.7257,75.0618,Karnataka,SWR
+BHO,Bhawanipatna,19.9088,83.1610,Odisha,ECoR
+CSDR,Chikkabanavara,13.0653,77.5076,Karnataka,SWR
+NMGA,Nidasosi,15.8888,74.6150,Karnataka,SWR
+SGA,Sagara,14.1667,75.0333,Karnataka,SWR
+PTKC,Pathankot Cantt,32.2869,75.6410,Punjab,NR
+OOT,Udagamandalam,11.4000,76.6950,Tamil Nadu,SR
+WKI,Wadakkanchery,10.6621,76.2432,Kerala,SR
+PGTN,Perinthalmanna,10.9769,76.2309,Kerala,SR
+PNQ,Punalur,9.0173,76.9266,Kerala,SR
+TVCY,Tirur,10.9135,75.9203,Kerala,SR
+TE,Tellicherry,11.7485,75.4897,Kerala,SR
+SKLR,Solapur Road,17.6000,75.9200,Karnataka,SWR
+URC,Uravakonda,15.6000,77.2500,Andhra Pradesh,SCR
+GTR,Guntakal Road,15.1711,77.3773,Andhra Pradesh,SCR
+VDE,Vriddhachalam,11.5157,79.3319,Tamil Nadu,SR
+KSNG,Krishnagiri,12.5266,78.2141,Tamil Nadu,SR
+PAP,Papanasam,10.9320,79.2637,Tamil Nadu,SR
+KQN,Karaikal,10.9262,79.8370,Tamil Nadu,SR
+BZN,Bhind,26.5630,78.7764,Madhya Pradesh,NCR
+SMT,Shamgarh,24.1920,75.6362,Madhya Pradesh,WR
+DWX,Dewas,22.9623,76.0508,Madhya Pradesh,WR
+NAG,Nagda Junction,23.4573,75.4133,Madhya Pradesh,WR
+BPF,Bairagarh,23.2636,77.3647,Madhya Pradesh,WCR
+VDA,Vidisha,23.5333,77.8013,Madhya Pradesh,WCR
+SOJ,Sojat Road,25.9221,73.6716,Rajasthan,NWR
+PHL,Phulera Junction,26.8744,75.2431,Rajasthan,NWR
+MEL,Merta Road Junction,26.6460,73.8880,Rajasthan,NWR
+NEL,New Bhongir,17.5065,78.8889,Telangana,SCR
+MED,Medchal,17.6297,78.4825,Telangana,SCR
+JGY,Jangaon,17.7261,79.1771,Telangana,SCR
+PKD,Parkal,18.2167,79.7000,Telangana,SCR
+MHD,Mahad,18.0833,73.4000,Maharashtra,KR
+CHI,Chiplun,17.5333,73.5167,Maharashtra,KR
+MNI,Mangaon,18.2333,73.2833,Maharashtra,KR
+KKW,Karjat Junction,18.9106,73.3245,Maharashtra,CR
+LNL,Lonavala,18.7530,73.4076,Maharashtra,CR
+WAD,Wadgaon Road,18.4500,74.5000,Maharashtra,CR
+RPR,Rohri Junction,27.6918,68.8946,Rajasthan,NWR
+CHU,Churu Junction,28.2927,74.9706,Rajasthan,NWR
+SKN,Sikar Junction,27.6094,75.1398,Rajasthan,NWR
+LHU,Lakheri,25.0500,76.1833,Rajasthan,WCR
+SJP,Sri Dungargarh,28.1000,73.7500,Rajasthan,NWR
+RMA,Ramdevra,27.0333,71.0667,Rajasthan,NWR
+PH,Pokhran,26.9167,71.9167,Rajasthan,NWR
+BMER,Barmer,25.7508,71.3972,Rajasthan,NWR
+JOD,Jalore,25.3457,72.6199,Rajasthan,NWR
+SLI,Sirohi Road,24.8833,72.8333,Rajasthan,NWR
+DSA,Dungarpur,23.8400,73.7200,Rajasthan,NWR
+CTI,Chittaurgarh Junction,24.8887,74.6269,Rajasthan,NWR
+MTD,Mandsaur,24.0711,75.0669,Madhya Pradesh,WR
+NMH,Neemuch,24.4642,74.8723,Madhya Pradesh,WR
+MDS,Mhow,22.5521,75.7546,Madhya Pradesh,WR
+DMO,Damoh,23.8324,79.4413,Madhya Pradesh,WCR
+PPI,Pipariya,22.7623,78.3508,Madhya Pradesh,WCR
+NNR,Narsinghpur,22.9465,79.1944,Madhya Pradesh,WCR
+GAD,Gadarwara,22.9240,78.7841,Madhya Pradesh,WCR
+STA,Sagar,23.8481,78.7378,Madhya Pradesh,WCR
+AML,Amla Junction,21.9237,78.1279,Madhya Pradesh,CR
+BZU,Betul,21.9090,77.9010,Madhya Pradesh,CR
+NTN,Nainpur Junction,22.4307,80.1150,Madhya Pradesh,SECR
+CWA,Chhindwara Junction,22.0579,78.9408,Madhya Pradesh,CR
+BAQ,Balaghat,21.8098,80.1849,Madhya Pradesh,SECR
+MND,Mandla Fort,22.5977,80.3767,Madhya Pradesh,WCR
+RWA,Rewa,24.5310,81.3006,Madhya Pradesh,WCR
+ANG,Anuppur Junction,23.1017,81.6930,Madhya Pradesh,SECR
+PNR,Penukonda,14.0813,77.5975,Andhra Pradesh,SCR
+HPN,Hindupur,13.8278,77.4847,Andhra Pradesh,SCR
+PAK,Pakala Junction,13.4400,79.1188,Andhra Pradesh,SCR
+KVZ,Kavali,14.9183,79.9906,Andhra Pradesh,SCR
+NLR,Nellore,14.4426,79.9865,Andhra Pradesh,SCR
+GWM,Gwalior,26.2118,78.1823,Madhya Pradesh,NCR
+ALY,Alipur Duar,26.4885,89.5270,West Bengal,NFR
+BZL,Barasat,22.7233,88.4800,West Bengal,ER
+DH,Diamond Harbour,22.1900,88.1900,West Bengal,ER
+JXN,Jiaganj,24.2286,88.2685,West Bengal,ER
+CANN,Canning,22.3179,88.6659,West Bengal,ER
+KAI,Kalyani,22.9750,88.4340,West Bengal,ER
+HBR,Habra,22.8318,88.6628,West Bengal,ER
+NH,Naihati Junction,22.8939,88.4216,West Bengal,ER
+TIT,Tikiapara,22.5800,88.3300,West Bengal,ER
+DBGM,Durgapur B,23.5300,87.3200,West Bengal,ER
+CRJ,Chittaranjan,23.8700,86.8800,West Bengal,ER
+PLY,Pradhannagar,26.7100,88.4300,West Bengal,NFR
+ADL,Adra Junction,23.4924,86.6677,West Bengal,SER
+GTI,Giridih,24.1800,86.2800,Jharkhand,ECR
+DVC,Deoghar,24.4800,86.6900,Jharkhand,ECR
+DUMK,Dumka,24.2637,87.2484,Jharkhand,ECR
+CMA,Chaibasa,22.5500,85.8000,Jharkhand,SER
+JMD,Jamshedpur,22.7883,86.1663,Jharkhand,SER
+KQH,Koderma,24.4675,85.5939,Jharkhand,ECR
+MGA,Mughalsarai Junction,25.2800,83.1100,Uttar Pradesh,ECR
+BUI,Ballia,25.7558,84.1474,Uttar Pradesh,NER
+GZP,Ghazipur City,25.5878,83.5875,Uttar Pradesh,NER
+NSZ,Nautanwa,27.4244,83.4108,Uttar Pradesh,NER
+KLD,Khalilabad,26.7764,83.0687,Uttar Pradesh,NER
+OBR,Obra,24.4450,82.9900,Uttar Pradesh,NCR
+RBL,Robertsganj,24.6904,83.0679,Uttar Pradesh,NCR
+CKN,Chunar Junction,25.1282,82.8873,Uttar Pradesh,NCR
+PPG,Phaphamau Junction,25.4400,81.8700,Uttar Pradesh,NCR
+SLJ,Shuklaganj,26.5000,80.4200,Uttar Pradesh,NCR
+SWV,Sawantwadi Road,15.9176,73.8023,Maharashtra,KR
+BIDR,Bidar,17.9133,77.5202,Karnataka,SCR
+DGA,Degana Junction,26.9020,74.3239,Rajasthan,NWR
+BHL,Bhilwara,25.3500,74.6333,Rajasthan,NWR
+SDL,Shahdol,23.2949,81.3531,Madhya Pradesh,SECR
+KKH,Khammam,17.2473,80.1514,Telangana,SCR
+VNEC,Villupuram North Eastern,11.9500,79.5100,Tamil Nadu,SR
+TLY,Tindivanam,12.2346,79.6539,Tamil Nadu,SR
+MDN,Malda North,25.0200,88.1400,West Bengal,ER
+SNDT,Saundatti Road,15.7704,75.1211,Karnataka,SWR
+RMG,Ramgarh Cantt,23.6294,85.5054,Jharkhand,ECR
+PEP,Perambur Loco Works,13.1200,80.2400,Tamil Nadu,SR
+AJR,Anjar,23.1176,70.0244,Gujarat,WR
+MUX,Mansi Junction,25.6572,86.4211,Bihar,ECR
+KEM,Kempegowda Halt,12.9716,77.5946,Karnataka,SWR
