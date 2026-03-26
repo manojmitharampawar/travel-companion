@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_companion/core/services/location_service.dart';
 import 'package:travel_companion/core/theme/app_theme.dart';
+import 'package:travel_companion/providers/app_providers.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _dayBeforeReminder = true;
   bool _hoursBeforeReminder = true;
   bool _autoStartTracking = true;
@@ -180,6 +182,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                         ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Map Section
+          _SectionHeader(title: 'Map'),
+          _SettingCard(
+            child: Column(
+              children: [
+                _SettingItem(
+                  icon: Icons.layers_outlined,
+                  iconColor: const Color(0xFF1565C0),
+                  title: 'Railway Track Overlay',
+                  subtitle: 'Show OpenRailwayMap tracks on train journey map',
+                  trailing: Switch(
+                    value: ref.watch(railwayOverlayProvider),
+                    activeColor: const Color(0xFF1565C0),
+                    onChanged: (_) =>
+                        ref.read(railwayOverlayProvider.notifier).toggle(),
+                  ),
+                ),
+                Divider(color: Colors.grey[100], height: 0),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1565C0).withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.info_outline,
+                            size: 20, color: Color(0xFF1565C0)),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Text(
+                          'Railway overlay uses OpenRailwayMap tiles (OpenStreetMap data). '
+                          'Requires internet; disable to save data on slow connections.',
+                          style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                        ),
                       ),
                     ],
                   ),

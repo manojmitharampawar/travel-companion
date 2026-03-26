@@ -13,8 +13,10 @@ import 'package:travel_companion/core/theme/app_theme.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/train_route.dart';
+import 'package:travel_companion/data/models/train_route_stop.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/map/journey_map_widget.dart';
+import 'package:travel_companion/features/map/train_journey_map_widget.dart';
 import 'package:travel_companion/providers/app_providers.dart';
 
 class JourneyTrackingScreen extends ConsumerStatefulWidget {
@@ -31,7 +33,13 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
     with SingleTickerProviderStateMixin {
   TrackingState _trackingState = TrackingState.idle;
   double _distanceToDestination = 0;
+
+  /// Legacy route stops (station codes only) — kept for non-train fallback
   List<TrainRoute> _routeStops = [];
+
+  /// Enriched route stops with coordinates — used for train/local-train map
+  List<TrainRouteStop> _routeStopsWithCoords = [];
+
   List<LatLng> _roadRoutePoints = [];
   StreamSubscription<TrackingState>? _stateSub;
   StreamSubscription<double>? _distanceSub;
@@ -39,13 +47,21 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
   Position? _currentPosition;
   LocationPoint? _destinationPoint;
   LocationPoint? _originPoint;
-  bool _mapExpanded = false;
+  bool _mapExpanded = true; // expanded by default for trains
+
+  /// Index of the next upcoming stop (within _routeStopsWithCoords)
+  int _nextStopIndex = 0;
 
   // Pulse animation for "tracking" state indicator
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
 
+  // ScrollController for the route strip
+  final _stripScrollCtrl = ScrollController();
+
   TransportType get _type => widget.journey.transportType;
+  bool get _isRailType =>
+      _type == TransportType.train || _type == TransportType.localTrain;
 
   @override
   void initState() {
@@ -66,6 +82,7 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
     _distanceSub?.cancel();
     _positionSub?.cancel();
     _pulseController.dispose();
+    _stripScrollCtrl.dispose();
     super.dispose();
   }
 
@@ -119,23 +136,46 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
       if (mounted) setState(() => _trackingState = state);
     });
     _distanceSub = alarmService.distanceStream.listen((distance) {
-      if (mounted) setState(() => _distanceToDestination = distance);
+      if (mounted) {
+        setState(() {
+          _distanceToDestination = distance;
+          _updateNextStopIndex();
+        });
+      }
     });
     _positionSub = alarmService.positionStream.listen((position) {
       if (mounted) setState(() => _currentPosition = position);
     });
 
-    if (_type == TransportType.train || _type == TransportType.localTrain) {
+    if (_isRailType) {
       final j = widget.journey;
       if (j.vehicleNumber != null &&
           j.boardingStationCode != null &&
           j.destinationStationCode != null) {
-        final stops = await ref.read(trainRepositoryProvider).getRouteBetweenStations(
+        // Load enriched stops with coordinates for map rendering
+        final stopsWithCoords = await ref
+            .read(trainRepositoryProvider)
+            .getRouteSegmentWithCoordinates(
               trainNumber: j.vehicleNumber!,
               fromStation: j.boardingStationCode!,
               toStation: j.destinationStationCode!,
             );
-        if (mounted) setState(() => _routeStops = stops);
+
+        // Also load legacy stops for AlarmService compatibility
+        final legacyStops = await ref
+            .read(trainRepositoryProvider)
+            .getRouteBetweenStations(
+              trainNumber: j.vehicleNumber!,
+              fromStation: j.boardingStationCode!,
+              toStation: j.destinationStationCode!,
+            );
+
+        if (mounted) {
+          setState(() {
+            _routeStopsWithCoords = stopsWithCoords;
+            _routeStops = legacyStops;
+          });
+        }
       }
     }
 
@@ -161,6 +201,39 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
       routeStops: _routeStops,
     );
     if (mounted) setState(() => _trackingState = TrackingState.tracking);
+  }
+
+  /// Determines which stop in the route is the "next" one based on
+  /// distance from current position to each stop's location.
+  void _updateNextStopIndex() {
+    if (_routeStopsWithCoords.isEmpty || _currentPosition == null) return;
+
+    // Find the first upcoming stop closer than 3 km (near mode) to advance
+    for (var i = _nextStopIndex; i < _routeStopsWithCoords.length - 1; i++) {
+      final stop = _routeStopsWithCoords[i];
+      final distToStop = LocationService.calculateDistance(
+        _currentPosition!.latitude,
+        _currentPosition!.longitude,
+        stop.latitude,
+        stop.longitude,
+      );
+      // If we're within 1.5 km of a stop and it's before the destination,
+      // advance the next-stop pointer past it
+      if (distToStop < 1500 && i == _nextStopIndex) {
+        _nextStopIndex = (i + 1).clamp(0, _routeStopsWithCoords.length - 1);
+        _scrollStripToIndex(_nextStopIndex);
+        break;
+      }
+    }
+  }
+
+  void _scrollStripToIndex(int index) {
+    if (!_stripScrollCtrl.hasClients) return;
+    const itemWidth = 80.0;
+    final offset = (index * itemWidth - 80).clamp(
+        0.0, _stripScrollCtrl.position.maxScrollExtent);
+    _stripScrollCtrl.animateTo(offset,
+        duration: const Duration(milliseconds: 400), curve: Curves.easeOut);
   }
 
   Color _distanceColor() {
@@ -277,19 +350,38 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
                   ),
                   const SizedBox(height: 12),
 
-                  // Destination card
-                  if (_destinationPoint != null)
+                  // Next stop card (rail journeys with coord data)
+                  if (_isRailType &&
+                      _routeStopsWithCoords.isNotEmpty &&
+                      _nextStopIndex < _routeStopsWithCoords.length - 1) ...[
+                    _NextStopCard(
+                      stop: _routeStopsWithCoords[_nextStopIndex],
+                      type: _type,
+                    ),
+                    const SizedBox(height: 12),
+                  ] else if (_destinationPoint != null) ...[
                     _DestinationCard(
                       point: _destinationPoint!,
                       type: _type,
                     ),
-                  const SizedBox(height: 12),
+                    const SizedBox(height: 12),
+                  ],
 
-                  // Map section (expandable)
+                  // Map section
                   if (_destinationPoint != null) _buildMapSection(),
 
-                  // Route timeline
-                  if (_routeStops.isNotEmpty) ...[
+                  // Horizontal route strip (trains with coord data)
+                  if (_isRailType && _routeStopsWithCoords.length > 1) ...[
+                    const SizedBox(height: 12),
+                    _HorizontalRouteStrip(
+                      stops: _routeStopsWithCoords,
+                      nextStopIndex: _nextStopIndex,
+                      type: _type,
+                      scrollController: _stripScrollCtrl,
+                    ),
+                  ]
+                  // Legacy vertical timeline fallback
+                  else if (_routeStops.isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _ModernRouteTimeline(
                         routeStops: _routeStops, type: _type),
@@ -320,6 +412,9 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
   }
 
   Widget _buildMapSection() {
+    final useTrainMap =
+        _isRailType && _routeStopsWithCoords.isNotEmpty;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -352,6 +447,25 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
                         fontSize: 14,
                         color: _type.color),
                   ),
+                  if (useTrainMap) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1565C0).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        'Railway',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1565C0),
+                        ),
+                      ),
+                    ),
+                  ],
                   const Spacer(),
                   Icon(
                     _mapExpanded
@@ -365,15 +479,23 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
           ),
           if (_mapExpanded)
             SizedBox(
-              height: 280,
-              child: JourneyMapWidget(
-                origin: _originPoint,
-                destination: _destinationPoint!,
-                currentPosition: _currentPosition,
-                routeStops: _routeStops,
-                transportType: _type,
-                roadRoutePoints: _roadRoutePoints,
-              ),
+              height: 300,
+              child: useTrainMap
+                  ? TrainJourneyMapWidget(
+                      origin: _originPoint,
+                      destination: _destinationPoint!,
+                      currentPosition: _currentPosition,
+                      routeStops: _routeStopsWithCoords,
+                      nextStopIndex: _nextStopIndex,
+                    )
+                  : JourneyMapWidget(
+                      origin: _originPoint,
+                      destination: _destinationPoint!,
+                      currentPosition: _currentPosition,
+                      routeStops: _routeStops,
+                      transportType: _type,
+                      roadRoutePoints: _roadRoutePoints,
+                    ),
             ),
         ],
       ),
@@ -426,10 +548,23 @@ class _TrackingStateBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (color, icon, text) = switch (state) {
-      TrackingState.idle => (Colors.grey.shade600, Icons.gps_off_rounded, 'Initializing...'),
-      TrackingState.tracking => (AppTheme.successColor, Icons.gps_fixed_rounded, 'Tracking your journey'),
-      TrackingState.approaching => (AppTheme.dangerColor, Icons.warning_rounded, 'APPROACHING DESTINATION!'),
-      TrackingState.arrived => (AppTheme.primaryColor, Icons.check_circle_rounded, 'You have arrived!'),
+      TrackingState.idle =>
+        (Colors.grey.shade600, Icons.gps_off_rounded, 'Initializing...'),
+      TrackingState.tracking => (
+          AppTheme.successColor,
+          Icons.gps_fixed_rounded,
+          'Tracking your journey'
+        ),
+      TrackingState.approaching => (
+          AppTheme.dangerColor,
+          Icons.warning_rounded,
+          'APPROACHING DESTINATION!'
+        ),
+      TrackingState.arrived => (
+          AppTheme.primaryColor,
+          Icons.check_circle_rounded,
+          'You have arrived!'
+        ),
     };
 
     return AnimatedContainer(
@@ -526,11 +661,95 @@ class _MetricCard extends StatelessWidget {
                 Text(
                   subLabel!,
                   style: TextStyle(
-                      fontSize: 10, color: AppTheme.textSecondary.withValues(alpha: 0.6)),
+                      fontSize: 10,
+                      color: AppTheme.textSecondary.withValues(alpha: 0.6)),
                 ),
               ],
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Next Stop Card (rail journeys)
+// ─────────────────────────────────────────────
+
+class _NextStopCard extends StatelessWidget {
+  final TrainRouteStop stop;
+  final TransportType type;
+
+  const _NextStopCard({required this.stop, required this.type});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.orange.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade50,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.train_rounded, size: 20, color: Colors.orange.shade700),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Next Stop',
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: AppTheme.textSecondary,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.4)),
+                Text(
+                  stop.stationName,
+                  style: const TextStyle(
+                      fontSize: 15, fontWeight: FontWeight.w700),
+                ),
+                Text(
+                  stop.stationCode,
+                  style: TextStyle(
+                      fontSize: 12, color: Colors.grey.shade500),
+                ),
+              ],
+            ),
+          ),
+          if (stop.timeDisplay.isNotEmpty)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Text('Arr.',
+                    style: TextStyle(
+                        fontSize: 10, color: AppTheme.textSecondary)),
+                Text(
+                  stop.timeDisplay,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.orange.shade700,
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -600,7 +819,218 @@ class _DestinationCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Modern Route Timeline
+// Horizontal Route Strip
+// ─────────────────────────────────────────────
+
+class _HorizontalRouteStrip extends StatelessWidget {
+  final List<TrainRouteStop> stops;
+  final int nextStopIndex;
+  final TransportType type;
+  final ScrollController scrollController;
+
+  const _HorizontalRouteStrip({
+    required this.stops,
+    required this.nextStopIndex,
+    required this.type,
+    required this.scrollController,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: type.color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(Icons.route_rounded, size: 14, color: type.color),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Route · ${stops.length} stops',
+                style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: type.color),
+              ),
+              const Spacer(),
+              if (nextStopIndex > 0)
+                Text(
+                  '$nextStopIndex passed',
+                  style: TextStyle(
+                      fontSize: 11, color: Colors.grey.shade500),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          SingleChildScrollView(
+            controller: scrollController,
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: List.generate(stops.length, (i) {
+                final stop = stops[i];
+                final isPassed = i < nextStopIndex;
+                final isNext = i == nextStopIndex;
+                final isFirst = i == 0;
+                final isLast = i == stops.length - 1;
+
+                return _StripNode(
+                  stop: stop,
+                  isPassed: isPassed,
+                  isNext: isNext,
+                  isFirst: isFirst,
+                  isLast: isLast,
+                  accentColor: type.color,
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StripNode extends StatelessWidget {
+  final TrainRouteStop stop;
+  final bool isPassed;
+  final bool isNext;
+  final bool isFirst;
+  final bool isLast;
+  final Color accentColor;
+
+  const _StripNode({
+    required this.stop,
+    required this.isPassed,
+    required this.isNext,
+    required this.isFirst,
+    required this.isLast,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dotColor = isNext
+        ? Colors.orange.shade700
+        : isPassed
+            ? Colors.grey.shade400
+            : isFirst
+                ? Colors.green.shade600
+                : isLast
+                    ? AppTheme.dangerColor
+                    : accentColor.withValues(alpha: 0.6);
+
+    final dotSize = isNext || isFirst || isLast ? 12.0 : 8.0;
+
+    final labelColor = isNext
+        ? Colors.orange.shade700
+        : isPassed
+            ? Colors.grey.shade400
+            : isFirst || isLast
+                ? Colors.black87
+                : Colors.grey.shade700;
+
+    return SizedBox(
+      width: 76,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Connector row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (!isFirst)
+                Expanded(
+                  child: Container(
+                    height: 2,
+                    color: isPassed
+                        ? Colors.grey.shade300
+                        : accentColor.withValues(alpha: 0.25),
+                  ),
+                )
+              else
+                const Expanded(child: SizedBox()),
+              Container(
+                width: dotSize,
+                height: dotSize,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: dotColor,
+                  border: (isNext || isFirst || isLast)
+                      ? Border.all(color: Colors.white, width: 1.5)
+                      : null,
+                  boxShadow: isNext
+                      ? [
+                          BoxShadow(
+                            color: Colors.orange.withValues(alpha: 0.4),
+                            blurRadius: 6,
+                          )
+                        ]
+                      : null,
+                ),
+              ),
+              if (!isLast)
+                Expanded(
+                  child: Container(
+                    height: 2,
+                    color: isPassed
+                        ? Colors.grey.shade300
+                        : accentColor.withValues(alpha: 0.25),
+                  ),
+                )
+              else
+                const Expanded(child: SizedBox()),
+            ],
+          ),
+          const SizedBox(height: 6),
+          // Station code
+          Text(
+            stop.stationCode,
+            style: TextStyle(
+              fontSize: isNext ? 11 : 10,
+              fontWeight:
+                  isNext || isFirst || isLast ? FontWeight.w700 : FontWeight.w500,
+              color: labelColor,
+            ),
+            textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (isNext)
+            Text(
+              '← Next',
+              style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.orange.shade700,
+                  fontWeight: FontWeight.w600),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Modern Route Timeline (legacy / no-coord fallback)
 // ─────────────────────────────────────────────
 
 class _ModernRouteTimeline extends StatelessWidget {
@@ -764,18 +1194,13 @@ class _SimpleRouteCard extends StatelessWidget {
                   width: 10,
                   height: 10,
                   decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.successColor)),
-              Container(
-                  width: 2,
-                  height: 30,
-                  color: Colors.grey.shade300),
+                      shape: BoxShape.circle, color: AppTheme.successColor)),
+              Container(width: 2, height: 30, color: Colors.grey.shade300),
               Container(
                   width: 10,
                   height: 10,
                   decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppTheme.dangerColor)),
+                      shape: BoxShape.circle, color: AppTheme.dangerColor)),
             ],
           ),
           const SizedBox(width: 12),

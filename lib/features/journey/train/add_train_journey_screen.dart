@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_companion/data/models/train_route_stop.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/journey/train/train_journey_notifier.dart';
 import 'package:travel_companion/features/journey/widgets/journey_form_widgets.dart';
+import 'package:travel_companion/features/journey/widgets/train_stop_selector.dart';
 
 class AddTrainJourneyScreen extends ConsumerStatefulWidget {
   const AddTrainJourneyScreen({super.key});
@@ -34,6 +36,7 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(trainJourneyNotifierProvider);
     final notifier = ref.read(trainJourneyNotifierProvider.notifier);
+    final hasRouteStops = state.trainRouteStops.isNotEmpty;
 
     // Sync auto-filled values back to text controllers
     ref.listen<TrainJourneyState>(trainJourneyNotifierProvider, (prev, next) {
@@ -146,6 +149,16 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                         ),
                         onChanged: notifier.setTrainName,
                       ),
+
+                      // Route stops badge when loaded
+                      if (hasRouteStops) ...[
+                        const SizedBox(height: 10),
+                        _RouteLoadedBanner(
+                          stopCount: state.trainRouteStops.length,
+                          trainName: state.trainName,
+                          accentColor: _accent,
+                        ),
+                      ],
                     ],
                   ),
 
@@ -155,16 +168,32 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                     icon: Icons.alt_route,
                     accentColor: _accent,
                     children: [
-                      StationAutocompleteField(
-                        label: 'Boarding Station *',
-                        hint: 'Search by name or code',
-                        leadingIcon: Icons.trip_origin,
-                        selected: state.boardingStation,
-                        searchFn: notifier.searchStations,
-                        onChanged: notifier.setBoardingStation,
-                        accentColor: _accent,
-                        validator: (s) => s == null ? 'Select boarding station' : null,
-                      ),
+                      // Boarding Station
+                      if (hasRouteStops)
+                        TrainStopSelector(
+                          label: 'Boarding Station *',
+                          leadingIcon: Icons.trip_origin,
+                          stops: state.trainRouteStops,
+                          selected: _findStop(state.trainRouteStops,
+                              state.boardingStation?.code),
+                          onChanged: notifier.selectBoardingStop,
+                          accentColor: _accent,
+                          validator: (_) => state.boardingStation == null
+                              ? 'Select boarding station'
+                              : null,
+                        )
+                      else
+                        StationAutocompleteField(
+                          label: 'Boarding Station *',
+                          hint: 'Search by name or code',
+                          leadingIcon: Icons.trip_origin,
+                          selected: state.boardingStation,
+                          searchFn: notifier.searchStations,
+                          onChanged: notifier.setBoardingStation,
+                          accentColor: _accent,
+                          validator: (s) =>
+                              s == null ? 'Select boarding station' : null,
+                        ),
 
                       const SizedBox(height: 8),
                       // Route line connector
@@ -191,16 +220,33 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                       ),
                       const SizedBox(height: 8),
 
-                      StationAutocompleteField(
-                        label: 'Destination Station *',
-                        hint: 'Search by name or code',
-                        leadingIcon: Icons.place,
-                        selected: state.destinationStation,
-                        searchFn: notifier.searchStations,
-                        onChanged: notifier.setDestinationStation,
-                        accentColor: _accent,
-                        validator: (s) => s == null ? 'Select destination station' : null,
-                      ),
+                      // Destination Station
+                      if (hasRouteStops)
+                        TrainStopSelector(
+                          label: 'Destination Station *',
+                          leadingIcon: Icons.place,
+                          stops: state.destinationStops,
+                          selected: _findStop(state.trainRouteStops,
+                              state.destinationStation?.code),
+                          onChanged: notifier.selectDestinationStop,
+                          accentColor: _accent,
+                          disabledHint: 'Select boarding station first',
+                          validator: (_) => state.destinationStation == null
+                              ? 'Select destination station'
+                              : null,
+                        )
+                      else
+                        StationAutocompleteField(
+                          label: 'Destination Station *',
+                          hint: 'Search by name or code',
+                          leadingIcon: Icons.place,
+                          selected: state.destinationStation,
+                          searchFn: notifier.searchStations,
+                          onChanged: notifier.setDestinationStation,
+                          accentColor: _accent,
+                          validator: (s) =>
+                              s == null ? 'Select destination station' : null,
+                        ),
                     ],
                   ),
 
@@ -266,6 +312,59 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  TrainRouteStop? _findStop(List<TrainRouteStop> stops, String? code) {
+    if (code == null) return null;
+    try {
+      return stops.firstWhere((s) => s.stationCode == code);
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+// ─────────────────────────────────────────────
+// Route Loaded Banner
+// ─────────────────────────────────────────────
+
+class _RouteLoadedBanner extends StatelessWidget {
+  final int stopCount;
+  final String trainName;
+  final Color accentColor;
+
+  const _RouteLoadedBanner({
+    required this.stopCount,
+    required this.trainName,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: accentColor.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.check_circle_rounded, size: 16, color: accentColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '$stopCount stops loaded${trainName.isNotEmpty ? ' · $trainName' : ''}',
+              style: TextStyle(
+                fontSize: 12,
+                color: accentColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
