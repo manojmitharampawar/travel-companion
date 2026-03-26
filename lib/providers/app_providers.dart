@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_companion/core/services/alarm_service.dart';
 import 'package:travel_companion/core/services/location_service.dart';
 import 'package:travel_companion/data/datasources/remote/train_status_api.dart';
@@ -41,3 +42,32 @@ final alarmServiceProvider = Provider<AlarmService>((ref) {
   ref.onDispose(() => service.dispose());
   return service;
 });
+
+// ─────────────────────────────────────────────
+// Railway Map Overlay Setting
+// ─────────────────────────────────────────────
+
+/// Persisted toggle for the OpenRailwayMap tile overlay on the train map.
+class RailwayOverlayNotifier extends StateNotifier<bool> {
+  static const _key = 'showRailwayOverlay';
+
+  RailwayOverlayNotifier() : super(true) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    state = prefs.getBool(_key) ?? true;
+  }
+
+  Future<void> toggle() async {
+    state = !state;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_key, state);
+  }
+}
+
+final railwayOverlayProvider =
+    StateNotifierProvider<RailwayOverlayNotifier, bool>(
+  (ref) => RailwayOverlayNotifier(),
+);

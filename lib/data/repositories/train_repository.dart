@@ -1,5 +1,6 @@
 import 'package:travel_companion/data/database/app_database.dart';
 import 'package:travel_companion/data/models/train_route.dart';
+import 'package:travel_companion/data/models/train_route_stop.dart';
 
 class TrainRepository {
   /// Get train details (name) by train number from local DB
@@ -78,5 +79,50 @@ class TrainRepository {
       'to_station': route.last.stationCode,
       'train_name': route.first.trainName,
     };
+  }
+
+  /// Get all stops for a train with geographic coordinates (JOIN with stations).
+  /// Only returns stops that have matching station records with coordinates.
+  Future<List<TrainRouteStop>> getRouteStopsWithCoordinates(
+      String trainNumber) async {
+    final db = await AppDatabase.database;
+    final results = await db.rawQuery(
+      '''
+      SELECT tr.station_code, tr.stop_sequence, tr.arrival_time,
+             tr.departure_time, tr.distance_km,
+             s.name AS station_name, s.latitude, s.longitude
+      FROM train_routes tr
+      LEFT JOIN stations s ON tr.station_code = s.code
+      WHERE tr.train_number = ?
+      ORDER BY tr.stop_sequence ASC
+      ''',
+      [trainNumber],
+    );
+
+    return results
+        .where((r) => r['latitude'] != null && r['longitude'] != null)
+        .map(TrainRouteStop.fromMap)
+        .toList();
+  }
+
+  /// Get stops between two stations (inclusive) with geographic coordinates.
+  /// Falls back to the full route when station indices cannot be found.
+  Future<List<TrainRouteStop>> getRouteSegmentWithCoordinates({
+    required String trainNumber,
+    required String fromStation,
+    required String toStation,
+  }) async {
+    final fullRoute = await getRouteStopsWithCoordinates(trainNumber);
+    if (fullRoute.isEmpty) return [];
+
+    int? fromIdx;
+    int? toIdx;
+    for (var i = 0; i < fullRoute.length; i++) {
+      if (fullRoute[i].stationCode == fromStation) fromIdx = i;
+      if (fullRoute[i].stationCode == toStation) toIdx = i;
+    }
+
+    if (fromIdx == null || toIdx == null || fromIdx >= toIdx) return fullRoute;
+    return fullRoute.sublist(fromIdx, toIdx + 1);
   }
 }

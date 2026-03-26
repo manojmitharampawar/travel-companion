@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_companion/data/datasources/remote/train_status_api.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/station.dart';
+import 'package:travel_companion/data/models/train_route_stop.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/data/repositories/journey_repository.dart';
 import 'package:travel_companion/data/repositories/station_repository.dart';
@@ -26,6 +27,9 @@ class TrainJourneyState {
   final String? errorMessage;
   final bool savedSuccessfully;
 
+  /// All stops for the resolved train, with coordinates. Used by TrainStopSelector.
+  final List<TrainRouteStop> trainRouteStops;
+
   TrainJourneyState({
     this.pnr = '',
     this.trainNumber = '',
@@ -39,6 +43,7 @@ class TrainJourneyState {
     this.isSaving = false,
     this.errorMessage,
     this.savedSuccessfully = false,
+    this.trainRouteStops = const [],
   }) : journeyDate = journeyDate ?? DateTime.now().add(const Duration(days: 1));
 
   TrainJourneyState copyWith({
@@ -58,6 +63,7 @@ class TrainJourneyState {
     String? errorMessage,
     bool clearError = false,
     bool? savedSuccessfully,
+    List<TrainRouteStop>? trainRouteStops,
   }) {
     return TrainJourneyState(
       pnr: pnr ?? this.pnr,
@@ -73,7 +79,19 @@ class TrainJourneyState {
       isSaving: isSaving ?? this.isSaving,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       savedSuccessfully: savedSuccessfully ?? this.savedSuccessfully,
+      trainRouteStops: trainRouteStops ?? this.trainRouteStops,
     );
+  }
+
+  /// Stops available for destination (after boarding stop sequence).
+  List<TrainRouteStop> get destinationStops {
+    if (boardingStation == null || trainRouteStops.isEmpty) return trainRouteStops;
+    final boardingSeq = trainRouteStops
+        .where((s) => s.stationCode == boardingStation!.code)
+        .map((s) => s.stopSequence)
+        .firstOrNull;
+    if (boardingSeq == null) return trainRouteStops;
+    return trainRouteStops.where((s) => s.stopSequence > boardingSeq).toList();
   }
 }
 
@@ -100,20 +118,63 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
 
   void setPnr(String value) => state = state.copyWith(pnr: value, clearError: true);
   void setTrainName(String value) => state = state.copyWith(trainName: value);
+
   void setBoardingStation(Station? s) => s == null
       ? state = state.copyWith(clearBoardingStation: true)
       : state = state.copyWith(boardingStation: s);
+
   void setDestinationStation(Station? s) => s == null
       ? state = state.copyWith(clearDestinationStation: true)
       : state = state.copyWith(destinationStation: s);
+
   void setJourneyDate(DateTime d) => state = state.copyWith(journeyDate: d);
+
   void setTravelClass(String? c) =>
       c == null ? state = state.copyWith(clearTravelClass: true) : state = state.copyWith(travelClass: c);
+
   void setBerth(String value) => state = state.copyWith(berth: value);
 
-  /// Updates the train number and auto-fills name + endpoints when possible.
+  /// Selects a boarding stop from the train route (via TrainStopSelector).
+  void selectBoardingStop(TrainRouteStop stop) {
+    final station = _stopToStation(stop);
+    state = state.copyWith(
+      boardingStation: station,
+      // Clear destination if it is now before the new boarding stop
+      clearDestinationStation: state.destinationStation != null &&
+          _stopSequenceFor(state.destinationStation!.code) <=
+              stop.stopSequence,
+    );
+  }
+
+  /// Selects a destination stop from the train route (via TrainStopSelector).
+  void selectDestinationStop(TrainRouteStop stop) {
+    state = state.copyWith(destinationStation: _stopToStation(stop));
+  }
+
+  int _stopSequenceFor(String code) {
+    return state.trainRouteStops
+        .where((s) => s.stationCode == code)
+        .map((s) => s.stopSequence)
+        .firstOrNull ?? 0;
+  }
+
+  Station _stopToStation(TrainRouteStop stop) {
+    return Station(
+      id: 0,
+      code: stop.stationCode,
+      name: stop.stationName,
+      latitude: stop.latitude,
+      longitude: stop.longitude,
+    );
+  }
+
+  /// Updates the train number and auto-fills name, endpoints, and route stops.
   Future<void> setTrainNumber(String value) async {
-    state = state.copyWith(trainNumber: value, clearError: true);
+    state = state.copyWith(
+      trainNumber: value,
+      clearError: true,
+      trainRouteStops: const [],
+    );
 
     if (value.length < 4) return;
 
@@ -125,22 +186,42 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
         state = state.copyWith(trainName: localName);
       }
 
-      // 2. Auto-fill endpoints if not yet set
+      // 2. Load route stops with coordinates for TrainStopSelector
+      final stops = await _trainRepo.getRouteStopsWithCoordinates(value);
+      if (stops.isNotEmpty) {
+        state = state.copyWith(trainRouteStops: stops);
+      }
+
+      // 3. Auto-fill endpoints if not yet set (use stop data if available)
       if (state.boardingStation == null || state.destinationStation == null) {
-        final endpoints = await _trainRepo.getTrainEndpoints(value);
-        if (endpoints != null) {
+        if (stops.isNotEmpty) {
           if (state.boardingStation == null) {
-            final from = await _stationRepo.getStationByCode(endpoints['from_station']!);
-            if (from != null) state = state.copyWith(boardingStation: from);
+            state = state.copyWith(
+                boardingStation: _stopToStation(stops.first));
           }
           if (state.destinationStation == null) {
-            final to = await _stationRepo.getStationByCode(endpoints['to_station']!);
-            if (to != null) state = state.copyWith(destinationStation: to);
+            state = state.copyWith(
+                destinationStation: _stopToStation(stops.last));
+          }
+        } else {
+          // Fallback: use endpoint codes from train_routes table
+          final endpoints = await _trainRepo.getTrainEndpoints(value);
+          if (endpoints != null) {
+            if (state.boardingStation == null) {
+              final from =
+                  await _stationRepo.getStationByCode(endpoints['from_station']!);
+              if (from != null) state = state.copyWith(boardingStation: from);
+            }
+            if (state.destinationStation == null) {
+              final to =
+                  await _stationRepo.getStationByCode(endpoints['to_station']!);
+              if (to != null) state = state.copyWith(destinationStation: to);
+            }
           }
         }
       }
 
-      // 3. Fallback to remote API for 5-digit numbers with no local match
+      // 4. Fallback to remote API for 5-digit numbers with no local match
       if (value.length == 5 && state.trainName.isEmpty) {
         final details = await _trainApi.getTrainDetails(value);
         final remoteName = details?['train_name'] as String?;

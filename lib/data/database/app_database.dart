@@ -6,7 +6,7 @@ import 'package:travel_companion/data/database/train_seed_data.dart';
 
 class AppDatabase {
   static Database? _database;
-  static const int _version = 3;
+  static const int _version = 4;
 
   static Future<Database> get database async {
     if (_database != null) return _database!;
@@ -108,6 +108,7 @@ class AppDatabase {
     // Seed data
     await _seedStations(db);
     await _seedTrainRoutes(db);
+    await _seedTrainRoutesFromCsv(db);
   }
 
   static Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -151,6 +152,10 @@ class AppDatabase {
       } catch (e) {
         // Column might already exist, skip silently
       }
+    }
+    if (oldVersion < 4) {
+      // Seed additional train routes from CSV (safe: uses INSERT OR IGNORE)
+      await _seedTrainRoutesFromCsv(db);
     }
   }
 
@@ -227,6 +232,64 @@ class AppDatabase {
       batch.insert('train_routes', {'id': i + 1, ...routes[i]});
     }
     await batch.commit(noResult: true);
+  }
+
+  /// Seeds additional train routes from the bundled CSV asset.
+  /// Uses INSERT OR IGNORE so it is safe to call on both fresh installs and upgrades.
+  static Future<void> _seedTrainRoutesFromCsv(Database db) async {
+    try {
+      final csvString =
+          await rootBundle.loadString('assets/db/train_routes.csv');
+      final lines = csvString.split('\n');
+      if (lines.isEmpty) return;
+
+      // Get current max id so CSV ids don't collide with Dart seed ids
+      final maxIdResult =
+          await db.rawQuery('SELECT MAX(id) as max_id FROM train_routes');
+      var nextId = (Sqflite.firstIntValue(
+                  await db.rawQuery('SELECT COUNT(*) FROM train_routes')) ??
+              0) +
+          1;
+      final currentMaxId = maxIdResult.first['max_id'] as int? ?? 0;
+      nextId = currentMaxId + 1;
+
+      final batch = db.batch();
+      // Skip header line (index 0)
+      for (var i = 1; i < lines.length; i++) {
+        final line = lines[i].trim();
+        if (line.isEmpty) continue;
+
+        final fields = _parseCsvLine(line);
+        // train_number,train_name,station_code,stop_sequence,
+        // arrival_time,departure_time,day,distance_km
+        if (fields.length < 6) continue;
+
+        final arrivalTime = fields.length > 4 ? fields[4].trim() : '';
+        final departureTime = fields.length > 5 ? fields[5].trim() : '';
+        final day = fields.length > 6 ? int.tryParse(fields[6].trim()) ?? 1 : 1;
+        final distanceKm =
+            fields.length > 7 ? int.tryParse(fields[7].trim()) : null;
+
+        batch.insert(
+          'train_routes',
+          {
+            'id': nextId++,
+            'train_number': fields[0].trim(),
+            'train_name': fields[1].trim(),
+            'station_code': fields[2].trim(),
+            'stop_sequence': int.tryParse(fields[3].trim()) ?? 0,
+            'arrival_time': arrivalTime.isEmpty ? null : arrivalTime,
+            'departure_time': departureTime.isEmpty ? null : departureTime,
+            'day': day,
+            'distance_km': distanceKm,
+          },
+          conflictAlgorithm: ConflictAlgorithm.ignore,
+        );
+      }
+      await batch.commit(noResult: true);
+    } catch (_) {
+      // CSV not found or malformed — skip silently, Dart seed is the fallback
+    }
   }
 
   static Future<void> _seedFallbackStations(Database db) async {
