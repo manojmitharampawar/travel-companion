@@ -183,14 +183,14 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
     if (_type == TransportType.bus &&
         _originPoint != null &&
         _destinationPoint != null) {
-      final roadPoints = await RoutingService.fetchRoute(
+      final routeResult = await RoutingService.fetchRoute(
         origin: LatLng(_originPoint!.latitude, _originPoint!.longitude),
         destination:
             LatLng(_destinationPoint!.latitude, _destinationPoint!.longitude),
         profile: 'driving',
       );
-      if (mounted && roadPoints.isNotEmpty) {
-        setState(() => _roadRoutePoints = roadPoints);
+      if (mounted && routeResult.isNotEmpty) {
+        setState(() => _roadRoutePoints = routeResult.points);
       }
     }
 

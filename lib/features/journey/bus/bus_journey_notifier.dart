@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:travel_companion/core/services/routing_service.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
@@ -24,6 +26,10 @@ class BusJourneyState {
   final String? errorMessage;
   final bool savedSuccessfully;
 
+  // OSRM route
+  final RouteResult? routeResult;
+  final bool isFetchingRoute;
+
   BusJourneyState({
     this.routeNumber = '',
     this.operatorName = '',
@@ -35,6 +41,8 @@ class BusJourneyState {
     this.isSaving = false,
     this.errorMessage,
     this.savedSuccessfully = false,
+    this.routeResult,
+    this.isFetchingRoute = false,
   }) : journeyDate = journeyDate ?? DateTime.now();
 
   BusJourneyState copyWith({
@@ -52,6 +60,9 @@ class BusJourneyState {
     String? errorMessage,
     bool clearError = false,
     bool? savedSuccessfully,
+    RouteResult? routeResult,
+    bool clearRoute = false,
+    bool? isFetchingRoute,
   }) {
     return BusJourneyState(
       routeNumber: routeNumber ?? this.routeNumber,
@@ -64,6 +75,8 @@ class BusJourneyState {
       isSaving: isSaving ?? this.isSaving,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       savedSuccessfully: savedSuccessfully ?? this.savedSuccessfully,
+      routeResult: clearRoute ? null : (routeResult ?? this.routeResult),
+      isFetchingRoute: isFetchingRoute ?? this.isFetchingRoute,
     );
   }
 }
@@ -88,13 +101,36 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
 
   void setOperatorName(String value) => state = state.copyWith(operatorName: value);
 
-  void setOrigin(LocationPoint? point) => point == null
-      ? state = state.copyWith(clearOrigin: true)
-      : state = state.copyWith(origin: point);
+  void setOrigin(LocationPoint? point) {
+    if (point == null) {
+      state = state.copyWith(clearOrigin: true, clearRoute: true);
+    } else {
+      state = state.copyWith(origin: point);
+      _fetchRouteIfReady();
+    }
+  }
 
-  void setDestination(LocationPoint? point) => point == null
-      ? state = state.copyWith(clearDestination: true)
-      : state = state.copyWith(destination: point);
+  void setDestination(LocationPoint? point) {
+    if (point == null) {
+      state = state.copyWith(clearDestination: true, clearRoute: true);
+    } else {
+      state = state.copyWith(destination: point);
+      _fetchRouteIfReady();
+    }
+  }
+
+  void swapLocations() {
+    final o = state.origin;
+    final d = state.destination;
+    state = state.copyWith(
+      origin: d,
+      destination: o,
+      clearOrigin: d == null,
+      clearDestination: o == null,
+      clearRoute: true,
+    );
+    _fetchRouteIfReady();
+  }
 
   void setJourneyDate(DateTime d) => state = state.copyWith(journeyDate: d);
 
@@ -118,9 +154,9 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
         latitude: pos.latitude,
         longitude: pos.longitude,
       );
-      // Save to recents for future use
       await _locationRepo.saveLocation(point);
       state = state.copyWith(origin: point, isDetectingLocation: false);
+      _fetchRouteIfReady();
     } catch (_) {
       state = state.copyWith(
         isDetectingLocation: false,
@@ -131,6 +167,28 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
 
   Future<List<LocationPoint>> searchLocations(String query) =>
       _locationRepo.searchLocations(query);
+
+  /// Fetches the OSRM road route when both origin and destination are set.
+  Future<void> _fetchRouteIfReady() async {
+    final o = state.origin;
+    final d = state.destination;
+    if (o == null || d == null) return;
+
+    state = state.copyWith(isFetchingRoute: true, clearRoute: true);
+    try {
+      final result = await RoutingService.fetchRoute(
+        origin: LatLng(o.latitude, o.longitude),
+        destination: LatLng(d.latitude, d.longitude),
+      );
+      if (mounted) {
+        state = state.copyWith(routeResult: result, isFetchingRoute: false);
+      }
+    } catch (_) {
+      if (mounted) {
+        state = state.copyWith(isFetchingRoute: false);
+      }
+    }
+  }
 
   /// Validates and persists the journey.
   Future<void> save() async {

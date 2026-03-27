@@ -1,15 +1,23 @@
 import 'dart:async';
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:travel_companion/core/services/geocoding_service.dart';
+import 'package:travel_companion/core/services/routing_service.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/journey/bus/bus_journey_notifier.dart';
 import 'package:travel_companion/features/journey/widgets/journey_form_widgets.dart';
+import 'package:travel_companion/features/map/bus_map_picker_screen.dart';
+
+// ─────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────
+const _accent = Color(0xFF2E7D32);
+const _originColor = Color(0xFF1A73E8);
+const _destColor = Color(0xFFD93025);
 
 // ─────────────────────────────────────────────
 // Screen
@@ -27,9 +35,6 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
   final _formKey = GlobalKey<FormState>();
   final _routeCtrl = TextEditingController();
   final _operatorCtrl = TextEditingController();
-
-  static const _type = TransportType.bus;
-  static const _accent = Color(0xFF2E7D32);
 
   @override
   void dispose() {
@@ -72,7 +77,7 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
               flexibleSpace: FlexibleSpaceBar(
                 collapseMode: CollapseMode.pin,
                 background: TransportHeroHeader(
-                  type: _type,
+                  type: TransportType.bus,
                   title: 'Add Bus Journey',
                   subtitle: 'Track your bus trip and get arrival alerts',
                 ),
@@ -89,40 +94,85 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
                     icon: Icons.alt_route,
                     accentColor: _accent,
                     children: [
-                      _LocationSearchField(
+                      _BusLocationField(
                         label: 'Origin',
                         hint: 'Boarding stop or area',
-                        leadingIcon: Icons.trip_origin,
+                        icon: Icons.trip_origin,
+                        iconColor: _originColor,
                         value: state.origin,
-                        accentColor: _accent,
-                        markerColor: const Color(0xFF1A73E8),
                         isDetecting: state.isDetectingLocation,
                         onSelected: notifier.setOrigin,
                         onDetectGps: notifier.detectCurrentLocation,
-                        searchFn: (q) => GeocodingService.search(q),
+                        onPickOnMap: () => _openMapPicker(
+                          title: 'Origin',
+                          current: state.origin,
+                          onResult: notifier.setOrigin,
+                        ),
                       ),
-                      fieldSpacing,
-                      _LocationSearchField(
+
+                      // Swap button
+                      if (state.origin != null || state.destination != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Center(
+                            child: Material(
+                              color: _accent.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(20),
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap: notifier.swapLocations,
+                                child: const Padding(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 6),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.swap_vert_rounded,
+                                          size: 18, color: _accent),
+                                      SizedBox(width: 4),
+                                      Text(
+                                        'Swap',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: _accent,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        )
+                      else
+                        fieldSpacing,
+
+                      _BusLocationField(
                         label: 'Destination',
                         hint: 'Destination stop or area',
-                        leadingIcon: Icons.location_on,
+                        icon: Icons.location_on,
+                        iconColor: _destColor,
                         value: state.destination,
-                        accentColor: _accent,
-                        markerColor: const Color(0xFFD93025),
                         onSelected: notifier.setDestination,
-                        searchFn: (q) => GeocodingService.search(q),
+                        onPickOnMap: () => _openMapPicker(
+                          title: 'Destination',
+                          current: state.destination,
+                          onResult: notifier.setDestination,
+                        ),
                       ),
                     ],
                   ),
 
-                  // ── Inline bus map preview ────────
+                  // ── Route map preview ─────────────
                   if (state.origin != null || state.destination != null)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                       child: _BusRouteMapPreview(
                         origin: state.origin,
                         destination: state.destination,
-                        accentColor: _accent,
+                        routeResult: state.routeResult,
+                        isFetchingRoute: state.isFetchingRoute,
                       ),
                     ),
 
@@ -196,48 +246,60 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
       ),
     );
   }
+
+  Future<void> _openMapPicker({
+    required String title,
+    required LocationPoint? current,
+    required ValueChanged<LocationPoint?> onResult,
+  }) async {
+    final result = await Navigator.push<LocationPoint>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BusMapPickerScreen(
+          title: title,
+          accentColor: _accent,
+          initialLocation: current,
+        ),
+      ),
+    );
+    if (result != null) {
+      onResult(result);
+    }
+  }
 }
 
 // ─────────────────────────────────────────────
-// Location search field with OverlayEntry dropdown
-// ─────────────────────────────────────────────
-//
-// This is the key fix for the destination selection bug.
-// Search results are rendered in an OverlayEntry positioned
-// relative to the text field, so they float above all other
-// widgets and never get clipped by parent containers.
+// Location field with search + map picker
 // ─────────────────────────────────────────────
 
-class _LocationSearchField extends StatefulWidget {
+class _BusLocationField extends StatefulWidget {
   final String label;
   final String hint;
-  final IconData leadingIcon;
+  final IconData icon;
+  final Color iconColor;
   final LocationPoint? value;
-  final Color accentColor;
-  final Color markerColor;
   final bool isDetecting;
   final ValueChanged<LocationPoint?> onSelected;
   final VoidCallback? onDetectGps;
-  final Future<List<LocationPoint>> Function(String query) searchFn;
+  final VoidCallback onPickOnMap;
 
-  const _LocationSearchField({
+  const _BusLocationField({
     required this.label,
     required this.hint,
-    required this.leadingIcon,
+    required this.icon,
+    required this.iconColor,
     required this.value,
-    required this.accentColor,
-    required this.markerColor,
     required this.onSelected,
-    required this.searchFn,
+    required this.onPickOnMap,
     this.onDetectGps,
     this.isDetecting = false,
   });
 
   @override
-  State<_LocationSearchField> createState() => _LocationSearchFieldState();
+  State<_BusLocationField> createState() => _BusLocationFieldState();
 }
 
-class _LocationSearchFieldState extends State<_LocationSearchField> {
+class _BusLocationFieldState extends State<_BusLocationField> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   final _layerLink = LayerLink();
@@ -257,13 +319,11 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
   }
 
   @override
-  void didUpdateWidget(_LocationSearchField old) {
+  void didUpdateWidget(_BusLocationField old) {
     super.didUpdateWidget(old);
     if (widget.value != old.value) {
       _controller.text = widget.value?.name ?? '';
-      if (widget.value != null) {
-        _removeOverlay();
-      }
+      if (widget.value != null) _removeOverlay();
     }
   }
 
@@ -279,11 +339,8 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
 
   void _onFocusChanged() {
     if (!_focusNode.hasFocus) {
-      // Delay removal so that tap events on overlay items register first.
       Future.delayed(const Duration(milliseconds: 200), () {
-        if (mounted && !_focusNode.hasFocus) {
-          _removeOverlay();
-        }
+        if (mounted && !_focusNode.hasFocus) _removeOverlay();
       });
     }
   }
@@ -299,22 +356,26 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
       return;
     }
     setState(() => _isSearching = true);
-    _debounce = Timer(const Duration(milliseconds: 500), () async {
+    _updateOverlay();
+    _debounce = Timer(const Duration(milliseconds: 600), () async {
       try {
-        final res = await widget.searchFn(query);
+        final res = await GeocodingService.search(query);
         if (mounted) {
           setState(() {
             _results = res;
             _isSearching = false;
           });
           if (res.isNotEmpty) {
-            _showOverlay();
+            _updateOverlay();
           } else {
-            _removeOverlay();
+            _showNoResultsOverlay();
           }
         }
       } catch (_) {
-        if (mounted) setState(() => _isSearching = false);
+        if (mounted) {
+          setState(() => _isSearching = false);
+          _removeOverlay();
+        }
       }
     });
   }
@@ -340,7 +401,12 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
     widget.onSelected(null);
   }
 
-  void _showOverlay() {
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  void _updateOverlay() {
     _removeOverlay();
 
     final renderBox = context.findRenderObject() as RenderBox?;
@@ -348,23 +414,23 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
     final fieldWidth = renderBox.size.width;
 
     _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
+      builder: (ctx) => Positioned(
         width: fieldWidth,
         child: CompositedTransformFollower(
           link: _layerLink,
           showWhenUnlinked: false,
-          offset: const Offset(0, 60),
+          offset: const Offset(0, 62),
           child: Material(
             elevation: 8,
             borderRadius: BorderRadius.circular(14),
             shadowColor: Colors.black.withValues(alpha: 0.15),
             child: Container(
-              constraints: const BoxConstraints(maxHeight: 260),
+              constraints: const BoxConstraints(maxHeight: 280),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
+                color: Theme.of(ctx).colorScheme.surface,
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: Theme.of(context).colorScheme.outlineVariant,
+                  color: Theme.of(ctx).colorScheme.outlineVariant,
                 ),
               ),
               child: _isSearching && _results.isEmpty
@@ -376,8 +442,7 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
                           SizedBox(
                             width: 16,
                             height: 16,
-                            child:
-                                CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                           SizedBox(width: 10),
                           Text('Searching...',
@@ -390,7 +455,7 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
                       shrinkWrap: true,
                       padding: const EdgeInsets.symmetric(vertical: 6),
                       itemCount: _results.length,
-                      separatorBuilder: (_, __) => const Divider(
+                      separatorBuilder: (_, _) => const Divider(
                           height: 1, indent: 56, endIndent: 16),
                       itemBuilder: (_, i) {
                         final p = _results[i];
@@ -401,19 +466,17 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
                             width: 36,
                             height: 36,
                             decoration: BoxDecoration(
-                              color:
-                                  widget.markerColor.withValues(alpha: 0.10),
+                              color: widget.iconColor.withValues(alpha: 0.10),
                               shape: BoxShape.circle,
                             ),
                             child: Icon(Icons.location_on_rounded,
-                                size: 18, color: widget.markerColor),
+                                size: 18, color: widget.iconColor),
                           ),
                           title: Text(
                             p.name,
                             style: const TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF202124),
                             ),
                           ),
                           subtitle: p.address != null
@@ -441,9 +504,70 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
     Overlay.of(context).insert(_overlayEntry!);
   }
 
-  void _removeOverlay() {
-    _overlayEntry?.remove();
-    _overlayEntry = null;
+  void _showNoResultsOverlay() {
+    _removeOverlay();
+
+    final renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    final fieldWidth = renderBox.size.width;
+
+    _overlayEntry = OverlayEntry(
+      builder: (ctx) => Positioned(
+        width: fieldWidth,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: const Offset(0, 62),
+          child: Material(
+            elevation: 8,
+            borderRadius: BorderRadius.circular(14),
+            shadowColor: Colors.black.withValues(alpha: 0.15),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(ctx).colorScheme.surface,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: Theme.of(ctx).colorScheme.outlineVariant,
+                ),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.search_off_rounded,
+                      size: 28, color: Colors.grey.shade400),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'No locations found',
+                    style: TextStyle(
+                        fontSize: 13, color: Color(0xFF5F6368)),
+                  ),
+                  const SizedBox(height: 10),
+                  TextButton.icon(
+                    onPressed: () {
+                      _removeOverlay();
+                      _focusNode.unfocus();
+                      widget.onPickOnMap();
+                    },
+                    icon: const Icon(Icons.map_outlined, size: 16),
+                    label: const Text('Pick on map instead'),
+                    style: TextButton.styleFrom(
+                      foregroundColor: _accent,
+                      textStyle: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    Overlay.of(context).insert(_overlayEntry!);
   }
 
   @override
@@ -452,27 +576,22 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
 
     return CompositedTransformTarget(
       link: _layerLink,
-      child: TextFormField(
-        controller: _controller,
-        focusNode: _focusNode,
-        onChanged: _onSearchChanged,
-        decoration: InputDecoration(
-          labelText: widget.label,
-          hintText: widget.hint,
-          prefixIcon: Icon(widget.leadingIcon),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          suffixIcon: widget.isDetecting
-              ? const Padding(
-                  padding: EdgeInsets.all(14),
-                  child: SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                )
-              : _isSearching
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextFormField(
+            controller: _controller,
+            focusNode: _focusNode,
+            onChanged: _onSearchChanged,
+            decoration: InputDecoration(
+              labelText: widget.label,
+              hintText: widget.hint,
+              prefixIcon: Icon(widget.icon, color: widget.iconColor),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              suffixIcon: widget.isDetecting
                   ? const Padding(
                       padding: EdgeInsets.all(14),
                       child: SizedBox(
@@ -481,19 +600,161 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     )
-                  : isSet
-                      ? IconButton(
-                          icon: const Icon(Icons.clear, size: 18),
-                          onPressed: _clear,
+                  : _isSearching
+                      ? const Padding(
+                          padding: EdgeInsets.all(14),
+                          child: SizedBox(
+                            width: 18,
+                            height: 18,
+                            child:
+                                CircularProgressIndicator(strokeWidth: 2),
+                          ),
                         )
-                      : widget.onDetectGps != null
+                      : isSet
                           ? IconButton(
-                              icon: const Icon(Icons.my_location,
-                                  size: 20, color: Color(0xFF1A73E8)),
-                              tooltip: 'Detect GPS location',
-                              onPressed: widget.onDetectGps,
+                              icon: const Icon(Icons.clear, size: 18),
+                              onPressed: _clear,
                             )
-                          : const Icon(Icons.search, size: 20),
+                          : null,
+            ),
+          ),
+
+          // Action row below the field
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(
+              children: [
+                // Pick on map button
+                _ActionChip(
+                  icon: Icons.map_outlined,
+                  label: 'Pick on map',
+                  onTap: () {
+                    _focusNode.unfocus();
+                    _removeOverlay();
+                    widget.onPickOnMap();
+                  },
+                ),
+                if (widget.onDetectGps != null) ...[
+                  const SizedBox(width: 8),
+                  _ActionChip(
+                    icon: Icons.my_location,
+                    label: 'Current location',
+                    color: _originColor,
+                    onTap: widget.isDetecting ? null : widget.onDetectGps,
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // Selected location preview chip
+          if (isSet)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: widget.iconColor.withValues(alpha: 0.06),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: widget.iconColor.withValues(alpha: 0.15),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded,
+                        size: 16, color: widget.iconColor),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.value!.name,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: widget.iconColor,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (widget.value!.address != null)
+                            Text(
+                              widget.value!.address!,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      '${widget.value!.latitude.toStringAsFixed(4)}, '
+                      '${widget.value!.longitude.toStringAsFixed(4)}',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey.shade500,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Small action chip for "Pick on map" / "GPS"
+// ─────────────────────────────────────────────
+
+class _ActionChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final Color color;
+
+  const _ActionChip({
+    required this.icon,
+    required this.label,
+    this.onTap,
+    this.color = _accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color.withValues(alpha: 0.20)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -501,18 +762,20 @@ class _LocationSearchFieldState extends State<_LocationSearchField> {
 }
 
 // ─────────────────────────────────────────────
-// Inline Bus Route Map Preview
+// Route map preview with OSRM road path
 // ─────────────────────────────────────────────
 
 class _BusRouteMapPreview extends StatefulWidget {
   final LocationPoint? origin;
   final LocationPoint? destination;
-  final Color accentColor;
+  final RouteResult? routeResult;
+  final bool isFetchingRoute;
 
   const _BusRouteMapPreview({
     this.origin,
     this.destination,
-    required this.accentColor,
+    this.routeResult,
+    this.isFetchingRoute = false,
   });
 
   @override
@@ -521,8 +784,6 @@ class _BusRouteMapPreview extends StatefulWidget {
 
 class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
   late MapController _mapController;
-
-  static const _defaultCenter = LatLng(20.5937, 78.9629);
 
   @override
   void initState() {
@@ -533,7 +794,7 @@ class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
   @override
   void didUpdateWidget(_BusRouteMapPreview old) {
     super.didUpdateWidget(old);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _animateCamera());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _fitBounds());
   }
 
   @override
@@ -542,16 +803,33 @@ class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
     super.dispose();
   }
 
-  void _animateCamera() {
+  void _fitBounds() {
     final o = widget.origin;
     final d = widget.destination;
-    if (o != null && d != null) {
-      final bounds = LatLngBounds(
-        LatLng(o.latitude, o.longitude),
-        LatLng(d.latitude, d.longitude),
-      );
+    final route = widget.routeResult;
+
+    if (route != null && route.isNotEmpty) {
+      // Fit to route bounds
+      double minLat = route.points.first.latitude;
+      double maxLat = route.points.first.latitude;
+      double minLng = route.points.first.longitude;
+      double maxLng = route.points.first.longitude;
+      for (final p in route.points) {
+        if (p.latitude < minLat) minLat = p.latitude;
+        if (p.latitude > maxLat) maxLat = p.latitude;
+        if (p.longitude < minLng) minLng = p.longitude;
+        if (p.longitude > maxLng) maxLng = p.longitude;
+      }
       _mapController.fitCamera(CameraFit.bounds(
-        bounds: bounds,
+        bounds: LatLngBounds(LatLng(minLat, minLng), LatLng(maxLat, maxLng)),
+        padding: const EdgeInsets.all(48),
+      ));
+    } else if (o != null && d != null) {
+      _mapController.fitCamera(CameraFit.bounds(
+        bounds: LatLngBounds(
+          LatLng(o.latitude, o.longitude),
+          LatLng(d.latitude, d.longitude),
+        ),
         padding: const EdgeInsets.all(48),
       ));
     } else if (o != null) {
@@ -572,20 +850,18 @@ class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
     }
     if (o != null) return LatLng(o.latitude, o.longitude);
     if (d != null) return LatLng(d.latitude, d.longitude);
-    return _defaultCenter;
+    return const LatLng(20.5937, 78.9629);
   }
-
-  double get _zoom =>
-      (widget.origin == null && widget.destination == null) ? 4.5 : 12.0;
 
   @override
   Widget build(BuildContext context) {
     final o = widget.origin;
     final d = widget.destination;
-    final hasRoute = o != null && d != null;
+    final route = widget.routeResult;
+    final hasRoute = route != null && route.isNotEmpty;
 
     return Container(
-      height: 240,
+      height: 260,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
@@ -606,10 +882,12 @@ class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _center,
-              initialZoom: _zoom,
+              initialZoom: 12,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.none,
+              ),
             ),
             children: [
-              // CartoDB Voyager tiles
               TileLayer(
                 urlTemplate:
                     'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
@@ -619,16 +897,33 @@ class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
                 maxZoom: 19,
               ),
 
-              // Dashed polyline between origin and destination
+              // OSRM road route polyline
               if (hasRoute)
+                PolylineLayer(polylines: [
+                  // Shadow
+                  Polyline(
+                    points: route.points,
+                    strokeWidth: 7.0,
+                    color: _accent.withValues(alpha: 0.25),
+                  ),
+                  // Main line
+                  Polyline(
+                    points: route.points,
+                    strokeWidth: 4.5,
+                    color: _accent,
+                  ),
+                ]),
+
+              // Fallback straight line if no OSRM route yet
+              if (!hasRoute && o != null && d != null)
                 PolylineLayer(polylines: [
                   Polyline(
                     points: [
                       LatLng(o.latitude, o.longitude),
                       LatLng(d.latitude, d.longitude),
                     ],
-                    strokeWidth: 4.0,
-                    color: widget.accentColor,
+                    strokeWidth: 3.5,
+                    color: _accent.withValues(alpha: 0.50),
                     pattern: StrokePattern.dashed(segments: [14, 7]),
                   ),
                 ]),
@@ -638,22 +933,27 @@ class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
                 if (o != null)
                   Marker(
                     point: LatLng(o.latitude, o.longitude),
-                    width: 48,
-                    height: 48,
+                    width: 40,
+                    height: 40,
                     alignment: Alignment.center,
-                    child: _OriginPin(),
+                    child: _RouteMarker(
+                      color: _originColor,
+                      icon: Icons.trip_origin,
+                    ),
                   ),
                 if (d != null)
                   Marker(
                     point: LatLng(d.latitude, d.longitude),
-                    width: 44,
-                    height: 52,
-                    alignment: Alignment.bottomCenter,
-                    child: const _DestinationPin(),
+                    width: 40,
+                    height: 40,
+                    alignment: Alignment.center,
+                    child: _RouteMarker(
+                      color: _destColor,
+                      icon: Icons.location_on_rounded,
+                    ),
                   ),
               ]),
 
-              // Attribution
               const RichAttributionWidget(
                 attributions: [
                   TextSourceAttribution('OpenStreetMap contributors'),
@@ -663,12 +963,77 @@ class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
             ],
           ),
 
-          // Distance chip
+          // Loading indicator while fetching route
+          if (widget.isFetchingRoute)
+            Positioned(
+              top: 10,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.10),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: _accent),
+                      ),
+                      SizedBox(width: 8),
+                      Text('Finding best route...',
+                          style: TextStyle(fontSize: 12, color: _accent)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // Route info chips
           if (hasRoute)
             Positioned(
               bottom: 36,
-              left: 12,
-              child: _DistanceChip(origin: o, destination: d),
+              left: 10,
+              right: 10,
+              child: Row(
+                children: [
+                  _InfoChip(
+                    icon: Icons.route_rounded,
+                    label: route.distanceText,
+                    color: _accent,
+                  ),
+                  const SizedBox(width: 6),
+                  _InfoChip(
+                    icon: Icons.schedule_rounded,
+                    label: route.durationText,
+                    color: const Color(0xFF1565C0),
+                  ),
+                ],
+              ),
+            ),
+
+          // Single-point label
+          if ((o != null) != (d != null))
+            Positioned(
+              bottom: 36,
+              left: 10,
+              child: _InfoChip(
+                icon: Icons.location_on_rounded,
+                label: (o ?? d)!.name,
+                color: o != null ? _originColor : _destColor,
+              ),
             ),
         ],
       ),
@@ -677,114 +1042,54 @@ class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
 }
 
 // ─────────────────────────────────────────────
-// Origin marker (blue dot)
+// Route marker (origin/destination)
 // ─────────────────────────────────────────────
 
-class _OriginPin extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        width: 22,
-        height: 22,
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A73E8),
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 3),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x551A73E8),
-              blurRadius: 8,
-              spreadRadius: 3,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// Destination marker (teardrop pin with bus icon)
-// ─────────────────────────────────────────────
-
-class _DestinationPin extends StatelessWidget {
-  const _DestinationPin();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: const Color(0xFFD93025),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2.5),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x55D93025),
-                blurRadius: 8,
-                spreadRadius: 3,
-              ),
-            ],
-          ),
-          child: const Icon(Icons.directions_bus_rounded,
-              size: 18, color: Colors.white),
-        ),
-        CustomPaint(
-          size: const Size(12, 8),
-          painter: _TrianglePainter(color: const Color(0xFFD93025)),
-        ),
-      ],
-    );
-  }
-}
-
-class _TrianglePainter extends CustomPainter {
+class _RouteMarker extends StatelessWidget {
   final Color color;
-  const _TrianglePainter({required this.color});
+  final IconData icon;
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawPath(
-      ui.Path()
-        ..moveTo(0, 0)
-        ..lineTo(size.width, 0)
-        ..lineTo(size.width / 2, size.height)
-        ..close(),
-      Paint()..color = color,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_TrianglePainter o) => o.color != color;
-}
-
-// ─────────────────────────────────────────────
-// Straight-line distance chip
-// ─────────────────────────────────────────────
-
-class _DistanceChip extends StatelessWidget {
-  final LocationPoint origin;
-  final LocationPoint destination;
-
-  const _DistanceChip({required this.origin, required this.destination});
+  const _RouteMarker({required this.color, required this.icon});
 
   @override
   Widget build(BuildContext context) {
-    const calc = Distance();
-    final km = calc.as(
-      LengthUnit.Kilometer,
-      LatLng(origin.latitude, origin.longitude),
-      LatLng(destination.latitude, destination.longitude),
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2.5),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.45),
+            blurRadius: 8,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Icon(icon, size: 16, color: Colors.white),
     );
-    final label = km < 1
-        ? '${(km * 1000).toStringAsFixed(0)} m'
-        : '~${km.toStringAsFixed(1)} km';
+  }
+}
 
+// ─────────────────────────────────────────────
+// Info chip (distance, duration, label)
+// ─────────────────────────────────────────────
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _InfoChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -801,15 +1106,14 @@ class _DistanceChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.straighten_rounded,
-              size: 13, color: Color(0xFF2E7D32)),
+          Icon(icon, size: 13, color: color),
           const SizedBox(width: 5),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF202124),
+              color: color,
             ),
           ),
         ],

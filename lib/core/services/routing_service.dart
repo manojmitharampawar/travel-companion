@@ -1,6 +1,37 @@
 import 'package:dio/dio.dart';
 import 'package:latlong2/latlong.dart';
 
+/// Result from an OSRM route query, including the polyline, distance, and duration.
+class RouteResult {
+  final List<LatLng> points;
+  final double distanceKm;
+  final double durationMinutes;
+
+  const RouteResult({
+    required this.points,
+    required this.distanceKm,
+    required this.durationMinutes,
+  });
+
+  static const empty = RouteResult(points: [], distanceKm: 0, durationMinutes: 0);
+
+  bool get isEmpty => points.isEmpty;
+  bool get isNotEmpty => points.isNotEmpty;
+
+  String get distanceText {
+    if (distanceKm < 1) return '${(distanceKm * 1000).toStringAsFixed(0)} m';
+    return '${distanceKm.toStringAsFixed(1)} km';
+  }
+
+  String get durationText {
+    final totalMin = durationMinutes.round();
+    if (totalMin < 60) return '$totalMin min';
+    final h = totalMin ~/ 60;
+    final m = totalMin % 60;
+    return m > 0 ? '${h}h ${m}m' : '${h}h';
+  }
+}
+
 /// Fetches a road-following polyline from the OSRM public routing API.
 /// No API key required.  Rate-limit: reasonable fair use.
 class RoutingService {
@@ -14,13 +45,11 @@ class RoutingService {
     },
   ));
 
-  /// Returns an ordered list of [LatLng] that follows the road network
-  /// between [origin] and [destination].
+  /// Returns a [RouteResult] with road-following polyline, distance, and duration.
   ///
   /// [profile] can be `'driving'` (default), `'walking'`, or `'cycling'`.
-  /// Falls back to an empty list on any error so callers can degrade
-  /// gracefully to a straight-line polyline.
-  static Future<List<LatLng>> fetchRoute({
+  /// Falls back to [RouteResult.empty] on any error.
+  static Future<RouteResult> fetchRoute({
     required LatLng origin,
     required LatLng destination,
     String profile = 'driving',
@@ -34,26 +63,35 @@ class RoutingService {
 
       final resp = await _dio.get<Map<String, dynamic>>(url);
       final data = resp.data;
-      if (data == null) return [];
+      if (data == null) return RouteResult.empty;
 
       final routes = data['routes'] as List<dynamic>?;
-      if (routes == null || routes.isEmpty) return [];
+      if (routes == null || routes.isEmpty) return RouteResult.empty;
 
-      final geometry = routes[0]['geometry'] as Map<String, dynamic>?;
-      if (geometry == null) return [];
+      final route = routes[0] as Map<String, dynamic>;
+      final geometry = route['geometry'] as Map<String, dynamic>?;
+      if (geometry == null) return RouteResult.empty;
 
       final coordinates = geometry['coordinates'] as List<dynamic>?;
-      if (coordinates == null) return [];
+      if (coordinates == null) return RouteResult.empty;
 
-      return coordinates.map((c) {
+      final points = coordinates.map((c) {
         final coord = c as List<dynamic>;
-        // GeoJSON order is [longitude, latitude]
         final lon = (coord[0] as num).toDouble();
         final lat = (coord[1] as num).toDouble();
         return LatLng(lat, lon);
       }).toList();
+
+      final distanceM = (route['distance'] as num?)?.toDouble() ?? 0;
+      final durationS = (route['duration'] as num?)?.toDouble() ?? 0;
+
+      return RouteResult(
+        points: points,
+        distanceKm: distanceM / 1000,
+        durationMinutes: durationS / 60,
+      );
     } catch (_) {
-      return [];
+      return RouteResult.empty;
     }
   }
 }

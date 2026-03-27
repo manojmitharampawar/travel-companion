@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter analyze:*)",
+      "Bash(flutter build:*)",
+      "Bash(./gradlew assembleDebug --stacktrace)",
+      "Bash(./gradlew assembleDebug --info)",
+      "Bash(echo $JAVA_HOME)",
+      "Bash(flutter --version)"
+    ]
+  }
+}
