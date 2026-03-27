@@ -6,7 +6,7 @@ import 'package:travel_companion/data/database/train_seed_data.dart';
 
 class AppDatabase {
   static Database? _database;
-  static const int _version = 4;
+  static const int _version = 5;
 
   static Future<Database> get database async {
     if (_database != null) return _database!;
@@ -96,6 +96,32 @@ class AppDatabase {
       )
     ''');
 
+    await db.execute('''
+      CREATE TABLE metro_lines (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        city TEXT NOT NULL,
+        line_name TEXT NOT NULL,
+        line_code TEXT UNIQUE,
+        line_color TEXT,
+        start_station_code TEXT,
+        end_station_code TEXT
+      )
+    ''');
+
+    await db.execute('''
+      CREATE TABLE metro_stations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        code TEXT UNIQUE NOT NULL,
+        line_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        station_index INTEGER NOT NULL,
+        latitude REAL NOT NULL,
+        longitude REAL NOT NULL,
+        FOREIGN KEY (line_id) REFERENCES metro_lines(id),
+        FOREIGN KEY (code) REFERENCES stations(code)
+      )
+    ''');
+
     // Create indexes
     await db.execute('CREATE INDEX idx_stations_code ON stations(code)');
     await db.execute('CREATE INDEX idx_stations_name ON stations(name)');
@@ -104,6 +130,9 @@ class AppDatabase {
     await db.execute('CREATE INDEX idx_journeys_date ON journeys(journey_date)');
     await db.execute('CREATE INDEX idx_journeys_transport ON journeys(transport_type)');
     await db.execute('CREATE INDEX idx_custom_locations_name ON custom_locations(name)');
+    await db.execute('CREATE INDEX idx_metro_lines_city ON metro_lines(city)');
+    await db.execute('CREATE INDEX idx_metro_stations_line ON metro_stations(line_id)');
+    await db.execute('CREATE INDEX idx_metro_stations_code ON metro_stations(code)');
 
     // Seed data
     await _seedStations(db);
@@ -156,6 +185,153 @@ class AppDatabase {
     if (oldVersion < 4) {
       // Seed additional train routes from CSV (safe: uses INSERT OR IGNORE)
       await _seedTrainRoutesFromCsv(db);
+    }
+    if (oldVersion < 5) {
+      // Create metro tables
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS metro_lines (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          city TEXT NOT NULL,
+          line_name TEXT NOT NULL,
+          line_code TEXT UNIQUE,
+          line_color TEXT,
+          start_station_code TEXT,
+          end_station_code TEXT
+        )
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS metro_stations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          code TEXT UNIQUE NOT NULL,
+          line_id INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          station_index INTEGER NOT NULL,
+          latitude REAL NOT NULL,
+          longitude REAL NOT NULL,
+          FOREIGN KEY (line_id) REFERENCES metro_lines(id),
+          FOREIGN KEY (code) REFERENCES stations(code)
+        )
+      ''');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_metro_lines_city ON metro_lines(city)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_metro_stations_line ON metro_stations(line_id)');
+      await db.execute('CREATE INDEX IF NOT EXISTS idx_metro_stations_code ON metro_stations(code)');
+
+      // Seed metro data
+      await _seedMetroData(db);
+    }
+  }
+
+  /// Seeds sample metro data for major Indian cities (Delhi, Mumbai, Bangalore, Chennai, Hyderabad).
+  static Future<void> _seedMetroData(Database db) async {
+    try {
+      final batch = db.batch();
+      int lineId = 1;
+
+      // DELHI METRO
+      final delhiLines = [
+        {'name': 'Red Line', 'code': 'DL-RED', 'color': '#E31C23', 'start': 'RITHALA', 'end': 'GHAZIABAD_CITY'},
+        {'name': 'Blue Line', 'code': 'DL-BLUE', 'color': '#002DA5', 'start': 'INDERLOK', 'end': 'NOIDA_SECTOR_62'},
+        {'name': 'Yellow Line', 'code': 'DL-YELLOW', 'color': '#FDB913', 'start': 'SAMAYPUR_BADLI', 'end': 'GURU_TEGH_BAHADUR_NAGAR'},
+        {'name': 'Green Line', 'code': 'DL-GREEN', 'color': '#06A649', 'start': 'MUNDKA', 'end': 'INDRAPRASTHA'},
+      ];
+
+      for (final line in delhiLines) {
+        batch.insert('metro_lines', {
+          'id': lineId,
+          'city': 'Delhi',
+          'line_name': line['name'],
+          'line_code': line['code'],
+          'line_color': line['color'],
+          'start_station_code': line['start'],
+          'end_station_code': line['end'],
+        }, conflictAlgorithm: ConflictAlgorithm.ignore);
+        lineId++;
+      }
+
+      // MUMBAI METRO
+      batch.insert('metro_lines', {
+        'id': lineId,
+        'city': 'Mumbai',
+        'line_name': 'Line 1',
+        'line_code': 'MUM-L1',
+        'line_color': '#0C60CA',
+        'start_station_code': 'VERSOVA',
+        'end_station_code': 'GHATKOPAR',
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      lineId++;
+
+      batch.insert('metro_lines', {
+        'id': lineId,
+        'city': 'Mumbai',
+        'line_name': 'Line 2A',
+        'line_code': 'MUM-L2A',
+        'line_color': '#FF6600',
+        'start_station_code': 'DAHISAR_EAST',
+        'end_station_code': 'ANDHERI_EAST',
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      lineId++;
+
+      // BANGALORE METRO
+      batch.insert('metro_lines', {
+        'id': lineId,
+        'city': 'Bangalore',
+        'line_name': 'Red Line',
+        'line_code': 'BLR-RED',
+        'line_color': '#E60000',
+        'start_station_code': 'BATH_MARKET',
+        'end_station_code': 'HEELALIGE',
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      lineId++;
+
+      batch.insert('metro_lines', {
+        'id': lineId,
+        'city': 'Bangalore',
+        'line_name': 'Purple Line',
+        'line_code': 'BLR-PURPLE',
+        'line_color': '#6B2C91',
+        'start_station_code': 'KSTDC_BUS_STATION',
+        'end_station_code': 'WHITEFIELD',
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      lineId++;
+
+      // CHENNAI METRO
+      batch.insert('metro_lines', {
+        'id': lineId,
+        'city': 'Chennai',
+        'line_name': 'Line 1',
+        'line_code': 'CHN-L1',
+        'line_color': '#006BB6',
+        'start_station_code': 'WIMCO_NAGAR',
+        'end_station_code': 'WIMCO_NAGAR',
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      lineId++;
+
+      // HYDERABAD METRO
+      batch.insert('metro_lines', {
+        'id': lineId,
+        'city': 'Hyderabad',
+        'line_name': 'Red Line',
+        'line_code': 'HYD-RED',
+        'line_color': '#C60C30',
+        'start_station_code': 'MIYAPUR',
+        'end_station_code': 'FALAKNUMA',
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      lineId++;
+
+      batch.insert('metro_lines', {
+        'id': lineId,
+        'city': 'Hyderabad',
+        'line_name': 'Green Line',
+        'line_code': 'HYD-GREEN',
+        'line_color': '#00A651',
+        'start_station_code': 'JNTU',
+        'end_station_code': 'RAIDURG',
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      lineId++;
+
+      await batch.commit(noResult: true);
+    } catch (_) {
+      // Silently skip if seeding fails
     }
   }
 

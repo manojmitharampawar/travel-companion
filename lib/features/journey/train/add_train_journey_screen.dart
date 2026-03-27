@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:travel_companion/data/models/train_route_stop.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/journey/train/train_journey_notifier.dart';
@@ -250,6 +252,18 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                     ],
                   ),
 
+                  // ── SECTION: Route Preview ─────────
+                  if (state.boardingStation != null &&
+                      state.destinationStation != null &&
+                      state.boardingStation!.latitude != 0 &&
+                      state.destinationStation!.latitude != 0)
+                    _TrainRoutePreview(
+                      stops: state.trainRouteStops,
+                      boardingCode: state.boardingStation!.code,
+                      destinationCode: state.destinationStation!.code,
+                      accentColor: _accent,
+                    ),
+
                   // ── SECTION: Journey Info ──────────
                   FormSectionCard(
                     title: 'JOURNEY INFO',
@@ -323,6 +337,200 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
     } catch (_) {
       return null;
     }
+  }
+}
+
+// ─────────────────────────────────────────────
+// Route Loaded Banner
+// ─────────────────────────────────────────────
+
+// ─────────────────────────────────────────────
+// Train Route Map Preview
+// ─────────────────────────────────────────────
+
+class _TrainRoutePreview extends StatelessWidget {
+  final List<TrainRouteStop> stops;
+  final String boardingCode;
+  final String destinationCode;
+  final Color accentColor;
+
+  const _TrainRoutePreview({
+    required this.stops,
+    required this.boardingCode,
+    required this.destinationCode,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Build route points from stops between boarding and destination
+    final routeStops = _getRouteStops();
+    if (routeStops.isEmpty) return const SizedBox.shrink();
+
+    final points = routeStops
+        .where((s) => s.latitude != 0 && s.longitude != 0)
+        .map((s) => LatLng(s.latitude, s.longitude))
+        .toList();
+
+    if (points.length < 2) return const SizedBox.shrink();
+
+    // Calculate center and zoom
+    double minLat = points.first.latitude, maxLat = points.first.latitude;
+    double minLon = points.first.longitude, maxLon = points.first.longitude;
+    for (final p in points) {
+      if (p.latitude < minLat) minLat = p.latitude;
+      if (p.latitude > maxLat) maxLat = p.latitude;
+      if (p.longitude < minLon) minLon = p.longitude;
+      if (p.longitude > maxLon) maxLon = p.longitude;
+    }
+    final center = LatLng((minLat + maxLat) / 2, (minLon + maxLon) / 2);
+    final maxDiff = (maxLat - minLat) > (maxLon - minLon)
+        ? (maxLat - minLat)
+        : (maxLon - minLon);
+    final zoom = (12.0 - (maxDiff * 10).clamp(0, 8)).clamp(4.0, 14.0);
+
+    return FormSectionCard(
+      title: 'ROUTE PREVIEW',
+      icon: Icons.map_outlined,
+      accentColor: accentColor,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: SizedBox(
+            height: 220,
+            child: FlutterMap(
+              options: MapOptions(
+                initialCenter: center,
+                initialZoom: zoom,
+                interactionOptions: const InteractionOptions(
+                  flags: InteractiveFlag.none,
+                ),
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate:
+                      'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+                  userAgentPackageName: 'com.travel_companion.app',
+                  fallbackUrl:
+                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                ),
+                // Route polyline connecting all stations
+                PolylineLayer(polylines: [
+                  Polyline(
+                    points: points,
+                    strokeWidth: 4,
+                    color: accentColor,
+                  ),
+                ]),
+                // Station markers
+                MarkerLayer(markers: [
+                  for (int i = 0; i < routeStops.length; i++)
+                    if (routeStops[i].latitude != 0)
+                      Marker(
+                        point: LatLng(
+                            routeStops[i].latitude, routeStops[i].longitude),
+                        width: 28,
+                        height: 28,
+                        alignment: Alignment.center,
+                        child: _StationDot(
+                          isEndpoint: routeStops[i].stationCode == boardingCode ||
+                              routeStops[i].stationCode == destinationCode,
+                          isOrigin: routeStops[i].stationCode == boardingCode,
+                          accentColor: accentColor,
+                        ),
+                      ),
+                ]),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        // Route summary strip
+        Row(
+          children: [
+            Icon(Icons.trip_origin, size: 14, color: Colors.green.shade600),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                routeStops.first.stationName,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Text(
+              '${routeStops.length} stops',
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                routeStops.last.stationName,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.right,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Icon(Icons.location_on, size: 14, color: Colors.red.shade600),
+          ],
+        ),
+      ],
+    );
+  }
+
+  List<TrainRouteStop> _getRouteStops() {
+    if (stops.isEmpty) return [];
+    final boardingIdx =
+        stops.indexWhere((s) => s.stationCode == boardingCode);
+    final destIdx =
+        stops.indexWhere((s) => s.stationCode == destinationCode);
+    if (boardingIdx < 0 || destIdx < 0 || boardingIdx >= destIdx) return [];
+    return stops.sublist(boardingIdx, destIdx + 1);
+  }
+}
+
+class _StationDot extends StatelessWidget {
+  final bool isEndpoint;
+  final bool isOrigin;
+  final Color accentColor;
+
+  const _StationDot({
+    required this.isEndpoint,
+    required this.isOrigin,
+    required this.accentColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isEndpoint) {
+      final color = isOrigin ? Colors.green.shade600 : Colors.red.shade600;
+      return Container(
+        width: 22,
+        height: 22,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 2.5),
+          boxShadow: [
+            BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 6),
+          ],
+        ),
+        child: Icon(
+          isOrigin ? Icons.trip_origin : Icons.location_on,
+          size: 10,
+          color: Colors.white,
+        ),
+      );
+    }
+    return Container(
+      width: 10,
+      height: 10,
+      decoration: BoxDecoration(
+        color: accentColor,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 1.5),
+      ),
+    );
   }
 }
 

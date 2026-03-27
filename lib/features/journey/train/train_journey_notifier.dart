@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_companion/data/datasources/remote/train_status_api.dart';
 import 'package:travel_companion/data/models/journey.dart';
@@ -105,6 +106,10 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
   final TrainRepository _trainRepo;
   final TrainStatusApi _trainApi;
 
+  /// Debounce timer for train number input to avoid excessive API calls.
+  /// Waits 600ms after user stops typing before fetching.
+  Timer? _trainNumberDebounceTimer;
+
   TrainJourneyNotifier({
     required JourneyRepository journeyRepo,
     required StationRepository stationRepo,
@@ -115,6 +120,12 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
         _trainRepo = trainRepo,
         _trainApi = trainApi,
         super(TrainJourneyState());
+
+  @override
+  void dispose() {
+    _trainNumberDebounceTimer?.cancel();
+    super.dispose();
+  }
 
   void setPnr(String value) => state = state.copyWith(pnr: value, clearError: true);
   void setTrainName(String value) => state = state.copyWith(trainName: value);
@@ -168,44 +179,113 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
     );
   }
 
-  /// Updates the train number and auto-fills name, endpoints, and route stops.
-  Future<void> setTrainNumber(String value) async {
+  /// Sets train number and initiates debounced auto-fetching.
+  ///
+  /// Called on every keystroke in the train number field.
+  /// Debounces for 600ms to avoid excessive API calls while user is typing.
+  /// Once user stops typing (600ms pause), automatically fetches:
+  /// - Train name from local DB
+  /// - Route stops with coordinates
+  /// - Auto-fills boarding/destination stations if not set
+  void setTrainNumber(String value) {
+    // Cancel previous debounce timer
+    _trainNumberDebounceTimer?.cancel();
+
     state = state.copyWith(
       trainNumber: value,
       clearError: true,
-      trainRouteStops: const [],
     );
 
-    if (value.length < 4) return;
+    // Clear route stops immediately to show the input is being processed
+    if (value.length < 4) {
+      state = state.copyWith(trainRouteStops: const []);
+      return;
+    }
 
+    // Debounce: wait 600ms for user to stop typing before auto-fetching
     state = state.copyWith(isAutoFilling: true);
+    _trainNumberDebounceTimer = Timer(const Duration(milliseconds: 600), () {
+      _performAutoFetch(value);
+    });
+  }
+
+  /// Performs the actual auto-fetch operation after debounce timer fires.
+  ///
+  /// Strategy: local DB first (instant), then remote API if local has gaps.
+  Future<void> _performAutoFetch(String trainNumber) async {
     try {
       // 1. Try local DB first (fast)
-      final localName = await _trainRepo.getTrainNameByNumber(value);
+      final localName = await _trainRepo.getTrainNameByNumber(trainNumber);
       if (localName != null && state.trainName.isEmpty) {
         state = state.copyWith(trainName: localName);
       }
 
       // 2. Load route stops with coordinates for TrainStopSelector
-      final stops = await _trainRepo.getRouteStopsWithCoordinates(value);
+      final stops = await _trainRepo.getRouteStopsWithCoordinates(trainNumber);
       if (stops.isNotEmpty) {
         state = state.copyWith(trainRouteStops: stops);
       }
 
-      // 3. Auto-fill endpoints if not yet set (use stop data if available)
+      // 3. If local DB had no name or no route, fetch from remote API at runtime
+      final needsRemoteName = state.trainName.isEmpty;
+      final needsRemoteRoute = stops.isEmpty;
+
+      if (needsRemoteName || needsRemoteRoute) {
+        final details = await _trainApi.getTrainDetails(trainNumber);
+        if (details != null) {
+          // Fill train name from API
+          if (needsRemoteName) {
+            final remoteName = details['train_name'] as String?;
+            if (remoteName != null && remoteName.isNotEmpty) {
+              state = state.copyWith(trainName: remoteName);
+            }
+          }
+
+          // Build route stops from API response if local DB had none
+          if (needsRemoteRoute) {
+            final routeList = details['route'] as List?;
+            if (routeList != null && routeList.isNotEmpty) {
+              final apiStops = <TrainRouteStop>[];
+              for (int i = 0; i < routeList.length; i++) {
+                final r = routeList[i] as Map<String, dynamic>;
+                final code = r['station_code'] as String? ?? '';
+                final name = r['station_name'] as String? ?? code;
+                // Try to resolve coordinates from local station DB
+                final localStation = await _stationRepo.getStationByCode(code);
+                apiStops.add(TrainRouteStop(
+                  stationCode: code,
+                  stationName: name,
+                  stopSequence: i + 1,
+                  arrivalTime: r['scheduled_arrival'] as String?,
+                  departureTime: r['scheduled_departure'] as String?,
+                  latitude: localStation?.latitude ?? 0.0,
+                  longitude: localStation?.longitude ?? 0.0,
+                ));
+              }
+              // Only use API stops if we got valid data
+              if (apiStops.isNotEmpty) {
+                state = state.copyWith(trainRouteStops: apiStops);
+              }
+            }
+          }
+        }
+      }
+
+      // 4. Auto-fill endpoints if not yet set (use resolved stop data)
+      final resolvedStops = state.trainRouteStops;
       if (state.boardingStation == null || state.destinationStation == null) {
-        if (stops.isNotEmpty) {
+        if (resolvedStops.isNotEmpty) {
           if (state.boardingStation == null) {
             state = state.copyWith(
-                boardingStation: _stopToStation(stops.first));
+                boardingStation: _stopToStation(resolvedStops.first));
           }
           if (state.destinationStation == null) {
             state = state.copyWith(
-                destinationStation: _stopToStation(stops.last));
+                destinationStation: _stopToStation(resolvedStops.last));
           }
         } else {
-          // Fallback: use endpoint codes from train_routes table
-          final endpoints = await _trainRepo.getTrainEndpoints(value);
+          // Last resort: use endpoint codes from train_routes table
+          final endpoints = await _trainRepo.getTrainEndpoints(trainNumber);
           if (endpoints != null) {
             if (state.boardingStation == null) {
               final from =
@@ -218,15 +298,6 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
               if (to != null) state = state.copyWith(destinationStation: to);
             }
           }
-        }
-      }
-
-      // 4. Fallback to remote API for 5-digit numbers with no local match
-      if (value.length == 5 && state.trainName.isEmpty) {
-        final details = await _trainApi.getTrainDetails(value);
-        final remoteName = details?['train_name'] as String?;
-        if (remoteName != null && remoteName.isNotEmpty) {
-          state = state.copyWith(trainName: remoteName);
         }
       }
     } catch (_) {
