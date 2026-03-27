@@ -6,7 +6,8 @@
       "Bash(./gradlew assembleDebug --stacktrace)",
       "Bash(./gradlew assembleDebug --info)",
       "Bash(echo $JAVA_HOME)",
-      "Bash(flutter --version)"
+      "Bash(flutter --version)",
+      "Bash(xargs grep:*)"
     ]
   }
 }

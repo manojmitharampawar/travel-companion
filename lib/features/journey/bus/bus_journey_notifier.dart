@@ -1,8 +1,11 @@
+import 'dart:developer' as dev;
+
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:travel_companion/core/services/routing_service.dart';
+import 'package:travel_companion/core/services/tile_cache_service.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
@@ -30,6 +33,11 @@ class BusJourneyState {
   final RouteResult? routeResult;
   final bool isFetchingRoute;
 
+  // Offline tile cache
+  final bool isCachingTiles;
+  final int tileCacheProgress; // 0-100
+  final bool tilesCached;
+
   BusJourneyState({
     this.routeNumber = '',
     this.operatorName = '',
@@ -43,6 +51,9 @@ class BusJourneyState {
     this.savedSuccessfully = false,
     this.routeResult,
     this.isFetchingRoute = false,
+    this.isCachingTiles = false,
+    this.tileCacheProgress = 0,
+    this.tilesCached = false,
   }) : journeyDate = journeyDate ?? DateTime.now();
 
   BusJourneyState copyWith({
@@ -63,6 +74,9 @@ class BusJourneyState {
     RouteResult? routeResult,
     bool clearRoute = false,
     bool? isFetchingRoute,
+    bool? isCachingTiles,
+    int? tileCacheProgress,
+    bool? tilesCached,
   }) {
     return BusJourneyState(
       routeNumber: routeNumber ?? this.routeNumber,
@@ -77,6 +91,9 @@ class BusJourneyState {
       savedSuccessfully: savedSuccessfully ?? this.savedSuccessfully,
       routeResult: clearRoute ? null : (routeResult ?? this.routeResult),
       isFetchingRoute: isFetchingRoute ?? this.isFetchingRoute,
+      isCachingTiles: isCachingTiles ?? this.isCachingTiles,
+      tileCacheProgress: tileCacheProgress ?? this.tileCacheProgress,
+      tilesCached: tilesCached ?? this.tilesCached,
     );
   }
 }
@@ -190,7 +207,74 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
     }
   }
 
-  /// Validates and persists the journey.
+  /// Pre-downloads map tiles for offline use along the route.
+  Future<void> downloadMapForOffline() async {
+    final route = state.routeResult;
+    final o = state.origin;
+    final d = state.destination;
+    if (o == null || d == null) return;
+
+    state = state.copyWith(isCachingTiles: true, tileCacheProgress: 0, tilesCached: false);
+
+    try {
+      const tileUrl = 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png';
+
+      if (route != null && route.isNotEmpty) {
+        // Cache along the OSRM road route
+        await TileCacheService.preDownloadRoute(
+          routePoints: route.points,
+          urlTemplate: tileUrl,
+          minZoom: 10,
+          maxZoom: 15,
+          corridorPadding: 1,
+          onProgress: (done, total) {
+            if (mounted && total > 0) {
+              state = state.copyWith(
+                tileCacheProgress: ((done / total) * 100).round(),
+              );
+            }
+          },
+        );
+      } else {
+        // No route yet — cache around origin and destination
+        await TileCacheService.preDownloadPoints(
+          points: [
+            LatLng(o.latitude, o.longitude),
+            LatLng(d.latitude, d.longitude),
+          ],
+          urlTemplate: tileUrl,
+          minZoom: 12,
+          maxZoom: 16,
+          padding: 2,
+          onProgress: (done, total) {
+            if (mounted && total > 0) {
+              state = state.copyWith(
+                tileCacheProgress: ((done / total) * 100).round(),
+              );
+            }
+          },
+        );
+      }
+
+      if (mounted) {
+        state = state.copyWith(
+          isCachingTiles: false,
+          tileCacheProgress: 100,
+          tilesCached: true,
+        );
+      }
+
+      final cacheSize = await TileCacheService.getCacheSizeText();
+      dev.log('Tile cache complete. Total cache size: $cacheSize', name: 'BusJourney');
+    } catch (e) {
+      dev.log('Tile caching failed: $e', name: 'BusJourney');
+      if (mounted) {
+        state = state.copyWith(isCachingTiles: false);
+      }
+    }
+  }
+
+  /// Validates and persists the journey, then pre-caches map tiles.
   Future<void> save() async {
     final s = state;
     if (s.origin == null) {
@@ -221,6 +305,22 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
         createdAt: DateTime.now(),
       );
       await _journeyRepo.insertJourney(journey);
+
+      // Pre-cache map tiles in background, detached from notifier lifecycle.
+      // This runs independently so disposing the notifier won't cause crashes.
+      final routePoints = s.routeResult?.points ?? [];
+      final originLatLng = LatLng(s.origin!.latitude, s.origin!.longitude);
+      final destLatLng = LatLng(s.destination!.latitude, s.destination!.longitude);
+      TileCacheService.preDownloadRoute(
+        routePoints: routePoints.isNotEmpty ? routePoints : [originLatLng, destLatLng],
+        minZoom: 10,
+        maxZoom: 15,
+      ).then((_) {
+        dev.log('Background tile pre-cache complete', name: 'BusJourney');
+      }).catchError((e) {
+        dev.log('Background tile pre-cache failed: $e', name: 'BusJourney');
+      });
+
       state = state.copyWith(isSaving: false, savedSuccessfully: true);
     } catch (e) {
       state = state.copyWith(isSaving: false, errorMessage: 'Failed to save: $e');

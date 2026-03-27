@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 import 'package:dio/dio.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -61,6 +63,7 @@ class RoutingService {
           ';${destination.longitude},${destination.latitude}'
           '?overview=full&geometries=geojson';
 
+      dev.log('RoutingService.fetchRoute: $url', name: 'Routing');
       final resp = await _dio.get<Map<String, dynamic>>(url);
       final data = resp.data;
       if (data == null) return RouteResult.empty;
@@ -90,7 +93,8 @@ class RoutingService {
         distanceKm: distanceM / 1000,
         durationMinutes: durationS / 60,
       );
-    } catch (_) {
+    } catch (e, st) {
+      dev.log('RoutingService.fetchRoute FAILED: $e', name: 'Routing', error: e, stackTrace: st);
       return RouteResult.empty;
     }
   }

@@ -1,3 +1,5 @@
+import 'dart:developer' as dev;
+
 import 'package:dio/dio.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 
@@ -7,10 +9,9 @@ class GeocodingService {
   GeocodingService._();
 
   static final _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 8),
-    receiveTimeout: const Duration(seconds: 8),
+    connectTimeout: const Duration(seconds: 12),
+    receiveTimeout: const Duration(seconds: 12),
     headers: {
-      // Nominatim requires a meaningful User-Agent (app name + contact).
       'User-Agent': 'TravelCompanionApp/1.0 (contact@travelcompanion.app)',
       'Accept-Language': 'en',
     },
@@ -21,6 +22,7 @@ class GeocodingService {
   static Future<List<LocationPoint>> search(String query) async {
     if (query.trim().isEmpty) return [];
     try {
+      dev.log('GeocodingService.search: querying "$query"', name: 'Geocoding');
       final resp = await _dio.get<List<dynamic>>(
         'https://nominatim.openstreetmap.org/search',
         queryParameters: {
@@ -33,12 +35,11 @@ class GeocodingService {
         },
       );
       final data = resp.data ?? [];
+      dev.log('GeocodingService.search: got ${data.length} results', name: 'Geocoding');
       return data.map((e) {
         final map = e as Map<String, dynamic>;
         final displayName = (map['display_name'] as String? ?? '');
-        // Short name = first segment before the first comma.
         final shortName = displayName.split(',').first.trim();
-        // Address detail snippet = second + third segments.
         final parts = displayName.split(',');
         final addressSnippet = parts.length > 2
             ? '${parts[1].trim()}, ${parts[2].trim()}'
@@ -52,7 +53,8 @@ class GeocodingService {
           address: addressSnippet.isNotEmpty ? addressSnippet : null,
         );
       }).toList();
-    } catch (_) {
+    } catch (e, st) {
+      dev.log('GeocodingService.search FAILED: $e', name: 'Geocoding', error: e, stackTrace: st);
       return [];
     }
   }
@@ -60,13 +62,14 @@ class GeocodingService {
   /// Reverse geocoding — lat/lon → [LocationPoint] with address.
   static Future<LocationPoint?> reverseGeocode(double lat, double lon) async {
     try {
+      dev.log('GeocodingService.reverseGeocode: ($lat, $lon)', name: 'Geocoding');
       final resp = await _dio.get<Map<String, dynamic>>(
         'https://nominatim.openstreetmap.org/reverse',
         queryParameters: {
           'lat': lat,
           'lon': lon,
           'format': 'json',
-          'zoom': 17, // neighbourhood level detail
+          'zoom': 17,
         },
       );
       final data = resp.data;
@@ -85,7 +88,8 @@ class GeocodingService {
         longitude: lon,
         address: addressSnippet.isNotEmpty ? addressSnippet : null,
       );
-    } catch (_) {
+    } catch (e, st) {
+      dev.log('GeocodingService.reverseGeocode FAILED: $e', name: 'Geocoding', error: e, stackTrace: st);
       return LocationPoint(
         name: 'Pinned Location',
         latitude: lat,

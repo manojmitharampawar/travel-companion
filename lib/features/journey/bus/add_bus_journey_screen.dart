@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:travel_companion/core/services/geocoding_service.dart';
 import 'package:travel_companion/core/services/routing_service.dart';
+import 'package:travel_companion/core/services/tile_cache_service.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/journey/bus/bus_journey_notifier.dart';
@@ -18,6 +19,7 @@ import 'package:travel_companion/features/map/bus_map_picker_screen.dart';
 const _accent = Color(0xFF2E7D32);
 const _originColor = Color(0xFF1A73E8);
 const _destColor = Color(0xFFD93025);
+const _kTileUrl = 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png';
 
 // ─────────────────────────────────────────────
 // Screen
@@ -174,6 +176,15 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
                         routeResult: state.routeResult,
                         isFetchingRoute: state.isFetchingRoute,
                       ),
+                    ),
+
+                  // ── Offline map download ───────────
+                  if (state.origin != null && state.destination != null)
+                    _OfflineMapCard(
+                      isCaching: state.isCachingTiles,
+                      progress: state.tileCacheProgress,
+                      isCached: state.tilesCached,
+                      onDownload: notifier.downloadMapForOffline,
                     ),
 
                   // ── Bus details ──────────────────
@@ -889,11 +900,8 @@ class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                userAgentPackageName: 'com.travel_companion.app',
-                fallbackUrl:
-                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: _kTileUrl,
+                tileProvider: CachedTileProvider(urlTemplate: _kTileUrl),
                 maxZoom: 19,
               ),
 
@@ -1117,6 +1125,143 @@ class _InfoChip extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Offline map download card
+// ─────────────────────────────────────────────
+
+class _OfflineMapCard extends StatelessWidget {
+  final bool isCaching;
+  final int progress;
+  final bool isCached;
+  final VoidCallback onDownload;
+
+  const _OfflineMapCard({
+    required this.isCaching,
+    required this.progress,
+    required this.isCached,
+    required this.onDownload,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: isCached
+              ? const Color(0xFFE8F5E9)
+              : const Color(0xFFF5F5F5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isCached
+                ? _accent.withValues(alpha: 0.30)
+                : Colors.grey.shade300,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isCached
+                    ? _accent.withValues(alpha: 0.12)
+                    : Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(
+                isCached
+                    ? Icons.offline_pin_rounded
+                    : Icons.cloud_download_outlined,
+                size: 20,
+                color: isCached ? _accent : Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isCached
+                        ? 'Map saved for offline'
+                        : isCaching
+                            ? 'Downloading map tiles...'
+                            : 'Save map for offline use',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isCached ? _accent : Colors.grey.shade800,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  if (isCaching)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress / 100,
+                        minHeight: 4,
+                        backgroundColor: Colors.grey.shade300,
+                        valueColor:
+                            const AlwaysStoppedAnimation<Color>(_accent),
+                      ),
+                    )
+                  else
+                    Text(
+                      isCached
+                          ? 'Route map available without internet'
+                          : 'Download route tiles for journey tracking',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            if (!isCached && !isCaching)
+              TextButton(
+                onPressed: onDownload,
+                style: TextButton.styleFrom(
+                  foregroundColor: _accent,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  textStyle: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                child: const Text('Download'),
+              ),
+            if (isCaching)
+              Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Text(
+                  '$progress%',
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: _accent,
+                  ),
+                ),
+              ),
+            if (isCached)
+              const Padding(
+                padding: EdgeInsets.only(left: 8),
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  size: 20,
+                  color: _accent,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

@@ -6,7 +6,10 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:travel_companion/core/services/geocoding_service.dart';
+import 'package:travel_companion/core/services/tile_cache_service.dart';
 import 'package:travel_companion/data/models/location_point.dart';
+
+const _kTileUrl = 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png';
 
 /// Full-screen map picker for bus journeys.
 ///
@@ -254,11 +257,8 @@ class _BusMapPickerScreenState extends State<BusMapPickerScreen>
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-                userAgentPackageName: 'com.travel_companion.app',
-                fallbackUrl:
-                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: _kTileUrl,
+                tileProvider: CachedTileProvider(urlTemplate: _kTileUrl),
                 maxZoom: 19,
               ),
               if (_pinnedLocation != null)

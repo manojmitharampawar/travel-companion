@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:travel_companion/core/services/tile_cache_service.dart';
 import 'package:travel_companion/data/models/location_point.dart';
+
+const _kTileUrl = 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png';
 
 /// Bus-specific map widget showing road-based route with OSRM routing.
 /// 
@@ -93,12 +96,10 @@ class _BusJourneyMapWidgetState extends State<BusJourneyMapWidget> {
         initialZoom: _calculateZoom(),
       ),
       children: [
-        // CartoDB Voyager basemap (Google Maps-like)
+        // CartoDB Voyager basemap with offline cache
         TileLayer(
-          urlTemplate:
-              'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-          userAgentPackageName: 'com.travel_companion.app',
-          fallbackUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          urlTemplate: _kTileUrl,
+          tileProvider: CachedTileProvider(urlTemplate: _kTileUrl),
         ),
 
         // Road route polyline (solid)
