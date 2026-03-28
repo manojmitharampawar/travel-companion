@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_companion/data/models/station.dart';
@@ -312,9 +314,11 @@ class StationAutocompleteField extends StatefulWidget {
 class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  final _layerLink = LayerLink();
   List<Station> _suggestions = [];
-  bool _showDropdown = false;
   bool _isSearching = false;
+  OverlayEntry? _overlayEntry;
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -322,11 +326,7 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
     if (widget.selected != null) {
       _controller.text = widget.selected!.displayName;
     }
-    _focusNode.addListener(() {
-      if (!_focusNode.hasFocus && mounted) {
-        setState(() => _showDropdown = false);
-      }
-    });
+    _focusNode.addListener(_onFocusChange);
   }
 
   @override
@@ -334,135 +334,178 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
     super.didUpdateWidget(old);
     if (widget.selected != old.selected) {
       _controller.text = widget.selected?.displayName ?? '';
-      if (widget.selected != null) {
-        setState(() => _showDropdown = false);
-      }
+      if (widget.selected != null) _hideOverlay();
+    }
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus) {
+      // Delay hide so tap on suggestion registers first
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted && !_focusNode.hasFocus) _hideOverlay();
+      });
     }
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
+    _hideOverlay();
+    _focusNode.removeListener(_onFocusChange);
     _controller.dispose();
     _focusNode.dispose();
     super.dispose();
   }
 
+  void _showOverlay() {
+    _hideOverlay();
+    if (_suggestions.isEmpty) return;
+
+    final overlay = Overlay.of(context);
+    final renderBox = context.findRenderObject() as RenderBox?;
+    final fieldWidth = renderBox?.size.width ?? 300;
+
+    _overlayEntry = OverlayEntry(
+      builder: (ctx) => Positioned(
+        width: fieldWidth,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: const Offset(0, 58), // below the text field
+          child: Material(
+            elevation: 6,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              constraints: const BoxConstraints(maxHeight: 240),
+              decoration: BoxDecoration(
+                color: Theme.of(ctx).colorScheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Theme.of(ctx).colorScheme.outlineVariant,
+                ),
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                itemCount: _suggestions.length,
+                itemBuilder: (_, i) {
+                  final s = _suggestions[i];
+                  return ListTile(
+                    dense: true,
+                    leading: CircleAvatar(
+                      radius: 16,
+                      backgroundColor:
+                          widget.accentColor.withValues(alpha: 0.12),
+                      child: Text(
+                        s.code.length >= 2
+                            ? s.code.substring(0, 2)
+                            : s.code,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: widget.accentColor,
+                        ),
+                      ),
+                    ),
+                    title: Text(s.name,
+                        style:
+                            const TextStyle(fontWeight: FontWeight.w500)),
+                    subtitle: Text(
+                      '${s.code}${s.state != null ? ' · ${s.state}' : ''}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    onTap: () => _select(s),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    overlay.insert(_overlayEntry!);
+  }
+
+  void _hideOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry?.dispose();
+    _overlayEntry = null;
+  }
+
   Future<void> _search(String query) async {
+    _debounce?.cancel();
     if (query.length < 2) {
-      setState(() {
-        _suggestions = [];
-        _showDropdown = false;
-      });
+      _suggestions = [];
+      _hideOverlay();
+      if (mounted) setState(() {});
       return;
     }
     setState(() => _isSearching = true);
-    try {
-      final results = await widget.searchFn(query);
-      if (mounted) {
-        setState(() {
+    _debounce = Timer(const Duration(milliseconds: 300), () async {
+      try {
+        final results = await widget.searchFn(query);
+        if (mounted) {
           _suggestions = results;
-          _showDropdown = results.isNotEmpty;
-        });
+          if (results.isNotEmpty) {
+            _showOverlay();
+          } else {
+            _hideOverlay();
+          }
+        }
+      } finally {
+        if (mounted) setState(() => _isSearching = false);
       }
-    } finally {
-      if (mounted) setState(() => _isSearching = false);
-    }
+    });
   }
 
   void _select(Station station) {
     _controller.text = station.displayName;
     _focusNode.unfocus();
-    setState(() => _showDropdown = false);
+    _hideOverlay();
     widget.onChanged(station);
   }
 
   void _clear() {
     _controller.clear();
-    setState(() {
-      _suggestions = [];
-      _showDropdown = false;
-    });
+    _suggestions = [];
+    _hideOverlay();
     widget.onChanged(null);
   }
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        TextFormField(
-          controller: _controller,
-          focusNode: _focusNode,
-          decoration: InputDecoration(
-            labelText: widget.label,
-            hintText: widget.hint,
-            prefixIcon: Icon(widget.leadingIcon),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            suffixIcon: _isSearching
-                ? const Padding(
-                    padding: EdgeInsets.all(14),
-                    child: SizedBox(
-                      width: 18, height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  )
-                : widget.selected != null
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
-                        onPressed: _clear,
-                      )
-                    : const Icon(Icons.search, size: 20),
-          ),
-          onChanged: _search,
-          validator: (_) => widget.validator?.call(widget.selected),
-        ),
-        if (_showDropdown)
-          Container(
-            margin: const EdgeInsets.only(top: 2),
-            constraints: const BoxConstraints(maxHeight: 220),
-            decoration: BoxDecoration(
-              color: scheme.surface,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: scheme.outlineVariant),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: ListView.builder(
-              shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              itemCount: _suggestions.length,
-              itemBuilder: (ctx, i) {
-                final s = _suggestions[i];
-                return ListTile(
-                  dense: true,
-                  leading: CircleAvatar(
-                    radius: 16,
-                    backgroundColor: widget.accentColor.withValues(alpha: 0.12),
-                    child: Text(
-                      s.code.length >= 2 ? s.code.substring(0, 2) : s.code,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: widget.accentColor,
-                      ),
-                    ),
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: TextFormField(
+        controller: _controller,
+        focusNode: _focusNode,
+        decoration: InputDecoration(
+          labelText: widget.label,
+          hintText: widget.hint,
+          prefixIcon: Icon(widget.leadingIcon),
+          border:
+              OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          suffixIcon: _isSearching
+              ? const Padding(
+                  padding: EdgeInsets.all(14),
+                  child: SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   ),
-                  title: Text(s.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                  subtitle: Text('${s.code}${s.state != null ? ' · ${s.state}' : ''}',
-                      style: const TextStyle(fontSize: 12)),
-                  onTap: () => _select(s),
-                );
-              },
-            ),
-          ),
-      ],
+                )
+              : widget.selected != null
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 18),
+                      onPressed: _clear,
+                    )
+                  : const Icon(Icons.search, size: 20),
+        ),
+        onChanged: _search,
+        validator: (_) => widget.validator?.call(widget.selected),
+      ),
     );
   }
 }

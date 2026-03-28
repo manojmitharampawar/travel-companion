@@ -5,6 +5,7 @@ import 'package:travel_companion/core/utils/date_utils.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/home/home_provider.dart';
+import 'package:travel_companion/providers/app_providers.dart';
 import 'package:travel_companion/features/journey/bus/add_bus_journey_screen.dart';
 import 'package:travel_companion/features/journey/journey_detail_screen.dart';
 import 'package:travel_companion/features/journey/local_train/add_local_train_journey_screen.dart';
@@ -295,13 +296,13 @@ class _AppBarHero extends StatelessWidget {
 // Journey Card — compact with left accent strip
 // ─────────────────────────────────────────────
 
-class _JourneyCard extends StatelessWidget {
+class _JourneyCard extends ConsumerWidget {
   final EnrichedJourney enrichedJourney;
 
   const _JourneyCard({required this.enrichedJourney});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final journey = enrichedJourney.journey;
     final isActive = journey.status == JourneyStatus.active;
     final isToday = journey.isToday;
@@ -376,6 +377,15 @@ class _JourneyCard extends StatelessWidget {
                                 ),
                                 const SizedBox(width: 8),
                                 _StatusBadge(status: journey.status),
+                                const SizedBox(width: 4),
+                                _FavoriteButton(
+                                  isFavorite: journey.isFavorite,
+                                  onToggle: () async {
+                                    final repo = ref.read(journeyRepositoryProvider);
+                                    await repo.toggleFavorite(journey.id!, !journey.isFavorite);
+                                    ref.invalidate(upcomingJourneysProvider);
+                                  },
+                                ),
                               ],
                             ),
 
@@ -578,6 +588,29 @@ class _StatusBadge extends StatelessWidget {
           color: color,
           fontSize: 10,
           fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _FavoriteButton extends StatelessWidget {
+  final bool isFavorite;
+  final VoidCallback onToggle;
+
+  const _FavoriteButton({required this.isFavorite, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggle,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: Icon(
+          isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+          size: 18,
+          color: isFavorite ? Colors.redAccent : Colors.grey.shade400,
         ),
       ),
     );

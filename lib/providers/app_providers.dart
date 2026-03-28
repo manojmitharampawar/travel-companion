@@ -4,6 +4,7 @@ import 'package:travel_companion/core/services/alarm_service.dart';
 import 'package:travel_companion/core/services/location_service.dart';
 import 'package:travel_companion/data/datasources/remote/train_status_api.dart';
 import 'package:travel_companion/data/repositories/journey_repository.dart';
+import 'package:travel_companion/data/repositories/local_train_repository.dart';
 import 'package:travel_companion/data/repositories/location_repository.dart';
 import 'package:travel_companion/data/repositories/metro_repository.dart';
 import 'package:travel_companion/data/repositories/station_repository.dart';
@@ -23,6 +24,10 @@ final trainRepositoryProvider = Provider<TrainRepository>((ref) {
 
 final metroRepositoryProvider = Provider<MetroRepository>((ref) {
   return MetroRepository();
+});
+
+final localTrainRepositoryProvider = Provider<LocalTrainRepository>((ref) {
+  return LocalTrainRepository();
 });
 
 final locationRepositoryProvider = Provider<LocationRepository>((ref) {

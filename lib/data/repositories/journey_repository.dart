@@ -44,8 +44,19 @@ class JourneyRepository {
     return Journey.fromMap(results.first);
   }
 
+  /// Auto-completes past-dated upcoming/active journeys, then returns remaining upcoming ones.
   Future<List<Journey>> getUpcomingJourneys() async {
     final db = await AppDatabase.database;
+
+    // Move past-dated journeys (before today) from upcoming/active → completed
+    final todayStr = DateTime.now().toIso8601String().substring(0, 10);
+    await db.update(
+      'journeys',
+      {'status': 'completed'},
+      where: "status IN ('upcoming', 'active') AND journey_date < ? AND (repeat_days IS NULL OR repeat_days = 0)",
+      whereArgs: [todayStr],
+    );
+
     final results = await db.query(
       'journeys',
       where: 'status IN (?, ?) AND (repeat_days IS NULL OR repeat_days = 0)',

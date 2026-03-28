@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:travel_companion/data/models/local_train_line.dart';
+import 'package:travel_companion/data/models/local_train_schedule.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/journey/local_train/local_train_journey_notifier.dart';
 import 'package:travel_companion/features/journey/widgets/journey_form_widgets.dart';
@@ -16,29 +16,14 @@ class AddLocalTrainJourneyScreen extends ConsumerStatefulWidget {
 
 class _AddLocalTrainJourneyScreenState
     extends ConsumerState<AddLocalTrainJourneyScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _lineCtrl = TextEditingController();
-  final _trainNumCtrl = TextEditingController();
-
   static const _type = TransportType.localTrain;
-  static const _accent = Color(0xFFE65100); // Deep orange
-
-  @override
-  void dispose() {
-    _lineCtrl.dispose();
-    _trainNumCtrl.dispose();
-    super.dispose();
-  }
+  static const _accent = Color(0xFFE65100);
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(localTrainJourneyNotifierProvider);
     final notifier = ref.read(localTrainJourneyNotifierProvider.notifier);
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-
-    final hasBothStations =
-        state.boardingStation != null && state.destinationStation != null;
+    final scheme = Theme.of(context).colorScheme;
 
     ref.listen<LocalTrainJourneyState>(localTrainJourneyNotifierProvider,
         (prev, next) {
@@ -57,207 +42,487 @@ class _AddLocalTrainJourneyScreenState
 
     return Scaffold(
       backgroundColor: scheme.surfaceContainerLowest,
-      body: Form(
-        key: _formKey,
-        child: CustomScrollView(
-          slivers: [
-            // ── App Bar ──────────────────────────────
-            Builder(builder: (ctx) {
-              final topPad = MediaQuery.paddingOf(ctx).top;
-              return SliverAppBar(
-                pinned: true,
-                expandedHeight: topPad + kToolbarHeight + 80,
-                backgroundColor: _accent,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                flexibleSpace: FlexibleSpaceBar(
-                  collapseMode: CollapseMode.pin,
-                  background: TransportHeroHeader(
-                    type: _type,
-                    title: 'Add Local Train Journey',
-                    subtitle: 'Track your daily local train commute',
+      body: CustomScrollView(
+        slivers: [
+          // ── App Bar ──
+          Builder(builder: (ctx) {
+            final topPad = MediaQuery.paddingOf(ctx).top;
+            return SliverAppBar(
+              pinned: true,
+              expandedHeight: topPad + kToolbarHeight + 80,
+              backgroundColor: _accent,
+              foregroundColor: Colors.white,
+              elevation: 0,
+              flexibleSpace: FlexibleSpaceBar(
+                collapseMode: CollapseMode.pin,
+                background: TransportHeroHeader(
+                  type: _type,
+                  title: 'Local Train Schedule',
+                  subtitle: 'Find next trains & start tracking',
+                ),
+              ),
+            );
+          }),
+
+          // ── Step indicator ──
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+              child: _StepIndicator(
+                currentStep: state.currentStep,
+                accent: _accent,
+              ),
+            ),
+          ),
+
+          // ── Content based on step ──
+          SliverPadding(
+            padding: const EdgeInsets.only(top: 8),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                // ── STEP 0: Line selection ──
+                if (state.currentStep == 0) ...[
+                  _LineSelectionSection(
+                    lines: state.availableLines,
+                    isLoading: state.isLoadingLines,
+                    onSelect: notifier.selectLine,
+                  ),
+                ],
+
+                // ── STEP 1: Station selection ──
+                if (state.currentStep >= 1) ...[
+                  _SelectedLineChip(
+                    line: state.selectedLine!,
+                    onChangePressed: notifier.goBackToLineSelection,
+                  ),
+                  _StationSelectionSection(
+                    stations: state.lineStations,
+                    isLoading: state.isLoadingStations,
+                    sourceStation: state.sourceStation,
+                    destStation: state.destStation,
+                    onSourceChanged: notifier.setSourceStation,
+                    onDestChanged: notifier.setDestStation,
+                    onSwap: notifier.swapStations,
+                    accent: _accent,
+                  ),
+                ],
+
+                // ── STEP 2: Schedule results + save ──
+                if (state.currentStep >= 2) ...[
+                  _ScheduleResultsSection(
+                    trains: state.upcomingTrains,
+                    isLoading: state.isLoadingSchedule,
+                    selectedTrain: state.selectedTrain,
+                    onTrainSelected: notifier.selectTrain,
+                    onRefresh: notifier.fetchUpcomingTrains,
+                    accent: _accent,
+                  ),
+                  if (state.selectedTrain != null) ...[
+                    // Class selector
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                      child: FormSectionCard(
+                        title: 'OPTIONS',
+                        icon: Icons.tune,
+                        accentColor: _accent,
+                        children: [
+                          DropdownButtonFormField<String>(
+                            initialValue: (state.travelClass == null ||
+                                    state.travelClass!.isEmpty)
+                                ? null
+                                : state.travelClass,
+                            decoration: InputDecoration(
+                              labelText: 'Class (optional)',
+                              prefixIcon: const Icon(
+                                  Icons.airline_seat_recline_normal_outlined),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                            items: const [
+                              DropdownMenuItem(
+                                  value: 'FC',
+                                  child: Text('First Class \u2014 FC')),
+                              DropdownMenuItem(
+                                  value: 'SC',
+                                  child: Text('Second Class \u2014 SC')),
+                              DropdownMenuItem(
+                                  value: 'Ladies',
+                                  child: Text('Ladies Coach')),
+                              DropdownMenuItem(
+                                  value: 'Divyang',
+                                  child: Text('Divyang Coach')),
+                            ],
+                            onChanged: notifier.setTravelClass,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SaveJourneyButton(
+                      isSaving: state.isSaving,
+                      accentColor: _accent,
+                      label: 'Start Journey & Track',
+                      onPressed: () => notifier.save(),
+                    ),
+                  ],
+                ],
+
+                const SizedBox(height: 32),
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Step Indicator
+// ─────────────────────────────────────────────
+
+class _StepIndicator extends StatelessWidget {
+  final int currentStep;
+  final Color accent;
+
+  const _StepIndicator({required this.currentStep, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    const labels = ['Select Line', 'Pick Stations', 'Choose Train'];
+    final scheme = Theme.of(context).colorScheme;
+
+    return Row(
+      children: List.generate(3, (i) {
+        final isActive = i <= currentStep;
+        final isCurrent = i == currentStep;
+        return Expanded(
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: isActive ? accent : scheme.surfaceContainerHighest,
+                  shape: BoxShape.circle,
+                  border: isCurrent
+                      ? Border.all(color: accent, width: 2.5)
+                      : null,
+                ),
+                child: Center(
+                  child: isActive && i < currentStep
+                      ? const Icon(Icons.check, size: 16, color: Colors.white)
+                      : Text(
+                          '${i + 1}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isActive
+                                ? Colors.white
+                                : scheme.onSurfaceVariant,
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  labels[i],
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+                    color: isActive ? accent : scheme.onSurfaceVariant,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        );
+      }),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Line Selection
+// ─────────────────────────────────────────────
+
+class _LineSelectionSection extends StatelessWidget {
+  final List<LocalTrainLine> lines;
+  final bool isLoading;
+  final ValueChanged<LocalTrainLine> onSelect;
+
+  const _LineSelectionSection({
+    required this.lines,
+    required this.isLoading,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(40),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 12),
+            child: Text(
+              'Choose your line',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+          ...lines.map((line) => _LineCard(line: line, onTap: () => onSelect(line))),
+        ],
+      ),
+    );
+  }
+}
+
+class _LineCard extends StatelessWidget {
+  final LocalTrainLine line;
+  final VoidCallback onTap;
+
+  const _LineCard({required this.line, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: scheme.outlineVariant),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 6,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: line.lineColor,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      line.lineName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${line.startStation ?? ''} \u2192 ${line.endStation ?? ''}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: line.lineColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  line.lineCode,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: line.lineColor,
                   ),
                 ),
-              );
-            }),
-
-            // ── Content ──────────────────────────────
-            SliverPadding(
-              padding: const EdgeInsets.only(top: 16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // ── SECTION: Train Details ─────────
-                  FormSectionCard(
-                    title: 'TRAIN DETAILS',
-                    icon: Icons.directions_railway,
-                    accentColor: _accent,
-                    children: [
-                      TextFormField(
-                        controller: _lineCtrl,
-                        decoration: InputDecoration(
-                          labelText: 'Line / Route Name (optional)',
-                          hintText:
-                              'e.g. Central Line, Harbour Line, Western',
-                          prefixIcon:
-                              const Icon(Icons.linear_scale_outlined),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onChanged: notifier.setLineName,
-                      ),
-                      fieldSpacing,
-
-                      TextFormField(
-                        controller: _trainNumCtrl,
-                        decoration: InputDecoration(
-                          labelText: 'Train Number (optional)',
-                          hintText: 'e.g. 90210',
-                          prefixIcon: const Icon(Icons.pin_outlined),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          helperText:
-                              'Leave blank for any train on this route',
-                        ),
-                        keyboardType: TextInputType.number,
-                        maxLength: 6,
-                        onChanged: notifier.setTrainNumber,
-                      ),
-                    ],
-                  ),
-
-                  // ── SECTION: Route ─────────────────
-                  FormSectionCard(
-                    title: 'JOURNEY ROUTE',
-                    icon: Icons.alt_route,
-                    accentColor: _accent,
-                    children: [
-                      StationAutocompleteField(
-                        label: 'Boarding Station *',
-                        hint: 'Search by name or code',
-                        leadingIcon: Icons.trip_origin,
-                        selected: state.boardingStation,
-                        searchFn: notifier.searchLocalTrainStations,
-                        onChanged: notifier.setBoardingStation,
-                        accentColor: _accent,
-                        validator: (s) =>
-                            s == null ? 'Select boarding station' : null,
-                      ),
-
-                      const SizedBox(height: 8),
-                      // Route connector line
-                      Padding(
-                        padding: const EdgeInsets.only(left: 20),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 2,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.orange.shade700,
-                                    Colors.deepOrange.shade800,
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      StationAutocompleteField(
-                        label: 'Destination Station *',
-                        hint: 'Search by name or code',
-                        leadingIcon: Icons.place,
-                        selected: state.destinationStation,
-                        searchFn: notifier.searchLocalTrainStations,
-                        onChanged: notifier.setDestinationStation,
-                        accentColor: _accent,
-                        validator: (s) =>
-                            s == null ? 'Select destination station' : null,
-                      ),
-                    ],
-                  ),
-
-                  // ── SECTION: Map Preview ───────────
-                  if (hasBothStations)
-                    _LocalTrainMapPreview(
-                      boardingLat: state.boardingStation!.latitude,
-                      boardingLng: state.boardingStation!.longitude,
-                      boardingName: state.boardingStation!.name,
-                      boardingCode: state.boardingStation!.code,
-                      destinationLat: state.destinationStation!.latitude,
-                      destinationLng: state.destinationStation!.longitude,
-                      destinationName: state.destinationStation!.name,
-                      destinationCode: state.destinationStation!.code,
-                      accentColor: _accent,
-                    ),
-
-                  // ── SECTION: Journey Info ──────────
-                  FormSectionCard(
-                    title: 'JOURNEY INFO',
-                    icon: Icons.info_outline,
-                    accentColor: _accent,
-                    children: [
-                      JourneyDateField(
-                        value: state.journeyDate,
-                        onChanged: notifier.setJourneyDate,
-                        accentColor: _accent,
-                      ),
-                      fieldSpacing,
-
-                      JourneyTimeField(
-                        value: state.departureTime,
-                        onChanged: notifier.setDepartureTime,
-                        accentColor: _accent,
-                      ),
-                      fieldSpacing,
-
-                      // Class dropdown
-                      DropdownButtonFormField<String>(
-                        initialValue: (state.travelClass == null || state.travelClass!.isEmpty)
-                            ? null
-                            : state.travelClass,
-                        decoration: InputDecoration(
-                          labelText: 'Class (optional)',
-                          prefixIcon: const Icon(
-                              Icons.airline_seat_recline_normal_outlined),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'FC',
-                              child: Text('First Class \u2014 FC')),
-                          DropdownMenuItem(
-                              value: 'SC',
-                              child: Text('Second Class \u2014 SC')),
-                          DropdownMenuItem(
-                              value: 'Ladies',
-                              child: Text('Ladies Coach')),
-                          DropdownMenuItem(
-                              value: 'Divyang',
-                              child: Text('Divyang Coach')),
-                        ],
-                        onChanged: notifier.setTravelClass,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ],
-                  ),
-
-                  // ── Save Button ────────────────────
-                  SaveJourneyButton(
-                    isSaving: state.isSaving,
-                    accentColor: _accent,
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) notifier.save();
-                    },
-                  ),
-                ]),
               ),
+              const SizedBox(width: 8),
+              Icon(Icons.chevron_right, color: scheme.onSurfaceVariant),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Selected Line Chip (shown in steps 1+)
+// ─────────────────────────────────────────────
+
+class _SelectedLineChip extends StatelessWidget {
+  final LocalTrainLine line;
+  final VoidCallback onChangePressed;
+
+  const _SelectedLineChip({
+    required this.line,
+    required this.onChangePressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Row(
+        children: [
+          Container(
+            width: 5,
+            height: 22,
+            decoration: BoxDecoration(
+              color: line.lineColor,
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Text(
+            line.lineName,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: line.lineColor,
+            ),
+          ),
+          const Spacer(),
+          TextButton.icon(
+            onPressed: onChangePressed,
+            icon: const Icon(Icons.swap_horiz, size: 16),
+            label: const Text('Change', style: TextStyle(fontSize: 12)),
+            style: TextButton.styleFrom(
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Station Selection
+// ─────────────────────────────────────────────
+
+class _StationSelectionSection extends StatelessWidget {
+  final List<LocalTrainStation> stations;
+  final bool isLoading;
+  final LocalTrainStation? sourceStation;
+  final LocalTrainStation? destStation;
+  final ValueChanged<LocalTrainStation?> onSourceChanged;
+  final ValueChanged<LocalTrainStation?> onDestChanged;
+  final VoidCallback onSwap;
+  final Color accent;
+
+  const _StationSelectionSection({
+    required this.stations,
+    required this.isLoading,
+    required this.sourceStation,
+    required this.destStation,
+    required this.onSourceChanged,
+    required this.onDestChanged,
+    required this.onSwap,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(40),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: scheme.outlineVariant),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child:
+                      Icon(Icons.alt_route, size: 16, color: accent),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'SELECT STATIONS',
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: accent,
+                        letterSpacing: 0.3,
+                      ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            // Source station dropdown
+            _StationDropdown(
+              label: 'From (Source)',
+              icon: Icons.trip_origin,
+              iconColor: Colors.green.shade600,
+              stations: stations,
+              selected: sourceStation,
+              onChanged: onSourceChanged,
+              excludeStation: destStation,
+            ),
+            const SizedBox(height: 8),
+            // Swap button
+            Center(
+              child: IconButton.filled(
+                onPressed: onSwap,
+                icon: const Icon(Icons.swap_vert, size: 20),
+                style: IconButton.styleFrom(
+                  backgroundColor: accent.withValues(alpha: 0.12),
+                  foregroundColor: accent,
+                ),
+                tooltip: 'Swap stations',
+              ),
+            ),
+            const SizedBox(height: 8),
+            // Destination station dropdown
+            _StationDropdown(
+              label: 'To (Destination)',
+              icon: Icons.place,
+              iconColor: Colors.red.shade600,
+              stations: stations,
+              selected: destStation,
+              onChanged: onDestChanged,
+              excludeStation: sourceStation,
             ),
           ],
         ),
@@ -266,43 +531,89 @@ class _AddLocalTrainJourneyScreenState
   }
 }
 
+class _StationDropdown extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color iconColor;
+  final List<LocalTrainStation> stations;
+  final LocalTrainStation? selected;
+  final ValueChanged<LocalTrainStation?> onChanged;
+  final LocalTrainStation? excludeStation;
+
+  const _StationDropdown({
+    required this.label,
+    required this.icon,
+    required this.iconColor,
+    required this.stations,
+    required this.selected,
+    required this.onChanged,
+    this.excludeStation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredStations = excludeStation != null
+        ? stations.where((s) => s.id != excludeStation!.id).toList()
+        : stations;
+
+    return DropdownButtonFormField<int>(
+      initialValue: selected?.id,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: iconColor),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
+      isExpanded: true,
+      menuMaxHeight: 300,
+      borderRadius: BorderRadius.circular(12),
+      items: filteredStations.map((s) {
+        return DropdownMenuItem<int>(
+          value: s.id,
+          child: Text(
+            s.name,
+            style: const TextStyle(fontSize: 14),
+            overflow: TextOverflow.ellipsis,
+          ),
+        );
+      }).toList(),
+      onChanged: (id) {
+        if (id == null) {
+          onChanged(null);
+        } else {
+          final station = stations.firstWhere((s) => s.id == id);
+          onChanged(station);
+        }
+      },
+    );
+  }
+}
+
 // ─────────────────────────────────────────────
-// Inline Map Preview
+// Schedule Results
 // ─────────────────────────────────────────────
 
-class _LocalTrainMapPreview extends StatelessWidget {
-  final double boardingLat;
-  final double boardingLng;
-  final String boardingName;
-  final String boardingCode;
-  final double destinationLat;
-  final double destinationLng;
-  final String destinationName;
-  final String destinationCode;
-  final Color accentColor;
+class _ScheduleResultsSection extends StatelessWidget {
+  final List<UpcomingTrain> trains;
+  final bool isLoading;
+  final UpcomingTrain? selectedTrain;
+  final ValueChanged<UpcomingTrain> onTrainSelected;
+  final VoidCallback onRefresh;
+  final Color accent;
 
-  const _LocalTrainMapPreview({
-    required this.boardingLat,
-    required this.boardingLng,
-    required this.boardingName,
-    required this.boardingCode,
-    required this.destinationLat,
-    required this.destinationLng,
-    required this.destinationName,
-    required this.destinationCode,
-    required this.accentColor,
+  const _ScheduleResultsSection({
+    required this.trains,
+    required this.isLoading,
+    required this.selectedTrain,
+    required this.onTrainSelected,
+    required this.onRefresh,
+    required this.accent,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final origin = LatLng(boardingLat, boardingLng);
-    final destination = LatLng(destinationLat, destinationLng);
-
-    // Compute bounds with padding
-    final midLat = (boardingLat + destinationLat) / 2;
-    final midLng = (boardingLng + destinationLng) / 2;
-    final center = LatLng(midLat, midLng);
 
     return Card(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
@@ -311,212 +622,282 @@ class _LocalTrainMapPreview extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: scheme.outlineVariant),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Section header inside the card
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
-            child: Row(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.12),
+                    color: accent.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child:
-                      Icon(Icons.map_outlined, size: 16, color: accentColor),
+                  child: Icon(Icons.schedule, size: 16, color: accent),
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  'ROUTE PREVIEW',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: accentColor,
-                        letterSpacing: 0.3,
-                      ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // Map
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: SizedBox(
-                height: 200,
-                child: FlutterMap(
-                  options: MapOptions(
-                    initialCenter: center,
-                    initialZoom: _estimateZoom(origin, destination),
-                    interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.none,
-                    ),
+                Expanded(
+                  child: Text(
+                    'NEXT TRAINS',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: accent,
+                          letterSpacing: 0.3,
+                        ),
                   ),
-                  children: [
-                    TileLayer(
-                      urlTemplate:
-                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                      userAgentPackageName: 'com.travel.companion',
-                    ),
-                    PolylineLayer(
-                      polylines: [
-                        Polyline(
-                          points: [origin, destination],
-                          strokeWidth: 3.5,
-                          color: accentColor,
-                        ),
-                      ],
-                    ),
-                    MarkerLayer(
-                      markers: [
-                        Marker(
-                          point: origin,
-                          width: 36,
-                          height: 36,
-                          child: _StationMarker(
-                            color: Colors.green.shade600,
-                            icon: Icons.trip_origin,
-                          ),
-                        ),
-                        Marker(
-                          point: destination,
-                          width: 36,
-                          height: 36,
-                          child: _StationMarker(
-                            color: Colors.red.shade600,
-                            icon: Icons.place,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
                 ),
-              ),
-            ),
-          ),
-
-          // Station labels below the map
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-            child: Row(
-              children: [
-                _StationLabel(
-                  icon: Icons.trip_origin,
-                  iconColor: Colors.green.shade600,
-                  name: boardingName,
-                  code: boardingCode,
-                ),
-                const Spacer(),
-                Icon(Icons.arrow_forward,
-                    size: 16, color: scheme.onSurfaceVariant),
-                const Spacer(),
-                _StationLabel(
-                  icon: Icons.place,
-                  iconColor: Colors.red.shade600,
-                  name: destinationName,
-                  code: destinationCode,
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                IconButton(
+                  onPressed: onRefresh,
+                  icon: const Icon(Icons.refresh, size: 20),
+                  tooltip: 'Refresh',
+                  style: IconButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 14),
+            if (isLoading)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (trains.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.train_outlined,
+                          size: 40, color: scheme.onSurfaceVariant),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No more trains today',
+                        style: TextStyle(color: scheme.onSurfaceVariant),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Try swapping direction or check tomorrow',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ...trains.map((t) => _TrainCard(
+                    train: t,
+                    isSelected: selectedTrain?.schedule.id == t.schedule.id,
+                    onTap: () => onTrainSelected(t),
+                    accent: accent,
+                  )),
+          ],
+        ),
       ),
     );
   }
-
-  /// Rough zoom estimate based on distance between two points.
-  double _estimateZoom(LatLng a, LatLng b) {
-    const distance = Distance();
-    final km = distance.as(LengthUnit.Kilometer, a, b);
-    if (km < 2) return 14.5;
-    if (km < 5) return 13.0;
-    if (km < 10) return 12.0;
-    if (km < 25) return 11.0;
-    if (km < 50) return 10.0;
-    if (km < 100) return 9.0;
-    return 8.0;
-  }
 }
 
-class _StationMarker extends StatelessWidget {
-  final Color color;
-  final IconData icon;
+class _TrainCard extends StatelessWidget {
+  final UpcomingTrain train;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final Color accent;
 
-  const _StationMarker({required this.color, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.4),
-            blurRadius: 6,
-            spreadRadius: 1,
-          ),
-        ],
-      ),
-      child: Icon(icon, size: 18, color: Colors.white),
-    );
-  }
-}
-
-class _StationLabel extends StatelessWidget {
-  final IconData icon;
-  final Color iconColor;
-  final String name;
-  final String code;
-  final CrossAxisAlignment crossAxisAlignment;
-
-  const _StationLabel({
-    required this.icon,
-    required this.iconColor,
-    required this.name,
-    required this.code,
-    this.crossAxisAlignment = CrossAxisAlignment.start,
+  const _TrainCard({
+    required this.train,
+    required this.isSelected,
+    required this.onTap,
+    required this.accent,
   });
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Flexible(
-      child: Column(
-        crossAxisAlignment: crossAxisAlignment,
-        children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 12, color: iconColor),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: scheme.onSurface,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+    final isFast = train.trainType == 'FAST' || train.trainType == 'SEMI_FAST';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: isSelected
+            ? accent.withValues(alpha: 0.08)
+            : scheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected
+                    ? accent
+                    : scheme.outlineVariant.withValues(alpha: 0.5),
+                width: isSelected ? 2 : 1,
               ),
-            ],
+            ),
+            child: Row(
+              children: [
+                // Departure time (large)
+                Column(
+                  children: [
+                    Text(
+                      train.formattedDeparture,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: isSelected ? accent : scheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'DEP',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSurfaceVariant,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(width: 14),
+                // Arrow with duration
+                Expanded(
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 2,
+                              color: isFast
+                                  ? Colors.amber.shade700
+                                  : scheme.outlineVariant,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Text(
+                              train.travelDuration,
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: scheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(
+                              height: 2,
+                              color: isFast
+                                  ? Colors.amber.shade700
+                                  : scheme.outlineVariant,
+                            ),
+                          ),
+                          Icon(Icons.arrow_forward_ios,
+                              size: 10, color: scheme.onSurfaceVariant),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _TypeBadge(
+                            label: train.trainTypeLabel,
+                            color: isFast
+                                ? Colors.amber.shade800
+                                : scheme.onSurfaceVariant,
+                            isFast: isFast,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '${train.stopsCount} stops',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: scheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Arrival time
+                Column(
+                  children: [
+                    Text(
+                      train.formattedArrival,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: isSelected ? accent : scheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'ARR',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w600,
+                        color: scheme.onSurfaceVariant,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+                if (isSelected) ...[
+                  const SizedBox(width: 8),
+                  Icon(Icons.check_circle, color: accent, size: 22),
+                ],
+              ],
+            ),
           ),
-          const SizedBox(height: 2),
+        ),
+      ),
+    );
+  }
+}
+
+class _TypeBadge extends StatelessWidget {
+  final String label;
+  final Color color;
+  final bool isFast;
+
+  const _TypeBadge({
+    required this.label,
+    required this.color,
+    required this.isFast,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isFast) ...[
+            Icon(Icons.bolt, size: 10, color: color),
+            const SizedBox(width: 2),
+          ],
           Text(
-            code,
+            label,
             style: TextStyle(
               fontSize: 10,
-              fontWeight: FontWeight.w500,
-              color: scheme.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              color: color,
             ),
           ),
         ],

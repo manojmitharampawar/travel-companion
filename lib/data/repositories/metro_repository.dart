@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:travel_companion/data/database/app_database.dart';
 import 'package:travel_companion/data/models/metro_line.dart';
+import 'package:travel_companion/data/models/metro_schedule.dart';
 import 'package:travel_companion/data/models/metro_station.dart';
 
 /// Repository for metro line and station queries.
@@ -114,6 +116,81 @@ class MetroRepository {
     );
     if (results.isEmpty) return null;
     return MetroLine.fromMap(results.first);
+  }
+
+  /// Find upcoming metro trains between two stations on a given line.
+  ///
+  /// Metro trains stop at every station (~2 min/stop).
+  /// Returns the next [limit] trains departing after [after].
+  Future<List<UpcomingMetro>> getUpcomingMetros({
+    required int lineId,
+    required int sourceIndex,
+    required int destIndex,
+    required TimeOfDay after,
+    int limit = 10,
+  }) async {
+    final db = await AppDatabase.database;
+
+    final direction = destIndex > sourceIndex ? 'UP' : 'DN';
+
+    final rows = await db.query(
+      'metro_schedules',
+      where: 'line_id = ? AND direction = ?',
+      whereArgs: [lineId, direction],
+      orderBy: 'departure_hour ASC, departure_minute ASC',
+    );
+
+    final schedules = rows.map(MetroScheduleEntry.fromMap).toList();
+
+    // Fetch line info
+    final line = await getLineById(lineId);
+    if (line == null) return [];
+
+    // Get total station count for this line
+    final stations = await getStationsByLine(lineId);
+    final totalStations = stations.length;
+
+    const minutesPerStop = 2.0; // Metro: ~2 min between stops
+    final results = <UpcomingMetro>[];
+
+    for (final schedule in schedules) {
+      final originIndex = direction == 'UP' ? 0 : totalStations - 1;
+
+      // Minutes from origin to source
+      final stopsToSource = (sourceIndex - originIndex).abs();
+      final minutesToSource = (stopsToSource * minutesPerStop).round();
+      final sourceDepartureMinutes =
+          schedule.departureHour * 60 + schedule.departureMinute + minutesToSource;
+      final sourceHour = (sourceDepartureMinutes ~/ 60) % 24;
+      final sourceMinute = sourceDepartureMinutes % 60;
+
+      // Skip if already departed
+      final afterMinutes = after.hour * 60 + after.minute;
+      if (sourceDepartureMinutes < afterMinutes) continue;
+
+      // Travel time from source to destination
+      final stopsSourceToDest = (destIndex - sourceIndex).abs();
+      final travelMinutes = (stopsSourceToDest * minutesPerStop).round();
+      final arrivalMinutes = sourceDepartureMinutes + travelMinutes;
+      final arrivalHour = (arrivalMinutes ~/ 60) % 24;
+      final arrivalMinute = arrivalMinutes % 60;
+
+      results.add(UpcomingMetro(
+        schedule: schedule,
+        direction: direction,
+        departureAtSource: TimeOfDay(hour: sourceHour, minute: sourceMinute),
+        arrivalAtDestination: TimeOfDay(hour: arrivalHour, minute: arrivalMinute),
+        travelMinutes: travelMinutes,
+        stopsCount: stopsSourceToDest,
+        lineCode: line.lineCode ?? line.id.toString(),
+        lineName: line.displayName,
+        lineColor: line.color,
+      ));
+
+      if (results.length >= limit) break;
+    }
+
+    return results;
   }
 }
 
