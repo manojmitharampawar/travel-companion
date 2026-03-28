@@ -104,14 +104,55 @@ class StationRepository {
 
   Future<Station?> getStationByCode(String code) async {
     final db = await AppDatabase.database;
+
+    // 1. Try main stations table
     final results = await db.query(
       'stations',
       where: 'code = ?',
       whereArgs: [code.toUpperCase()],
       limit: 1,
     );
-    if (results.isEmpty) return null;
-    return Station.fromMap(results.first);
+    if (results.isNotEmpty) return Station.fromMap(results.first);
+
+    // 2. Try local_train_stations table
+    final ltResults = await db.query(
+      'local_train_stations',
+      where: 'code = ?',
+      whereArgs: [code],
+      limit: 1,
+    );
+    if (ltResults.isNotEmpty) {
+      final r = ltResults.first;
+      return Station(
+        id: r['id'] as int,
+        code: r['code'] as String,
+        name: r['name'] as String,
+        latitude: (r['latitude'] as num).toDouble(),
+        longitude: (r['longitude'] as num).toDouble(),
+        stationType: 'local_train',
+      );
+    }
+
+    // 3. Try metro_stations table
+    final metroResults = await db.query(
+      'metro_stations',
+      where: 'code = ?',
+      whereArgs: [code],
+      limit: 1,
+    );
+    if (metroResults.isNotEmpty) {
+      final r = metroResults.first;
+      return Station(
+        id: r['id'] as int,
+        code: r['code'] as String,
+        name: r['name'] as String,
+        latitude: (r['latitude'] as num).toDouble(),
+        longitude: (r['longitude'] as num).toDouble(),
+        stationType: 'metro',
+      );
+    }
+
+    return null;
   }
 
   Future<Station?> getStationByName(String name) async {

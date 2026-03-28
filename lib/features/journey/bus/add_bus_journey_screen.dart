@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -7,23 +8,19 @@ import 'package:latlong2/latlong.dart';
 import 'package:travel_companion/core/services/geocoding_service.dart';
 import 'package:travel_companion/core/services/routing_service.dart';
 import 'package:travel_companion/core/services/tile_cache_service.dart';
+import 'package:travel_companion/core/theme/glass_widgets.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/journey/bus/bus_journey_notifier.dart';
 import 'package:travel_companion/features/journey/widgets/journey_form_widgets.dart';
 import 'package:travel_companion/features/map/bus_map_picker_screen.dart';
 
-// ─────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────
+const _kBgColor = Color(0xFF0A0E21);
 const _accent = Color(0xFF2E7D32);
 const _originColor = Color(0xFF1A73E8);
 const _destColor = Color(0xFFD93025);
 const _kTileUrl = 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png';
-
-// ─────────────────────────────────────────────
-// Screen
-// ─────────────────────────────────────────────
+const _kDarkTileUrl = 'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png';
 
 class AddBusJourneyScreen extends ConsumerStatefulWidget {
   const AddBusJourneyScreen({super.key});
@@ -49,7 +46,6 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
   Widget build(BuildContext context) {
     final state = ref.watch(busJourneyNotifierProvider);
     final notifier = ref.read(busJourneyNotifierProvider.notifier);
-    final theme = Theme.of(context);
 
     ref.listen<BusJourneyState>(busJourneyNotifierProvider, (prev, next) {
       if (next.savedSuccessfully) Navigator.pop(context, true);
@@ -64,196 +60,206 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
     });
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surfaceContainerLowest,
-      body: Form(
-        key: _formKey,
-        child: CustomScrollView(
-          slivers: [
-            // ── Hero AppBar ─────────────────────
-            SliverAppBar(
-              pinned: true,
-              expandedHeight: kToolbarHeight + 80,
-              backgroundColor: _accent,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              flexibleSpace: FlexibleSpaceBar(
-                collapseMode: CollapseMode.pin,
-                background: TransportHeroHeader(
-                  type: TransportType.bus,
-                  title: 'Add Bus Journey',
-                  subtitle: 'Track your bus trip and get arrival alerts',
+      backgroundColor: _kBgColor,
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        children: [
+          // Glass background
+          _BusBackground(),
+
+          Form(
+            key: _formKey,
+            child: CustomScrollView(
+              slivers: [
+                // Glass Hero AppBar
+                SliverAppBar(
+                  pinned: true,
+                  expandedHeight: kToolbarHeight + 80,
+                  backgroundColor: Colors.transparent,
+                  surfaceTintColor: Colors.transparent,
+                  scrolledUnderElevation: 0,
+                  foregroundColor: Colors.white,
+                  flexibleSpace: FlexibleSpaceBar(
+                    collapseMode: CollapseMode.pin,
+                    background: TransportHeroHeader(
+                      type: TransportType.bus,
+                      title: 'Add Bus Journey',
+                      subtitle: 'Track your bus trip and get arrival alerts',
+                    ),
+                  ),
                 ),
-              ),
-            ),
 
-            SliverPadding(
-              padding: const EdgeInsets.only(top: 16),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // ── Route section ─────────────────
-                  FormSectionCard(
-                    title: 'JOURNEY ROUTE',
-                    icon: Icons.alt_route,
-                    accentColor: _accent,
-                    children: [
-                      _BusLocationField(
-                        label: 'Origin',
-                        hint: 'Boarding stop or area',
-                        icon: Icons.trip_origin,
-                        iconColor: _originColor,
-                        value: state.origin,
-                        isDetecting: state.isDetectingLocation,
-                        onSelected: notifier.setOrigin,
-                        onDetectGps: notifier.detectCurrentLocation,
-                        onPickOnMap: () => _openMapPicker(
-                          title: 'Origin',
-                          current: state.origin,
-                          onResult: notifier.setOrigin,
-                        ),
-                      ),
+                SliverPadding(
+                  padding: const EdgeInsets.only(top: 16),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      // Route section
+                      FormSectionCard(
+                        title: 'JOURNEY ROUTE',
+                        icon: Icons.alt_route,
+                        accentColor: _accent,
+                        children: [
+                          _GlassBusLocationField(
+                            label: 'Origin',
+                            hint: 'Boarding stop or area',
+                            icon: Icons.trip_origin,
+                            iconColor: _originColor,
+                            value: state.origin,
+                            isDetecting: state.isDetectingLocation,
+                            onSelected: notifier.setOrigin,
+                            onDetectGps: notifier.detectCurrentLocation,
+                            onPickOnMap: () => _openMapPicker(
+                              title: 'Origin',
+                              current: state.origin,
+                              onResult: notifier.setOrigin,
+                            ),
+                          ),
 
-                      // Swap button
-                      if (state.origin != null || state.destination != null)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Center(
-                            child: Material(
-                              color: _accent.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(20),
-                              child: InkWell(
-                                borderRadius: BorderRadius.circular(20),
-                                onTap: notifier.swapLocations,
-                                child: const Padding(
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 6),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.swap_vert_rounded,
-                                          size: 18, color: _accent),
-                                      SizedBox(width: 4),
-                                      Text(
-                                        'Swap',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w600,
-                                          color: _accent,
-                                        ),
+                          // Swap button
+                          if (state.origin != null || state.destination != null)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Center(
+                                child: GestureDetector(
+                                  onTap: notifier.swapLocations,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: _accent.withValues(alpha: 0.12),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: _accent.withValues(alpha: 0.25),
                                       ),
-                                    ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.swap_vert_rounded,
+                                            size: 18, color: _accent),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Swap',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: _accent,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
+                            )
+                          else
+                            fieldSpacing,
+
+                          _GlassBusLocationField(
+                            label: 'Destination',
+                            hint: 'Destination stop or area',
+                            icon: Icons.location_on,
+                            iconColor: _destColor,
+                            value: state.destination,
+                            onSelected: notifier.setDestination,
+                            onPickOnMap: () => _openMapPicker(
+                              title: 'Destination',
+                              current: state.destination,
+                              onResult: notifier.setDestination,
                             ),
                           ),
-                        )
-                      else
-                        fieldSpacing,
+                        ],
+                      ),
 
-                      _BusLocationField(
-                        label: 'Destination',
-                        hint: 'Destination stop or area',
-                        icon: Icons.location_on,
-                        iconColor: _destColor,
-                        value: state.destination,
-                        onSelected: notifier.setDestination,
-                        onPickOnMap: () => _openMapPicker(
-                          title: 'Destination',
-                          current: state.destination,
-                          onResult: notifier.setDestination,
+                      // Route map preview
+                      if (state.origin != null || state.destination != null)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                          child: _GlassBusRouteMapPreview(
+                            origin: state.origin,
+                            destination: state.destination,
+                            routeResult: state.routeResult,
+                            isFetchingRoute: state.isFetchingRoute,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
 
-                  // ── Route map preview ─────────────
-                  if (state.origin != null || state.destination != null)
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                      child: _BusRouteMapPreview(
-                        origin: state.origin,
-                        destination: state.destination,
-                        routeResult: state.routeResult,
-                        isFetchingRoute: state.isFetchingRoute,
-                      ),
-                    ),
-
-                  // ── Offline map download ───────────
-                  if (state.origin != null && state.destination != null)
-                    _OfflineMapCard(
-                      isCaching: state.isCachingTiles,
-                      progress: state.tileCacheProgress,
-                      isCached: state.tilesCached,
-                      onDownload: notifier.downloadMapForOffline,
-                    ),
-
-                  // ── Bus details ──────────────────
-                  FormSectionCard(
-                    title: 'BUS DETAILS',
-                    icon: Icons.directions_bus,
-                    accentColor: _accent,
-                    children: [
-                      TextFormField(
-                        controller: _routeCtrl,
-                        decoration: InputDecoration(
-                          labelText: 'Route Number (optional)',
-                          hintText: 'e.g. 500LTD, AC47',
-                          prefixIcon:
-                              const Icon(Icons.confirmation_number_outlined),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12)),
+                      // Offline map download
+                      if (state.origin != null && state.destination != null)
+                        _GlassOfflineMapCard(
+                          isCaching: state.isCachingTiles,
+                          progress: state.tileCacheProgress,
+                          isCached: state.tilesCached,
+                          onDownload: notifier.downloadMapForOffline,
                         ),
-                        textCapitalization: TextCapitalization.characters,
-                        onChanged: notifier.setRouteNumber,
-                      ),
-                      fieldSpacing,
-                      TextFormField(
-                        controller: _operatorCtrl,
-                        decoration: InputDecoration(
-                          labelText: 'Operator / Service (optional)',
-                          hintText: 'e.g. MSRTC, KSRTC, Volvo',
-                          prefixIcon: const Icon(Icons.business_outlined),
-                          border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                        ),
-                        onChanged: notifier.setOperatorName,
-                      ),
-                    ],
-                  ),
 
-                  // ── Journey info ─────────────────
-                  FormSectionCard(
-                    title: 'JOURNEY INFO',
-                    icon: Icons.info_outline,
-                    accentColor: _accent,
-                    children: [
-                      JourneyDateField(
-                        value: state.journeyDate,
-                        onChanged: notifier.setJourneyDate,
+                      // Bus details
+                      FormSectionCard(
+                        title: 'BUS DETAILS',
+                        icon: Icons.directions_bus,
                         accentColor: _accent,
+                        children: [
+                          TextFormField(
+                            controller: _routeCtrl,
+                            style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9)),
+                            decoration: glassInputDecoration(
+                              labelText: 'Route Number (optional)',
+                              hintText: 'e.g. 500LTD, AC47',
+                              prefixIcon: Icons.confirmation_number_outlined,
+                            ),
+                            textCapitalization: TextCapitalization.characters,
+                            onChanged: notifier.setRouteNumber,
+                          ),
+                          fieldSpacing,
+                          TextFormField(
+                            controller: _operatorCtrl,
+                            style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.9)),
+                            decoration: glassInputDecoration(
+                              labelText: 'Operator / Service (optional)',
+                              hintText: 'e.g. MSRTC, KSRTC, Volvo',
+                              prefixIcon: Icons.business_outlined,
+                            ),
+                            onChanged: notifier.setOperatorName,
+                          ),
+                        ],
                       ),
-                      fieldSpacing,
-                      JourneyTimeField(
-                        value: state.departureTime,
-                        onChanged: notifier.setDepartureTime,
-                        accentColor: _accent,
-                      ),
-                    ],
-                  ),
 
-                  // ── Save ────────────────────────
-                  SaveJourneyButton(
-                    isSaving: state.isSaving,
-                    accentColor: _accent,
-                    onPressed: () {
-                      if (_formKey.currentState!.validate()) notifier.save();
-                    },
+                      // Journey info
+                      FormSectionCard(
+                        title: 'JOURNEY INFO',
+                        icon: Icons.info_outline,
+                        accentColor: _accent,
+                        children: [
+                          JourneyDateField(
+                            value: state.journeyDate,
+                            onChanged: notifier.setJourneyDate,
+                            accentColor: _accent,
+                          ),
+                          fieldSpacing,
+                          JourneyTimeField(
+                            value: state.departureTime,
+                            onChanged: notifier.setDepartureTime,
+                            accentColor: _accent,
+                          ),
+                        ],
+                      ),
+
+                      // Save
+                      SaveJourneyButton(
+                        isSaving: state.isSaving,
+                        accentColor: _accent,
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) notifier.save();
+                        },
+                      ),
+                    ]),
                   ),
-                ]),
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -280,10 +286,66 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
 }
 
 // ─────────────────────────────────────────────
-// Location field with search + map picker
+// Background
 // ─────────────────────────────────────────────
 
-class _BusLocationField extends StatefulWidget {
+class _BusBackground extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: _kBgColor,
+      child: Stack(
+        children: [
+          Positioned(
+            top: -60,
+            right: -50,
+            child: _GlowOrb(color: _accent, size: 220),
+          ),
+          Positioned(
+            bottom: 150,
+            left: -60,
+            child: _GlowOrb(color: GlassConstants.meshCyan, size: 180),
+          ),
+          Positioned(
+            top: 400,
+            right: -30,
+            child: _GlowOrb(color: GlassConstants.meshPurple, size: 140),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GlowOrb extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _GlowOrb({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            color.withValues(alpha: 0.25),
+            color.withValues(alpha: 0.06),
+            color.withValues(alpha: 0.0),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Glass Bus Location Field
+// ─────────────────────────────────────────────
+
+class _GlassBusLocationField extends StatefulWidget {
   final String label;
   final String hint;
   final IconData icon;
@@ -294,7 +356,7 @@ class _BusLocationField extends StatefulWidget {
   final VoidCallback? onDetectGps;
   final VoidCallback onPickOnMap;
 
-  const _BusLocationField({
+  const _GlassBusLocationField({
     required this.label,
     required this.hint,
     required this.icon,
@@ -307,10 +369,10 @@ class _BusLocationField extends StatefulWidget {
   });
 
   @override
-  State<_BusLocationField> createState() => _BusLocationFieldState();
+  State<_GlassBusLocationField> createState() => _GlassBusLocationFieldState();
 }
 
-class _BusLocationFieldState extends State<_BusLocationField> {
+class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   final _layerLink = LayerLink();
@@ -330,7 +392,7 @@ class _BusLocationFieldState extends State<_BusLocationField> {
   }
 
   @override
-  void didUpdateWidget(_BusLocationField old) {
+  void didUpdateWidget(_GlassBusLocationField old) {
     super.didUpdateWidget(old);
     if (widget.value != old.value) {
       _controller.text = widget.value?.name ?? '';
@@ -432,80 +494,100 @@ class _BusLocationFieldState extends State<_BusLocationField> {
           showWhenUnlinked: false,
           offset: const Offset(0, 62),
           child: Material(
-            elevation: 8,
+            elevation: 0,
             borderRadius: BorderRadius.circular(14),
-            shadowColor: Colors.black.withValues(alpha: 0.15),
-            child: Container(
-              constraints: const BoxConstraints(maxHeight: 280),
-              decoration: BoxDecoration(
-                color: Theme.of(ctx).colorScheme.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Theme.of(ctx).colorScheme.outlineVariant,
+            color: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: 280),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A2340).withValues(alpha: 0.95),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  child: _isSearching && _results.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white.withValues(alpha: 0.5),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text('Searching...',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                    fontSize: 13,
+                                  )),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.symmetric(vertical: 6),
+                          itemCount: _results.length,
+                          separatorBuilder: (_, __) => Divider(
+                            height: 1,
+                            indent: 56,
+                            endIndent: 16,
+                            color: Colors.white.withValues(alpha: 0.08),
+                          ),
+                          itemBuilder: (_, i) {
+                            final p = _results[i];
+                            return ListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 2),
+                              leading: Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  color:
+                                      widget.iconColor.withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Icon(Icons.location_on_rounded,
+                                    size: 18, color: widget.iconColor),
+                              ),
+                              title: Text(
+                                p.name,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                              ),
+                              subtitle: p.address != null
+                                  ? Text(
+                                      p.address!,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color:
+                                            Colors.white.withValues(alpha: 0.4),
+                                      ),
+                                    )
+                                  : null,
+                              trailing: Icon(Icons.north_west_rounded,
+                                  size: 14,
+                                  color: Colors.white.withValues(alpha: 0.3)),
+                              onTap: () => _selectResult(p),
+                            );
+                          },
+                        ),
                 ),
               ),
-              child: _isSearching && _results.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 20),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                          SizedBox(width: 10),
-                          Text('Searching...',
-                              style: TextStyle(
-                                  color: Color(0xFF5F6368), fontSize: 13)),
-                        ],
-                      ),
-                    )
-                  : ListView.separated(
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      itemCount: _results.length,
-                      separatorBuilder: (_, _) => const Divider(
-                          height: 1, indent: 56, endIndent: 16),
-                      itemBuilder: (_, i) {
-                        final p = _results[i];
-                        return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 2),
-                          leading: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: widget.iconColor.withValues(alpha: 0.10),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(Icons.location_on_rounded,
-                                size: 18, color: widget.iconColor),
-                          ),
-                          title: Text(
-                            p.name,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          subtitle: p.address != null
-                              ? Text(
-                                  p.address!,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Color(0xFF5F6368)),
-                                )
-                              : null,
-                          trailing: const Icon(Icons.north_west_rounded,
-                              size: 14, color: Color(0xFF9AA0A6)),
-                          onTap: () => _selectResult(p),
-                        );
-                      },
-                    ),
             ),
           ),
         ),
@@ -530,47 +612,75 @@ class _BusLocationFieldState extends State<_BusLocationField> {
           showWhenUnlinked: false,
           offset: const Offset(0, 62),
           child: Material(
-            elevation: 8,
+            elevation: 0,
             borderRadius: BorderRadius.circular(14),
-            shadowColor: Colors.black.withValues(alpha: 0.15),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Theme.of(ctx).colorScheme.surface,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: Theme.of(ctx).colorScheme.outlineVariant,
-                ),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.search_off_rounded,
-                      size: 28, color: Colors.grey.shade400),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'No locations found',
-                    style: TextStyle(
-                        fontSize: 13, color: Color(0xFF5F6368)),
-                  ),
-                  const SizedBox(height: 10),
-                  TextButton.icon(
-                    onPressed: () {
-                      _removeOverlay();
-                      _focusNode.unfocus();
-                      widget.onPickOnMap();
-                    },
-                    icon: const Icon(Icons.map_outlined, size: 16),
-                    label: const Text('Pick on map instead'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: _accent,
-                      textStyle: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                      ),
+            color: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A2340).withValues(alpha: 0.95),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
                     ),
                   ),
-                ],
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 20, horizontal: 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.search_off_rounded,
+                          size: 28,
+                          color: Colors.white.withValues(alpha: 0.3)),
+                      const SizedBox(height: 8),
+                      Text(
+                        'No locations found',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () {
+                          _removeOverlay();
+                          _focusNode.unfocus();
+                          widget.onPickOnMap();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _accent.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: _accent.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.map_outlined,
+                                  size: 16, color: _accent),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Pick on map instead',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: _accent,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
@@ -594,49 +704,40 @@ class _BusLocationFieldState extends State<_BusLocationField> {
             controller: _controller,
             focusNode: _focusNode,
             onChanged: _onSearchChanged,
-            decoration: InputDecoration(
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+            decoration: glassInputDecoration(
               labelText: widget.label,
               hintText: widget.hint,
-              prefixIcon: Icon(widget.icon, color: widget.iconColor),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              suffixIcon: widget.isDetecting
-                  ? const Padding(
-                      padding: EdgeInsets.all(14),
+              prefixIcon: widget.icon,
+              suffixIcon: widget.isDetecting || _isSearching
+                  ? Padding(
+                      padding: const EdgeInsets.all(14),
                       child: SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white.withValues(alpha: 0.5),
+                        ),
                       ),
                     )
-                  : _isSearching
-                      ? const Padding(
-                          padding: EdgeInsets.all(14),
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
-                            child:
-                                CircularProgressIndicator(strokeWidth: 2),
-                          ),
+                  : isSet
+                      ? IconButton(
+                          icon: Icon(Icons.clear,
+                              size: 18,
+                              color: Colors.white.withValues(alpha: 0.5)),
+                          onPressed: _clear,
                         )
-                      : isSet
-                          ? IconButton(
-                              icon: const Icon(Icons.clear, size: 18),
-                              onPressed: _clear,
-                            )
-                          : null,
+                      : null,
             ),
           ),
 
-          // Action row below the field
+          // Action row
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Row(
               children: [
-                // Pick on map button
-                _ActionChip(
+                _GlassActionChip(
                   icon: Icons.map_outlined,
                   label: 'Pick on map',
                   onTap: () {
@@ -647,7 +748,7 @@ class _BusLocationFieldState extends State<_BusLocationField> {
                 ),
                 if (widget.onDetectGps != null) ...[
                   const SizedBox(width: 8),
-                  _ActionChip(
+                  _GlassActionChip(
                     icon: Icons.my_location,
                     label: 'Current location',
                     color: _originColor,
@@ -658,7 +759,7 @@ class _BusLocationFieldState extends State<_BusLocationField> {
             ),
           ),
 
-          // Selected location preview chip
+          // Selected location chip
           if (isSet)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -666,10 +767,10 @@ class _BusLocationFieldState extends State<_BusLocationField> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: widget.iconColor.withValues(alpha: 0.06),
+                  color: widget.iconColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: widget.iconColor.withValues(alpha: 0.15),
+                    color: widget.iconColor.withValues(alpha: 0.2),
                   ),
                 ),
                 child: Row(
@@ -696,7 +797,7 @@ class _BusLocationFieldState extends State<_BusLocationField> {
                               widget.value!.address!,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey.shade600,
+                                color: Colors.white.withValues(alpha: 0.4),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -709,7 +810,7 @@ class _BusLocationFieldState extends State<_BusLocationField> {
                       '${widget.value!.longitude.toStringAsFixed(4)}',
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.grey.shade500,
+                        color: Colors.white.withValues(alpha: 0.3),
                         fontFamily: 'monospace',
                       ),
                     ),
@@ -724,16 +825,16 @@ class _BusLocationFieldState extends State<_BusLocationField> {
 }
 
 // ─────────────────────────────────────────────
-// Small action chip for "Pick on map" / "GPS"
+// Glass action chip
 // ─────────────────────────────────────────────
 
-class _ActionChip extends StatelessWidget {
+class _GlassActionChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
   final Color color;
 
-  const _ActionChip({
+  const _GlassActionChip({
     required this.icon,
     required this.label,
     this.onTap,
@@ -742,15 +843,14 @@ class _ActionChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.20)),
+          border: Border.all(color: color.withValues(alpha: 0.2)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -773,16 +873,16 @@ class _ActionChip extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Route map preview with OSRM road path
+// Glass Route Map Preview
 // ─────────────────────────────────────────────
 
-class _BusRouteMapPreview extends StatefulWidget {
+class _GlassBusRouteMapPreview extends StatefulWidget {
   final LocationPoint? origin;
   final LocationPoint? destination;
   final RouteResult? routeResult;
   final bool isFetchingRoute;
 
-  const _BusRouteMapPreview({
+  const _GlassBusRouteMapPreview({
     this.origin,
     this.destination,
     this.routeResult,
@@ -790,10 +890,11 @@ class _BusRouteMapPreview extends StatefulWidget {
   });
 
   @override
-  State<_BusRouteMapPreview> createState() => _BusRouteMapPreviewState();
+  State<_GlassBusRouteMapPreview> createState() =>
+      _GlassBusRouteMapPreviewState();
 }
 
-class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
+class _GlassBusRouteMapPreviewState extends State<_GlassBusRouteMapPreview> {
   late MapController _mapController;
 
   @override
@@ -803,7 +904,7 @@ class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
   }
 
   @override
-  void didUpdateWidget(_BusRouteMapPreview old) {
+  void didUpdateWidget(_GlassBusRouteMapPreview old) {
     super.didUpdateWidget(old);
     WidgetsBinding.instance.addPostFrameCallback((_) => _fitBounds());
   }
@@ -820,7 +921,6 @@ class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
     final route = widget.routeResult;
 
     if (route != null && route.isNotEmpty) {
-      // Fit to route bounds
       double minLat = route.points.first.latitude;
       double maxLat = route.points.first.latitude;
       double minLng = route.points.first.longitude;
@@ -871,186 +971,181 @@ class _BusRouteMapPreviewState extends State<_BusRouteMapPreview> {
     final route = widget.routeResult;
     final hasRoute = route != null && route.isNotEmpty;
 
-    return Container(
-      height: 260,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outlineVariant,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              initialCenter: _center,
-              initialZoom: 12,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.none,
-              ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          height: 260,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.12),
             ),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
             children: [
-              TileLayer(
-                urlTemplate: _kTileUrl,
-                tileProvider: CachedTileProvider(urlTemplate: _kTileUrl),
-                maxZoom: 19,
-              ),
-
-              // OSRM road route polyline
-              if (hasRoute)
-                PolylineLayer(polylines: [
-                  // Shadow
-                  Polyline(
-                    points: route.points,
-                    strokeWidth: 7.0,
-                    color: _accent.withValues(alpha: 0.25),
+              FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  initialCenter: _center,
+                  initialZoom: 12,
+                  interactionOptions: const InteractionOptions(
+                    flags: InteractiveFlag.none,
                   ),
-                  // Main line
-                  Polyline(
-                    points: route.points,
-                    strokeWidth: 4.5,
-                    color: _accent,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: _kDarkTileUrl,
+                    tileProvider: CachedTileProvider(urlTemplate: _kTileUrl),
+                    maxZoom: 19,
                   ),
-                ]),
-
-              // Fallback straight line if no OSRM route yet
-              if (!hasRoute && o != null && d != null)
-                PolylineLayer(polylines: [
-                  Polyline(
-                    points: [
-                      LatLng(o.latitude, o.longitude),
-                      LatLng(d.latitude, d.longitude),
+                  if (hasRoute)
+                    PolylineLayer(polylines: [
+                      Polyline(
+                        points: route.points,
+                        strokeWidth: 7.0,
+                        color: _accent.withValues(alpha: 0.25),
+                      ),
+                      Polyline(
+                        points: route.points,
+                        strokeWidth: 4.5,
+                        color: _accent,
+                      ),
+                    ]),
+                  if (!hasRoute && o != null && d != null)
+                    PolylineLayer(polylines: [
+                      Polyline(
+                        points: [
+                          LatLng(o.latitude, o.longitude),
+                          LatLng(d.latitude, d.longitude),
+                        ],
+                        strokeWidth: 3.5,
+                        color: _accent.withValues(alpha: 0.50),
+                        pattern: StrokePattern.dashed(segments: [14, 7]),
+                      ),
+                    ]),
+                  MarkerLayer(markers: [
+                    if (o != null)
+                      Marker(
+                        point: LatLng(o.latitude, o.longitude),
+                        width: 40,
+                        height: 40,
+                        alignment: Alignment.center,
+                        child: _RouteMarker(
+                          color: _originColor,
+                          icon: Icons.trip_origin,
+                        ),
+                      ),
+                    if (d != null)
+                      Marker(
+                        point: LatLng(d.latitude, d.longitude),
+                        width: 40,
+                        height: 40,
+                        alignment: Alignment.center,
+                        child: _RouteMarker(
+                          color: _destColor,
+                          icon: Icons.location_on_rounded,
+                        ),
+                      ),
+                  ]),
+                  const RichAttributionWidget(
+                    attributions: [
+                      TextSourceAttribution('OpenStreetMap contributors'),
+                      TextSourceAttribution('CARTO'),
                     ],
-                    strokeWidth: 3.5,
-                    color: _accent.withValues(alpha: 0.50),
-                    pattern: StrokePattern.dashed(segments: [14, 7]),
                   ),
-                ]),
-
-              // Markers
-              MarkerLayer(markers: [
-                if (o != null)
-                  Marker(
-                    point: LatLng(o.latitude, o.longitude),
-                    width: 40,
-                    height: 40,
-                    alignment: Alignment.center,
-                    child: _RouteMarker(
-                      color: _originColor,
-                      icon: Icons.trip_origin,
-                    ),
-                  ),
-                if (d != null)
-                  Marker(
-                    point: LatLng(d.latitude, d.longitude),
-                    width: 40,
-                    height: 40,
-                    alignment: Alignment.center,
-                    child: _RouteMarker(
-                      color: _destColor,
-                      icon: Icons.location_on_rounded,
-                    ),
-                  ),
-              ]),
-
-              const RichAttributionWidget(
-                attributions: [
-                  TextSourceAttribution('OpenStreetMap contributors'),
-                  TextSourceAttribution('CARTO'),
                 ],
               ),
-            ],
-          ),
 
-          // Loading indicator while fetching route
-          if (widget.isFetchingRoute)
-            Positioned(
-              top: 10,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.10),
-                        blurRadius: 6,
+              // Loading overlay
+              if (widget.isFetchingRoute)
+                Positioned(
+                  top: 10,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _kBgColor.withValues(alpha: 0.7),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.15),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              SizedBox(
+                                width: 14,
+                                height: 14,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: _accent,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text('Finding best route...',
+                                  style: TextStyle(
+                                      fontSize: 12, color: _accent)),
+                            ],
+                          ),
+                        ),
                       ),
-                    ],
+                    ),
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
+                ),
+
+              // Route info chips
+              if (hasRoute)
+                Positioned(
+                  bottom: 36,
+                  left: 10,
+                  right: 10,
+                  child: Row(
                     children: [
-                      SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: _accent),
+                      _GlassMapInfoChip(
+                        icon: Icons.route_rounded,
+                        label: route.distanceText,
+                        color: _accent,
                       ),
-                      SizedBox(width: 8),
-                      Text('Finding best route...',
-                          style: TextStyle(fontSize: 12, color: _accent)),
+                      const SizedBox(width: 6),
+                      _GlassMapInfoChip(
+                        icon: Icons.schedule_rounded,
+                        label: route.durationText,
+                        color: const Color(0xFF1565C0),
+                      ),
                     ],
                   ),
                 ),
-              ),
-            ),
 
-          // Route info chips
-          if (hasRoute)
-            Positioned(
-              bottom: 36,
-              left: 10,
-              right: 10,
-              child: Row(
-                children: [
-                  _InfoChip(
-                    icon: Icons.route_rounded,
-                    label: route.distanceText,
-                    color: _accent,
+              if ((o != null) != (d != null))
+                Positioned(
+                  bottom: 36,
+                  left: 10,
+                  child: _GlassMapInfoChip(
+                    icon: Icons.location_on_rounded,
+                    label: (o ?? d)!.name,
+                    color: o != null ? _originColor : _destColor,
                   ),
-                  const SizedBox(width: 6),
-                  _InfoChip(
-                    icon: Icons.schedule_rounded,
-                    label: route.durationText,
-                    color: const Color(0xFF1565C0),
-                  ),
-                ],
-              ),
-            ),
-
-          // Single-point label
-          if ((o != null) != (d != null))
-            Positioned(
-              bottom: 36,
-              left: 10,
-              child: _InfoChip(
-                icon: Icons.location_on_rounded,
-                label: (o ?? d)!.name,
-                color: o != null ? _originColor : _destColor,
-              ),
-            ),
-        ],
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// Route marker (origin/destination)
+// Route marker
 // ─────────────────────────────────────────────
 
 class _RouteMarker extends StatelessWidget {
@@ -1070,7 +1165,7 @@ class _RouteMarker extends StatelessWidget {
         border: Border.all(color: Colors.white, width: 2.5),
         boxShadow: [
           BoxShadow(
-            color: color.withValues(alpha: 0.45),
+            color: color.withValues(alpha: 0.5),
             blurRadius: 8,
             spreadRadius: 2,
           ),
@@ -1082,15 +1177,15 @@ class _RouteMarker extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Info chip (distance, duration, label)
+// Glass map info chip
 // ─────────────────────────────────────────────
 
-class _InfoChip extends StatelessWidget {
+class _GlassMapInfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
   final Color color;
 
-  const _InfoChip({
+  const _GlassMapInfoChip({
     required this.icon,
     required this.label,
     required this.color,
@@ -1098,49 +1193,51 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 13, color: color),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: color,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: _kBgColor.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.15),
             ),
           ),
-        ],
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 13, color: color),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// Offline map download card
+// Glass offline map card
 // ─────────────────────────────────────────────
 
-class _OfflineMapCard extends StatelessWidget {
+class _GlassOfflineMapCard extends StatelessWidget {
   final bool isCaching;
   final int progress;
   final bool isCached;
   final VoidCallback onDownload;
 
-  const _OfflineMapCard({
+  const _GlassOfflineMapCard({
     required this.isCaching,
     required this.progress,
     required this.isCached,
@@ -1151,116 +1248,135 @@ class _OfflineMapCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: isCached
-              ? const Color(0xFFE8F5E9)
-              : const Color(0xFFF5F5F5),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isCached
-                ? _accent.withValues(alpha: 0.30)
-                : Colors.grey.shade300,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: isCached
+                  ? _accent.withValues(alpha: 0.1)
+                  : Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
                 color: isCached
-                    ? _accent.withValues(alpha: 0.12)
-                    : Colors.grey.shade200,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                isCached
-                    ? Icons.offline_pin_rounded
-                    : Icons.cloud_download_outlined,
-                size: 20,
-                color: isCached ? _accent : Colors.grey.shade600,
+                    ? _accent.withValues(alpha: 0.25)
+                    : Colors.white.withValues(alpha: 0.12),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: isCached
+                        ? _accent.withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
                     isCached
-                        ? 'Map saved for offline'
-                        : isCaching
-                            ? 'Downloading map tiles...'
-                            : 'Save map for offline use',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isCached ? _accent : Colors.grey.shade800,
+                        ? Icons.offline_pin_rounded
+                        : Icons.cloud_download_outlined,
+                    size: 20,
+                    color: isCached
+                        ? _accent
+                        : Colors.white.withValues(alpha: 0.5),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isCached
+                            ? 'Map saved for offline'
+                            : isCaching
+                                ? 'Downloading map tiles...'
+                                : 'Save map for offline use',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: isCached
+                              ? _accent
+                              : Colors.white.withValues(alpha: 0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      if (isCaching)
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: LinearProgressIndicator(
+                            value: progress / 100,
+                            minHeight: 4,
+                            backgroundColor: Colors.white.withValues(alpha: 0.1),
+                            valueColor:
+                                const AlwaysStoppedAnimation<Color>(_accent),
+                          ),
+                        )
+                      else
+                        Text(
+                          isCached
+                              ? 'Route map available without internet'
+                              : 'Download route tiles for journey tracking',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (!isCached && !isCaching)
+                  GestureDetector(
+                    onTap: onDownload,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _accent.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: _accent.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        'Download',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: _accent,
+                        ),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  if (isCaching)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: LinearProgressIndicator(
-                        value: progress / 100,
-                        minHeight: 4,
-                        backgroundColor: Colors.grey.shade300,
-                        valueColor:
-                            const AlwaysStoppedAnimation<Color>(_accent),
-                      ),
-                    )
-                  else
-                    Text(
-                      isCached
-                          ? 'Route map available without internet'
-                          : 'Download route tiles for journey tracking',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade600,
+                if (isCaching)
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: Text(
+                      '$progress%',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: _accent,
                       ),
                     ),
-                ],
-              ),
+                  ),
+                if (isCached)
+                  const Padding(
+                    padding: EdgeInsets.only(left: 8),
+                    child: Icon(
+                      Icons.check_circle_rounded,
+                      size: 20,
+                      color: _accent,
+                    ),
+                  ),
+              ],
             ),
-            if (!isCached && !isCaching)
-              TextButton(
-                onPressed: onDownload,
-                style: TextButton.styleFrom(
-                  foregroundColor: _accent,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  textStyle: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                child: const Text('Download'),
-              ),
-            if (isCaching)
-              Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Text(
-                  '$progress%',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: _accent,
-                  ),
-                ),
-              ),
-            if (isCached)
-              const Padding(
-                padding: EdgeInsets.only(left: 8),
-                child: Icon(
-                  Icons.check_circle_rounded,
-                  size: 20,
-                  color: _accent,
-                ),
-              ),
-          ],
+          ),
         ),
       ),
     );

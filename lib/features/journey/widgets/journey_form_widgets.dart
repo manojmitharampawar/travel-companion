@@ -1,15 +1,19 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:travel_companion/core/theme/glass_widgets.dart';
 import 'package:travel_companion/data/models/station.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 
+// Glass design constants shared across journey forms
+const _kBgColor = Color(0xFF0A0E21);
+
 // ─────────────────────────────────────────────
-// 1. TransportHeroHeader
+// 1. TransportHeroHeader — glass version
 // ─────────────────────────────────────────────
 
-/// Full-width gradient hero block used in each transport screen's SliverAppBar.
 class TransportHeroHeader extends StatelessWidget {
   final TransportType type;
   final String title;
@@ -24,9 +28,6 @@ class TransportHeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final base = type.color;
-    final dark = Color.lerp(base, Colors.black, 0.25)!;
-    // Push content below status bar + back-button row so it never hides under the clock/battery.
     final topPad = MediaQuery.paddingOf(context).top + kToolbarHeight + 4;
 
     return Container(
@@ -34,40 +35,95 @@ class TransportHeroHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [base, dark],
+          colors: [
+            type.color.withValues(alpha: 0.6),
+            _kBgColor,
+          ],
         ),
       ),
-      padding: EdgeInsets.fromLTRB(24, topPad, 24, 24),
-      child: Row(
+      child: Stack(
         children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(16),
+          // Decorative orbs
+          Positioned(
+            right: -30,
+            top: -20,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.1),
+                    Colors.white.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
             ),
-            child: Icon(type.icon, size: 34, color: Colors.white),
           ),
-          const SizedBox(width: 20),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Positioned(
+            left: -20,
+            bottom: -10,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    type.color.withValues(alpha: 0.15),
+                    type.color.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Content
+          Padding(
+            padding: EdgeInsets.fromLTRB(24, topPad, 24, 24),
+            child: Row(
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.4,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Icon(type.icon, size: 32, color: Colors.white),
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.82),
-                    fontSize: 13,
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -80,10 +136,9 @@ class TransportHeroHeader extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// 2. FormSectionCard
+// 2. FormSectionCard — glass version
 // ─────────────────────────────────────────────
 
-/// Card that wraps a labelled form section.
 class FormSectionCard extends StatelessWidget {
   final String title;
   final IconData icon;
@@ -100,55 +155,52 @@ class FormSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return Card(
+    return GlassCard(
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: scheme.outlineVariant),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _SectionTitle(title: title, icon: icon, color: accentColor),
-            const SizedBox(height: 20),
-            ...children,
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _GlassSectionTitle(title: title, icon: icon, color: accentColor),
+          const SizedBox(height: 20),
+          ...children,
+        ],
       ),
     );
   }
 }
 
-class _SectionTitle extends StatelessWidget {
+class _GlassSectionTitle extends StatelessWidget {
   final String title;
   final IconData icon;
   final Color color;
 
-  const _SectionTitle({required this.title, required this.icon, required this.color});
+  const _GlassSectionTitle({
+    required this.title,
+    required this.icon,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
+            color: color.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: color.withValues(alpha: 0.25)),
           ),
           child: Icon(icon, size: 16, color: color),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         Text(
           title,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w700,
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
             color: color,
-            letterSpacing: 0.3,
+            letterSpacing: 0.5,
+            fontSize: 13,
           ),
         ),
       ],
@@ -157,7 +209,7 @@ class _SectionTitle extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// 3. JourneyDateField
+// 3. JourneyDateField — glass version
 // ─────────────────────────────────────────────
 
 class JourneyDateField extends StatelessWidget {
@@ -183,29 +235,33 @@ class JourneyDateField extends StatelessWidget {
           lastDate: DateTime.now().add(const Duration(days: 365)),
           builder: (ctx, child) => Theme(
             data: Theme.of(ctx).copyWith(
-              colorScheme: Theme.of(ctx).colorScheme.copyWith(primary: accentColor),
+              colorScheme:
+                  Theme.of(ctx).colorScheme.copyWith(primary: accentColor),
             ),
             child: child!,
           ),
         );
         if (picked != null) onChanged(picked);
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: InputDecorator(
-        decoration: InputDecoration(
+        decoration: _glassInputDecoration(
           labelText: 'Journey Date',
-          prefixIcon: const Icon(Icons.calendar_today_outlined),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          prefixIcon: Icons.calendar_today_outlined,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               DateFormat('EEE, dd MMM yyyy').format(value),
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
             ),
-            Icon(Icons.expand_more, size: 22, color: Colors.grey.shade500),
+            Icon(Icons.expand_more,
+                size: 22, color: Colors.white.withValues(alpha: 0.4)),
           ],
         ),
       ),
@@ -214,7 +270,7 @@ class JourneyDateField extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// 4. JourneyTimeField
+// 4. JourneyTimeField — glass version
 // ─────────────────────────────────────────────
 
 class JourneyTimeField extends StatelessWidget {
@@ -238,23 +294,23 @@ class JourneyTimeField extends StatelessWidget {
           initialTime: value ?? TimeOfDay.now(),
           builder: (ctx, child) => Theme(
             data: Theme.of(ctx).copyWith(
-              colorScheme: Theme.of(ctx).colorScheme.copyWith(primary: accentColor),
+              colorScheme:
+                  Theme.of(ctx).colorScheme.copyWith(primary: accentColor),
             ),
             child: child!,
           ),
         );
         if (picked != null) onChanged(picked);
       },
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(14),
       child: InputDecorator(
-        decoration: InputDecoration(
+        decoration: _glassInputDecoration(
           labelText: 'Departure Time (optional)',
-          prefixIcon: const Icon(Icons.schedule_outlined),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          prefixIcon: Icons.schedule_outlined,
           suffixIcon: value != null
               ? IconButton(
-                  icon: const Icon(Icons.clear, size: 18),
+                  icon: Icon(Icons.clear,
+                      size: 18, color: Colors.white.withValues(alpha: 0.5)),
                   onPressed: () => onChanged(null),
                 )
               : null,
@@ -267,11 +323,14 @@ class JourneyTimeField extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: value != null ? FontWeight.w500 : FontWeight.w400,
-                color: value != null ? null : Colors.grey.shade500,
+                color: value != null
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : Colors.white.withValues(alpha: 0.4),
               ),
             ),
             if (value == null)
-              Icon(Icons.expand_more, size: 22, color: Colors.grey.shade500),
+              Icon(Icons.expand_more,
+                  size: 22, color: Colors.white.withValues(alpha: 0.4)),
           ],
         ),
       ),
@@ -280,11 +339,9 @@ class JourneyTimeField extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// 5. StationAutocompleteField
+// 5. StationAutocompleteField — glass version
 // ─────────────────────────────────────────────
 
-/// Autocomplete field for railway/metro/local-train stations.
-/// Pass a [searchFn] that returns matching [Station] objects.
 class StationAutocompleteField extends StatefulWidget {
   final String label;
   final String hint;
@@ -308,7 +365,8 @@ class StationAutocompleteField extends StatefulWidget {
   });
 
   @override
-  State<StationAutocompleteField> createState() => _StationAutocompleteFieldState();
+  State<StationAutocompleteField> createState() =>
+      _StationAutocompleteFieldState();
 }
 
 class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
@@ -340,7 +398,6 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
 
   void _onFocusChange() {
     if (!_focusNode.hasFocus) {
-      // Delay hide so tap on suggestion registers first
       Future.delayed(const Duration(milliseconds: 200), () {
         if (mounted && !_focusNode.hasFocus) _hideOverlay();
       });
@@ -371,52 +428,66 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
         child: CompositedTransformFollower(
           link: _layerLink,
           showWhenUnlinked: false,
-          offset: const Offset(0, 58), // below the text field
+          offset: const Offset(0, 58),
           child: Material(
-            elevation: 6,
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              constraints: const BoxConstraints(maxHeight: 240),
-              decoration: BoxDecoration(
-                color: Theme.of(ctx).colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Theme.of(ctx).colorScheme.outlineVariant,
-                ),
-              ),
-              child: ListView.builder(
-                shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                itemCount: _suggestions.length,
-                itemBuilder: (_, i) {
-                  final s = _suggestions[i];
-                  return ListTile(
-                    dense: true,
-                    leading: CircleAvatar(
-                      radius: 16,
-                      backgroundColor:
-                          widget.accentColor.withValues(alpha: 0.12),
-                      child: Text(
-                        s.code.length >= 2
-                            ? s.code.substring(0, 2)
-                            : s.code,
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: widget.accentColor,
+            elevation: 0,
+            borderRadius: BorderRadius.circular(14),
+            color: Colors.transparent,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(14),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Container(
+                  constraints: const BoxConstraints(maxHeight: 240),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A2340).withValues(alpha: 0.95),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    itemCount: _suggestions.length,
+                    itemBuilder: (_, i) {
+                      final s = _suggestions[i];
+                      return ListTile(
+                        dense: true,
+                        leading: CircleAvatar(
+                          radius: 16,
+                          backgroundColor:
+                              widget.accentColor.withValues(alpha: 0.2),
+                          child: Text(
+                            s.code.length >= 2
+                                ? s.code.substring(0, 2)
+                                : s.code,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: widget.accentColor,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    title: Text(s.name,
-                        style:
-                            const TextStyle(fontWeight: FontWeight.w500)),
-                    subtitle: Text(
-                      '${s.code}${s.state != null ? ' · ${s.state}' : ''}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    onTap: () => _select(s),
-                  );
-                },
+                        title: Text(
+                          s.name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            color: Colors.white.withValues(alpha: 0.9),
+                          ),
+                        ),
+                        subtitle: Text(
+                          '${s.code}${s.state != null ? ' · ${s.state}' : ''}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                        ),
+                        onTap: () => _select(s),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
           ),
@@ -479,29 +550,32 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
       child: TextFormField(
         controller: _controller,
         focusNode: _focusNode,
-        decoration: InputDecoration(
+        style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+        decoration: _glassInputDecoration(
           labelText: widget.label,
           hintText: widget.hint,
-          prefixIcon: Icon(widget.leadingIcon),
-          border:
-              OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          prefixIcon: widget.leadingIcon,
           suffixIcon: _isSearching
-              ? const Padding(
-                  padding: EdgeInsets.all(14),
+              ? Padding(
+                  padding: const EdgeInsets.all(14),
                   child: SizedBox(
                     width: 18,
                     height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
                   ),
                 )
               : widget.selected != null
                   ? IconButton(
-                      icon: const Icon(Icons.clear, size: 18),
+                      icon: Icon(Icons.clear,
+                          size: 18,
+                          color: Colors.white.withValues(alpha: 0.5)),
                       onPressed: _clear,
                     )
-                  : const Icon(Icons.search, size: 20),
+                  : Icon(Icons.search,
+                      size: 20, color: Colors.white.withValues(alpha: 0.4)),
         ),
         onChanged: _search,
         validator: (_) => widget.validator?.call(widget.selected),
@@ -511,7 +585,7 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
 }
 
 // ─────────────────────────────────────────────
-// 6. SaveJourneyButton
+// 6. SaveJourneyButton — glass version
 // ─────────────────────────────────────────────
 
 class SaveJourneyButton extends StatelessWidget {
@@ -530,30 +604,80 @@ class SaveJourneyButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-      child: FilledButton.icon(
-        onPressed: isSaving ? null : onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: accentColor,
-          foregroundColor: Colors.white,
-          minimumSize: const Size.fromHeight(54),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-        ),
-        icon: isSaving
-            ? const SizedBox(
-                width: 20, height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-              )
-            : const Icon(Icons.check_circle_outline, size: 22),
-        label: Text(isSaving ? 'Saving...' : label),
-      ),
+    return GlassButton(
+      label: label,
+      icon: Icons.check_circle_outline,
+      onPressed: isSaving ? null : onPressed,
+      accentColor: accentColor,
+      isLoading: isSaving,
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// 7. FieldSpacing — consistent gap between form fields
+// 7. FieldSpacing
 // ─────────────────────────────────────────────
 const fieldSpacing = SizedBox(height: 16);
+
+// ─────────────────────────────────────────────
+// Glass Input Decoration helper
+// ─────────────────────────────────────────────
+
+InputDecoration _glassInputDecoration({
+  required String labelText,
+  String? hintText,
+  IconData? prefixIcon,
+  Widget? suffixIcon,
+  String? helperText,
+}) {
+  return InputDecoration(
+    labelText: labelText,
+    hintText: hintText,
+    helperText: helperText,
+    prefixIcon: prefixIcon != null
+        ? Icon(prefixIcon, color: Colors.white.withValues(alpha: 0.5))
+        : null,
+    suffixIcon: suffixIcon,
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide:
+          BorderSide(color: Colors.white.withValues(alpha: 0.35), width: 2),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: const BorderSide(color: Color(0xFFE74C3C)),
+    ),
+    filled: true,
+    fillColor: Colors.white.withValues(alpha: 0.06),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+    helperStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+    counterStyle: TextStyle(color: Colors.white.withValues(alpha: 0.4)),
+    errorStyle: const TextStyle(color: Color(0xFFE74C3C)),
+  );
+}
+
+/// Exposes glass input decoration for use in other screens
+InputDecoration glassInputDecoration({
+  required String labelText,
+  String? hintText,
+  IconData? prefixIcon,
+  Widget? suffixIcon,
+  String? helperText,
+}) =>
+    _glassInputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      prefixIcon: prefixIcon,
+      suffixIcon: suffixIcon,
+      helperText: helperText,
+    );

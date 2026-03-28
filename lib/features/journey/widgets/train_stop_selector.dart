@@ -1,8 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:travel_companion/data/models/train_route_stop.dart';
+import 'package:travel_companion/features/journey/widgets/journey_form_widgets.dart';
 
-/// A tappable field that opens a bottom-sheet timeline of train stops.
-/// Used in AddTrainJourneyScreen once the train number is resolved.
+/// A tappable field that opens a glass bottom-sheet timeline of train stops.
 class TrainStopSelector extends StatelessWidget {
   final String label;
   final IconData leadingIcon;
@@ -40,32 +41,45 @@ class TrainStopSelector extends StatelessWidget {
       children: [
         InkWell(
           onTap: isDisabled ? null : () => _openSheet(context),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           child: InputDecorator(
             decoration: InputDecoration(
               labelText: label,
               prefixIcon: Icon(leadingIcon,
-                  color: isDisabled ? Colors.grey.shade400 : accentColor),
+                  color: isDisabled
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : accentColor),
               suffixIcon: Icon(Icons.keyboard_arrow_down_rounded,
-                  color: isDisabled ? Colors.grey.shade400 : accentColor),
-              border:
-                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  color: isDisabled
+                      ? Colors.white.withValues(alpha: 0.2)
+                      : accentColor),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide:
+                    BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+              ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(
                   color: errorText != null
-                      ? Colors.red.shade600
-                      : Colors.grey.shade400,
+                      ? const Color(0xFFE74C3C)
+                      : Colors.white.withValues(alpha: 0.15),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(color: accentColor, width: 2),
               ),
               errorText: errorText,
-              filled: isDisabled,
-              fillColor:
-                  isDisabled ? Colors.grey.shade50 : Colors.transparent,
+              errorStyle: const TextStyle(color: Color(0xFFE74C3C)),
+              filled: true,
+              fillColor: isDisabled
+                  ? Colors.white.withValues(alpha: 0.03)
+                  : Colors.white.withValues(alpha: 0.06),
+              labelStyle:
+                  TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
             isEmpty: selected == null,
             child: Text(
@@ -73,8 +87,8 @@ class TrainStopSelector extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 color: selected != null
-                    ? Theme.of(context).colorScheme.onSurface
-                    : Colors.grey.shade500,
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : Colors.white.withValues(alpha: 0.35),
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -86,9 +100,10 @@ class TrainStopSelector extends StatelessWidget {
             child: Text(
               '${stops.length} stops on this route',
               style: TextStyle(
-                  fontSize: 11,
-                  color: accentColor.withValues(alpha: 0.8),
-                  fontWeight: FontWeight.w500),
+                fontSize: 11,
+                color: accentColor.withValues(alpha: 0.8),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ),
       ],
@@ -100,7 +115,8 @@ class TrainStopSelector extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _TrainStopSheet(
+      barrierColor: Colors.black54,
+      builder: (_) => _GlassTrainStopSheet(
         label: label,
         stops: stops,
         selected: selected,
@@ -115,17 +131,17 @@ class TrainStopSelector extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Bottom Sheet
+// Glass Bottom Sheet
 // ─────────────────────────────────────────────
 
-class _TrainStopSheet extends StatefulWidget {
+class _GlassTrainStopSheet extends StatefulWidget {
   final String label;
   final List<TrainRouteStop> stops;
   final TrainRouteStop? selected;
   final Color accentColor;
   final ValueChanged<TrainRouteStop> onSelected;
 
-  const _TrainStopSheet({
+  const _GlassTrainStopSheet({
     required this.label,
     required this.stops,
     required this.selected,
@@ -134,10 +150,10 @@ class _TrainStopSheet extends StatefulWidget {
   });
 
   @override
-  State<_TrainStopSheet> createState() => _TrainStopSheetState();
+  State<_GlassTrainStopSheet> createState() => _GlassTrainStopSheetState();
 }
 
-class _TrainStopSheetState extends State<_TrainStopSheet> {
+class _GlassTrainStopSheetState extends State<_GlassTrainStopSheet> {
   final _searchCtrl = TextEditingController();
   List<TrainRouteStop> _filtered = [];
 
@@ -170,119 +186,144 @@ class _TrainStopSheetState extends State<_TrainStopSheet> {
   Widget build(BuildContext context) {
     final maxHeight = MediaQuery.of(context).size.height * 0.82;
 
-    return Container(
-      constraints: BoxConstraints(maxHeight: maxHeight),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ── Handle + Title ─────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Column(
-              children: [
-                Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Icon(Icons.alt_route_rounded,
-                        color: widget.accentColor, size: 20),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Select ${widget.label}',
-                        style: const TextStyle(
-                            fontSize: 16, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                    Text(
-                      '${widget.stops.length} stops',
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: widget.accentColor,
-                          fontWeight: FontWeight.w600),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          // ── Search field ─────────────────
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: TextField(
-              controller: _searchCtrl,
-              autofocus: false,
-              decoration: InputDecoration(
-                hintText: 'Search station name or code...',
-                prefixIcon: const Icon(Icons.search, size: 20),
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10)),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide:
-                      BorderSide(color: widget.accentColor, width: 1.5),
-                ),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A0E21).withValues(alpha: 0.92),
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withValues(alpha: 0.15),
+                width: 1.2,
+              ),
+              left: BorderSide(
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+              right: BorderSide(
+                color: Colors.white.withValues(alpha: 0.08),
               ),
             ),
           ),
-          const Divider(height: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle + Title
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Icon(Icons.alt_route_rounded,
+                            color: widget.accentColor, size: 20),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Select ${widget.label}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          '${widget.stops.length} stops',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: widget.accentColor,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
 
-          // ── Stop List ────────────────────
-          Flexible(
-            child: _filtered.isEmpty
-                ? Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text('No stops match your search',
-                        style: TextStyle(color: Colors.grey.shade500)),
-                  )
-                : ListView.builder(
-                    itemCount: _filtered.length,
-                    padding: const EdgeInsets.only(bottom: 24),
-                    itemBuilder: (_, i) {
-                      final stop = _filtered[i];
-                      final isFirst = stop.stopSequence ==
-                          widget.stops.first.stopSequence;
-                      final isLast = stop.stopSequence ==
-                          widget.stops.last.stopSequence;
-                      final isSelected =
-                          widget.selected?.stationCode == stop.stationCode;
-
-                      return _StopTile(
-                        stop: stop,
-                        isFirst: isFirst,
-                        isLast: isLast,
-                        isSelected: isSelected,
-                        accentColor: widget.accentColor,
-                        onTap: () => widget.onSelected(stop),
-                      );
-                    },
+              // Search field
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                child: TextField(
+                  controller: _searchCtrl,
+                  autofocus: false,
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.9)),
+                  decoration: glassInputDecoration(
+                    labelText: 'Search station...',
+                    hintText: 'Name or code',
+                    prefixIcon: Icons.search,
                   ),
+                ),
+              ),
+              Divider(
+                height: 8,
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+
+              // Stop List
+              Flexible(
+                child: _filtered.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Text(
+                          'No stops match your search',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      )
+                    : ListView.builder(
+                        itemCount: _filtered.length,
+                        padding: const EdgeInsets.only(bottom: 24),
+                        itemBuilder: (_, i) {
+                          final stop = _filtered[i];
+                          final isFirst = stop.stopSequence ==
+                              widget.stops.first.stopSequence;
+                          final isLast = stop.stopSequence ==
+                              widget.stops.last.stopSequence;
+                          final isSelected = widget.selected?.stationCode ==
+                              stop.stationCode;
+
+                          return _GlassStopTile(
+                            stop: stop,
+                            isFirst: isFirst,
+                            isLast: isLast,
+                            isSelected: isSelected,
+                            accentColor: widget.accentColor,
+                            onTap: () => widget.onSelected(stop),
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// Individual Stop Tile with timeline connector
+// Glass Stop Tile
 // ─────────────────────────────────────────────
 
-class _StopTile extends StatelessWidget {
+class _GlassStopTile extends StatelessWidget {
   final TrainRouteStop stop;
   final bool isFirst;
   final bool isLast;
@@ -290,7 +331,7 @@ class _StopTile extends StatelessWidget {
   final Color accentColor;
   final VoidCallback onTap;
 
-  const _StopTile({
+  const _GlassStopTile({
     required this.stop,
     required this.isFirst,
     required this.isLast,
@@ -302,20 +343,20 @@ class _StopTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dotColor = isFirst
-        ? Colors.green.shade600
+        ? const Color(0xFF27AE60)
         : isLast
-            ? Colors.red.shade600
+            ? const Color(0xFFE74C3C)
             : isSelected
                 ? accentColor
-                : Colors.grey.shade400;
+                : Colors.white.withValues(alpha: 0.25);
 
     final dotSize = (isFirst || isLast) ? 12.0 : 8.0;
 
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
-        color: isSelected ? accentColor.withValues(alpha: 0.06) : null,
+        color: isSelected ? accentColor.withValues(alpha: 0.1) : Colors.transparent,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: IntrinsicHeight(
           child: Row(
@@ -341,7 +382,18 @@ class _StopTile extends StatelessWidget {
                         shape: BoxShape.circle,
                         color: isSelected ? accentColor : dotColor,
                         border: isSelected
-                            ? Border.all(color: Colors.white, width: 2)
+                            ? Border.all(
+                                color: Colors.white.withValues(alpha: 0.5),
+                                width: 2,
+                              )
+                            : null,
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: accentColor.withValues(alpha: 0.4),
+                                  blurRadius: 6,
+                                ),
+                              ]
                             : null,
                       ),
                     ),
@@ -376,14 +428,16 @@ class _StopTile extends StatelessWidget {
                                 fontWeight: isFirst || isLast || isSelected
                                     ? FontWeight.w700
                                     : FontWeight.w400,
-                                color: isSelected ? accentColor : null,
+                                color: isSelected
+                                    ? accentColor
+                                    : Colors.white.withValues(alpha: 0.85),
                               ),
                             ),
                             Text(
                               stop.stationCode,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.grey.shade500,
+                                color: Colors.white.withValues(alpha: 0.4),
                                 fontWeight: FontWeight.w500,
                                 letterSpacing: 0.3,
                               ),
@@ -398,10 +452,9 @@ class _StopTile extends StatelessWidget {
                             fontSize: 12,
                             color: isSelected
                                 ? accentColor
-                                : Colors.grey.shade600,
-                            fontWeight: isSelected
-                                ? FontWeight.w700
-                                : FontWeight.w400,
+                                : Colors.white.withValues(alpha: 0.5),
+                            fontWeight:
+                                isSelected ? FontWeight.w700 : FontWeight.w400,
                           ),
                         ),
                       if (isSelected)

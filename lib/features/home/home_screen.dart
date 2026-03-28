@@ -1,6 +1,7 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:travel_companion/core/theme/app_theme.dart';
+import 'package:travel_companion/core/theme/glass_widgets.dart';
 import 'package:travel_companion/core/utils/date_utils.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
@@ -15,6 +16,11 @@ import 'package:travel_companion/features/journey/quick_trip_screen.dart';
 import 'package:travel_companion/features/history/history_screen.dart';
 import 'package:travel_companion/features/settings/settings_screen.dart';
 
+// Glass design constants for home screen
+const _kBgColor = Color(0xFF0A0E21);
+const _kAccent = Color(0xFF0D47A1);
+const _kSecondaryAccent = Color(0xFFFF9800);
+
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
@@ -23,95 +29,103 @@ class HomeScreen extends ConsumerWidget {
     final journeysAsync = ref.watch(upcomingJourneysProvider);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      body: RefreshIndicator(
-        onRefresh: () async => ref.invalidate(upcomingJourneysProvider),
-        color: AppTheme.primaryColor,
-        backgroundColor: Colors.white,
-        child: CustomScrollView(
-          slivers: [
-            // ── Modern App Bar ─────────────────────────
-            SliverAppBar(
-              pinned: true,
-              floating: false,
-              expandedHeight: 130,
-              collapsedHeight: kToolbarHeight,
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              elevation: 0,
-              scrolledUnderElevation: 2,
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.history_rounded, size: 22),
-                  tooltip: 'Journey History',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HistoryScreen()),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.settings_rounded, size: 22),
-                  tooltip: 'Settings',
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                  ),
-                ),
-                const SizedBox(width: 4),
-              ],
-              flexibleSpace: FlexibleSpaceBar(
-                collapseMode: CollapseMode.pin,
-                titlePadding: EdgeInsets.zero,
-                background: Builder(builder: (ctx) {
-                  return _AppBarHero(
-                    journeysAsync: journeysAsync,
-                  );
-                }),
-              ),
-            ),
+      backgroundColor: _kBgColor,
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        children: [
+          // Gradient mesh background with orbs
+          const _HomeBackground(),
 
-            // ── Content ────────────────────────────────
-            journeysAsync.when(
-              loading: () => const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (e, _) => SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: _ErrorState(onRetry: () => ref.invalidate(upcomingJourneysProvider)),
-                ),
-              ),
-              data: (journeys) {
-                if (journeys.isEmpty) {
-                  return SliverFillRemaining(
-                    child: _EmptyState(onAdd: () => _showAddOptions(context, ref)),
-                  );
-                }
-                return SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
-                  sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) => _JourneyCard(
-                        enrichedJourney: journeys[index],
+          // Main scrollable content
+          RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(upcomingJourneysProvider);
+              ref.invalidate(historyJourneysProvider);
+            },
+            color: _kSecondaryAccent,
+            backgroundColor: const Color(0xFF1A2340),
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                // Glass App Bar
+                SliverAppBar(
+                  pinned: true,
+                  floating: false,
+                  expandedHeight: 150,
+                  collapsedHeight: kToolbarHeight,
+                  backgroundColor: Colors.transparent,
+                  surfaceTintColor: Colors.transparent,
+                  scrolledUnderElevation: 0,
+                  foregroundColor: Colors.white,
+                  flexibleSpace: FlexibleSpaceBar(
+                    collapseMode: CollapseMode.pin,
+                    titlePadding: EdgeInsets.zero,
+                    background: _GlassAppBarContent(journeysAsync: journeysAsync),
+                  ),
+                  actions: [
+                    _GlassIconButton(
+                      icon: Icons.history_rounded,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const HistoryScreen()),
                       ),
-                      childCount: journeys.length,
+                    ),
+                    _GlassIconButton(
+                      icon: Icons.settings_rounded,
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                ),
+
+                // Content
+                journeysAsync.when(
+                  loading: () => const SliverFillRemaining(
+                    child: Center(
+                      child: CircularProgressIndicator(color: _kSecondaryAccent),
                     ),
                   ),
-                );
-              },
+                  error: (e, _) => SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: _GlassErrorState(
+                        onRetry: () => ref.invalidate(upcomingJourneysProvider),
+                      ),
+                    ),
+                  ),
+                  data: (journeys) {
+                    if (journeys.isEmpty) {
+                      return SliverFillRemaining(
+                        child: _GlassEmptyState(
+                          onAdd: () => _showAddOptions(context, ref),
+                        ),
+                      );
+                    }
+                    return SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
+                      sliver: SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) => _GlassJourneyCard(
+                            enrichedJourney: journeys[index],
+                          ),
+                          childCount: journeys.length,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddOptions(context, ref),
-        backgroundColor: AppTheme.secondaryColor,
-        icon: const Icon(Icons.add_rounded, color: Colors.white),
-        label: const Text(
-          'Add Journey',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-        ),
-        elevation: 4,
+
+      // Glass FAB
+      floatingActionButton: _GlassFab(
+        onTap: () => _showAddOptions(context, ref),
       ),
     );
   }
@@ -121,7 +135,8 @@ class HomeScreen extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _AddJourneySheet(
+      barrierColor: Colors.black54,
+      builder: (context) => _GlassAddJourneySheet(
         onSelected: (type) {
           Navigator.pop(context);
           _addJourney(context, ref, type);
@@ -145,23 +160,127 @@ class HomeScreen extends ConsumerWidget {
       context,
       MaterialPageRoute(builder: (_) => screen),
     );
-    if (result == true) ref.invalidate(upcomingJourneysProvider);
+    if (result == true) {
+      ref.invalidate(upcomingJourneysProvider);
+      ref.invalidate(historyJourneysProvider);
+    }
   }
 
   void _startQuickTrip(BuildContext context, WidgetRef ref) async {
     await Navigator.push(context, MaterialPageRoute(builder: (_) => const QuickTripScreen()));
     ref.invalidate(upcomingJourneysProvider);
+    ref.invalidate(historyJourneysProvider);
   }
 }
 
 // ─────────────────────────────────────────────
-// App Bar Hero
+// Background with gradient orbs
 // ─────────────────────────────────────────────
 
-class _AppBarHero extends StatelessWidget {
-  final AsyncValue<List<EnrichedJourney>> journeysAsync;
+class _HomeBackground extends StatelessWidget {
+  const _HomeBackground();
 
-  const _AppBarHero({required this.journeysAsync});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: _kBgColor,
+      child: Stack(
+        children: [
+          Positioned(
+            top: -80,
+            right: -60,
+            child: _GlowOrb(color: _kAccent, size: 250),
+          ),
+          Positioned(
+            bottom: 120,
+            left: -70,
+            child: _GlowOrb(color: GlassConstants.meshPurple, size: 200),
+          ),
+          Positioned(
+            top: 350,
+            right: -40,
+            child: _GlowOrb(color: GlassConstants.meshCyan, size: 150),
+          ),
+          Positioned(
+            bottom: -40,
+            right: 60,
+            child: _GlowOrb(color: _kSecondaryAccent, size: 120),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GlowOrb extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _GlowOrb({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            color.withValues(alpha: 0.25),
+            color.withValues(alpha: 0.06),
+            color.withValues(alpha: 0.0),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Glass Icon Button (app bar actions)
+// ─────────────────────────────────────────────
+
+class _GlassIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _GlassIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 4),
+      child: GestureDetector(
+        onTap: onTap,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.15),
+                ),
+              ),
+              child: Icon(icon, size: 20, color: Colors.white.withValues(alpha: 0.85)),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Glass App Bar Content (hero area)
+// ─────────────────────────────────────────────
+
+class _GlassAppBarContent extends StatelessWidget {
+  final AsyncValue<List<EnrichedJourney>> journeysAsync;
+  const _GlassAppBarContent({required this.journeysAsync});
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -174,44 +293,86 @@ class _AppBarHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final topPad = MediaQuery.paddingOf(context).top;
     final journeys = journeysAsync.valueOrNull ?? [];
-    final activeCount = journeys.where((j) => j.journey.status == JourneyStatus.active).length;
+    final activeCount =
+        journeys.where((j) => j.journey.status == JourneyStatus.active).length;
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [AppTheme.primaryColor, AppTheme.primaryLight],
+          colors: [
+            _kAccent.withValues(alpha: 0.6),
+            _kBgColor,
+          ],
         ),
       ),
-      // Decorative background circles
       child: Stack(
         children: [
+          // Decorative blurred orbs inside header
           Positioned(
-            right: -20,
-            top: -30,
-            child: CircleAvatar(
-              radius: 72,
-              backgroundColor: Colors.white.withValues(alpha: 0.06),
+            right: -30,
+            top: -20,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.08),
+                    Colors.white.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
             ),
           ),
           Positioned(
-            left: -30,
-            bottom: -20,
-            child: CircleAvatar(
-              radius: 56,
-              backgroundColor: Colors.white.withValues(alpha: 0.04),
+            left: -20,
+            bottom: -10,
+            child: Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    _kSecondaryAccent.withValues(alpha: 0.1),
+                    _kSecondaryAccent.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
             ),
           ),
-          // Content row
+          // Content
           Positioned(
             left: 20,
             right: 20,
-            bottom: 16,
-            top: topPad + kToolbarHeight - 16,
+            bottom: 20,
+            top: topPad + kToolbarHeight - 12,
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
+                // Glass icon
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: const Icon(Icons.navigation_rounded,
+                          size: 28, color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -220,13 +381,13 @@ class _AppBarHero extends StatelessWidget {
                       Text(
                         _greeting(),
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.75),
+                          color: Colors.white.withValues(alpha: 0.6),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
-                          letterSpacing: 0.4,
+                          letterSpacing: 0.8,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 3),
                       const Text(
                         'Your Journeys',
                         style: TextStyle(
@@ -239,50 +400,10 @@ class _AppBarHero extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (journeys.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.train_rounded, size: 14, color: Colors.white),
-                        const SizedBox(width: 5),
-                        Text(
-                          '${journeys.length}',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15,
-                          ),
-                        ),
-                        if (activeCount > 0) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: AppTheme.successColor,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '$activeCount active',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.85),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+                if (journeys.isNotEmpty) _JourneySummaryBadge(
+                  total: journeys.length,
+                  activeCount: activeCount,
+                ),
               ],
             ),
           ),
@@ -292,14 +413,79 @@ class _AppBarHero extends StatelessWidget {
   }
 }
 
+class _JourneySummaryBadge extends StatelessWidget {
+  final int total;
+  final int activeCount;
+  const _JourneySummaryBadge({required this.total, required this.activeCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.route_rounded,
+                  size: 14, color: Colors.white.withValues(alpha: 0.8)),
+              const SizedBox(width: 5),
+              Text(
+                '$total',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                ),
+              ),
+              if (activeCount > 0) ...[
+                const SizedBox(width: 8),
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF27AE60),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF27AE60).withValues(alpha: 0.5),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$activeCount active',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ─────────────────────────────────────────────
-// Journey Card — compact with left accent strip
+// Glass Journey Card
 // ─────────────────────────────────────────────
 
-class _JourneyCard extends ConsumerWidget {
+class _GlassJourneyCard extends ConsumerWidget {
   final EnrichedJourney enrichedJourney;
-
-  const _JourneyCard({required this.enrichedJourney});
+  const _GlassJourneyCard({required this.enrichedJourney});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -309,58 +495,74 @@ class _JourneyCard extends ConsumerWidget {
     final type = journey.transportType;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => JourneyDetailScreen(enrichedJourney: enrichedJourney),
-            ),
+      padding: const EdgeInsets.only(bottom: 10),
+      child: GestureDetector(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                JourneyDetailScreen(enrichedJourney: enrichedJourney),
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              color: isActive
-                  ? AppTheme.successColor.withValues(alpha: 0.04)
-                  : Colors.white,
-              border: Border.all(
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(18),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              decoration: BoxDecoration(
                 color: isActive
-                    ? AppTheme.successColor.withValues(alpha: 0.4)
-                    : Colors.grey.shade200,
-                width: 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 6,
-                  offset: const Offset(0, 2),
+                    ? const Color(0xFF27AE60).withValues(alpha: 0.1)
+                    : Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(
+                  color: isActive
+                      ? const Color(0xFF27AE60).withValues(alpha: 0.35)
+                      : Colors.white.withValues(alpha: 0.15),
+                  width: isActive ? 1.5 : 1,
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
+                boxShadow: isActive
+                    ? [
+                        BoxShadow(
+                          color: const Color(0xFF27AE60).withValues(alpha: 0.12),
+                          blurRadius: 12,
+                        ),
+                      ]
+                    : null,
+              ),
               child: IntrinsicHeight(
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Left accent strip
-                    Container(width: 4, color: type.color),
+                    // Left accent strip with gradient
+                    Container(
+                      width: 4,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            type.color,
+                            type.color.withValues(alpha: 0.4),
+                          ],
+                        ),
+                      ),
+                    ),
 
                     // Card body
                     Expanded(
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(12, 11, 12, 10),
+                        padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Row 1: type badge + vehicle name + status
+                            // Row 1: type badge + vehicle name + status + fav
                             Row(
                               children: [
-                                _TypeBadge(type: type, vehicleNumber: journey.vehicleNumber),
+                                _GlassTypeBadge(
+                                  type: type,
+                                  vehicleNumber: journey.vehicleNumber,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -368,92 +570,143 @@ class _JourneyCard extends ConsumerWidget {
                                         (journey.vehicleNumber != null
                                             ? '${type.label} ${journey.vehicleNumber}'
                                             : type.label),
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 14,
+                                      color: Colors.white.withValues(alpha: 0.92),
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                _StatusBadge(status: journey.status),
+                                const SizedBox(width: 6),
+                                _GlassStatusBadge(status: journey.status),
                                 const SizedBox(width: 4),
-                                _FavoriteButton(
+                                _GlassFavoriteButton(
                                   isFavorite: journey.isFavorite,
                                   onToggle: () async {
                                     final repo = ref.read(journeyRepositoryProvider);
-                                    await repo.toggleFavorite(journey.id!, !journey.isFavorite);
+                                    await repo.toggleFavorite(
+                                        journey.id!, !journey.isFavorite);
                                     ref.invalidate(upcomingJourneysProvider);
+                                    ref.invalidate(historyJourneysProvider);
+                                    ref.invalidate(favoriteJourneysProvider);
                                   },
                                 ),
                               ],
                             ),
 
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 10),
 
-                            // Row 2: horizontal origin → destination
+                            // Row 2: origin → destination
                             Row(
                               children: [
-                                Icon(Icons.circle, size: 7, color: AppTheme.successColor),
-                                const SizedBox(width: 5),
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF27AE60),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF27AE60)
+                                            .withValues(alpha: 0.4),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
                                     enrichedJourney.boardingName,
-                                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500),
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white.withValues(alpha: 0.8),
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 6),
                                   child: Icon(Icons.arrow_forward_rounded,
-                                      size: 13, color: Colors.grey.shade400),
+                                      size: 13,
+                                      color: Colors.white.withValues(alpha: 0.3)),
                                 ),
                                 Expanded(
                                   child: Text(
                                     enrichedJourney.destinationName,
-                                    style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500),
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white.withValues(alpha: 0.8),
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                     textAlign: TextAlign.end,
                                   ),
                                 ),
-                                const SizedBox(width: 5),
-                                Icon(Icons.location_on, size: 7, color: AppTheme.dangerColor),
+                                const SizedBox(width: 6),
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE74C3C),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFE74C3C)
+                                            .withValues(alpha: 0.4),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ],
                             ),
 
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 10),
 
-                            // Row 3: chips in a horizontal scroll
+                            // Row 3: glass info chips
                             SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: Row(
-                                spacing: 6,
                                 children: [
-                                  _InfoChip(
+                                  _GlassInfoChip(
                                     icon: Icons.calendar_today_rounded,
-                                    label: AppDateUtils.relativeDay(journey.journeyDate),
+                                    label: AppDateUtils.relativeDay(
+                                        journey.journeyDate),
                                     highlight: isToday,
                                   ),
-                                  if (journey.scheduledTime != null)
-                                    _InfoChip(
+                                  if (journey.scheduledTime != null) ...[
+                                    const SizedBox(width: 6),
+                                    _GlassInfoChip(
                                       icon: Icons.schedule_rounded,
                                       label: journey.scheduledTime!,
                                     ),
-                                  if (journey.travelClass != null)
-                                    _InfoChip(
-                                      icon: Icons.airline_seat_recline_normal_rounded,
+                                  ],
+                                  if (journey.travelClass != null) ...[
+                                    const SizedBox(width: 6),
+                                    _GlassInfoChip(
+                                      icon:
+                                          Icons.airline_seat_recline_normal_rounded,
                                       label: journey.travelClass!,
                                     ),
-                                  if (journey.pnr != null)
-                                    _InfoChip(
+                                  ],
+                                  if (journey.pnr != null) ...[
+                                    const SizedBox(width: 6),
+                                    _GlassInfoChip(
                                       icon: Icons.confirmation_number_outlined,
                                       label: 'PNR: ${journey.pnr}',
                                     ),
-                                  if (journey.isRepeating)
-                                    _InfoChip(
+                                  ],
+                                  if (journey.isRepeating) ...[
+                                    const SizedBox(width: 6),
+                                    _GlassInfoChip(
                                       icon: Icons.repeat_rounded,
                                       label: journey.repeatDaysDisplay,
                                     ),
+                                  ],
                                 ],
                               ),
                             ),
@@ -462,12 +715,13 @@ class _JourneyCard extends ConsumerWidget {
                       ),
                     ),
 
-                    // Right arrow indicator
-                    const Padding(
-                      padding: EdgeInsets.only(right: 10),
+                    // Right chevron
+                    Padding(
+                      padding: const EdgeInsets.only(right: 10),
                       child: Center(
                         child: Icon(Icons.chevron_right_rounded,
-                            size: 20, color: Color(0xFFBDBDBD)),
+                            size: 20,
+                            color: Colors.white.withValues(alpha: 0.25)),
                       ),
                     ),
                   ],
@@ -481,30 +735,30 @@ class _JourneyCard extends ConsumerWidget {
   }
 }
 
-class _TypeBadge extends StatelessWidget {
+class _GlassTypeBadge extends StatelessWidget {
   final TransportType type;
   final String? vehicleNumber;
-
-  const _TypeBadge({required this.type, required this.vehicleNumber});
+  const _GlassTypeBadge({required this.type, required this.vehicleNumber});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: type.color,
-        borderRadius: BorderRadius.circular(7),
+        color: type.color.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: type.color.withValues(alpha: 0.35)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(type.icon, size: 12, color: Colors.white),
+          Icon(type.icon, size: 12, color: type.color),
           if (vehicleNumber != null && vehicleNumber!.isNotEmpty) ...[
             const SizedBox(width: 4),
             Text(
               vehicleNumber!,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: type.color,
                 fontWeight: FontWeight.w700,
                 fontSize: 11,
               ),
@@ -516,71 +770,24 @@ class _TypeBadge extends StatelessWidget {
   }
 }
 
-class _InfoChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool highlight;
-
-  const _InfoChip({
-    required this.icon,
-    required this.label,
-    this.highlight = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final bgColor = highlight
-        ? AppTheme.warningColor.withValues(alpha: 0.12)
-        : Colors.grey.shade100;
-    final fgColor = highlight ? AppTheme.warningColor : AppTheme.textSecondary;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(6),
-        border: highlight
-            ? Border.all(color: AppTheme.warningColor.withValues(alpha: 0.3))
-            : null,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 10, color: fgColor),
-          const SizedBox(width: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: fgColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StatusBadge extends StatelessWidget {
+class _GlassStatusBadge extends StatelessWidget {
   final JourneyStatus status;
-
-  const _StatusBadge({required this.status});
+  const _GlassStatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
     final (color, text) = switch (status) {
-      JourneyStatus.upcoming => (AppTheme.infoColor, 'Upcoming'),
-      JourneyStatus.active => (AppTheme.successColor, 'Active'),
+      JourneyStatus.upcoming => (const Color(0xFF3498DB), 'Upcoming'),
+      JourneyStatus.active => (const Color(0xFF27AE60), 'Active'),
       JourneyStatus.completed => (Colors.grey, 'Done'),
-      JourneyStatus.cancelled => (AppTheme.dangerColor, 'Cancelled'),
+      JourneyStatus.cancelled => (const Color(0xFFE74C3C), 'Cancelled'),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Text(
         text,
@@ -594,11 +801,58 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-class _FavoriteButton extends StatelessWidget {
+class _GlassInfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool highlight;
+  const _GlassInfoChip({
+    required this.icon,
+    required this.label,
+    this.highlight = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final chipColor = highlight
+        ? const Color(0xFFFFA726)
+        : Colors.white.withValues(alpha: 0.6);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: highlight
+            ? const Color(0xFFFFA726).withValues(alpha: 0.12)
+            : Colors.white.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: highlight
+              ? const Color(0xFFFFA726).withValues(alpha: 0.25)
+              : Colors.white.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10, color: chipColor),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: chipColor,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GlassFavoriteButton extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback onToggle;
-
-  const _FavoriteButton({required this.isFavorite, required this.onToggle});
+  const _GlassFavoriteButton({required this.isFavorite, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -610,7 +864,9 @@ class _FavoriteButton extends StatelessWidget {
         child: Icon(
           isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
           size: 18,
-          color: isFavorite ? Colors.redAccent : Colors.grey.shade400,
+          color: isFavorite
+              ? const Color(0xFFFF5252)
+              : Colors.white.withValues(alpha: 0.3),
         ),
       ),
     );
@@ -618,88 +874,170 @@ class _FavoriteButton extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Add Journey Bottom Sheet
+// Glass Floating Action Button
 // ─────────────────────────────────────────────
 
-class _AddJourneySheet extends StatelessWidget {
+class _GlassFab extends StatelessWidget {
+  final VoidCallback onTap;
+  const _GlassFab({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(18),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  _kSecondaryAccent,
+                  _kSecondaryAccent.withValues(alpha: 0.8),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.25),
+                width: 1.2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: _kSecondaryAccent.withValues(alpha: 0.4),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add_rounded, color: Colors.white, size: 22),
+                SizedBox(width: 8),
+                Text(
+                  'Add Journey',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Glass Add Journey Bottom Sheet
+// ─────────────────────────────────────────────
+
+class _GlassAddJourneySheet extends StatelessWidget {
   final void Function(TransportType) onSelected;
   final VoidCallback onQuickTrip;
-
-  const _AddJourneySheet({required this.onSelected, required this.onQuickTrip});
+  const _GlassAddJourneySheet({
+    required this.onSelected,
+    required this.onQuickTrip,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A0E21).withValues(alpha: 0.92),
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(28)),
+            border: Border(
+              top: BorderSide(
+                color: Colors.white.withValues(alpha: 0.15),
+                width: 1.2,
+              ),
+              left: BorderSide(
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+              right: BorderSide(
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Handle
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-              // Title
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Add New Journey',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleLarge
-                          ?.copyWith(fontWeight: FontWeight.w800),
+                  // Title
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Add New Journey',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 20,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Choose your mode of transport',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Choose your mode of transport',
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(color: AppTheme.textSecondary),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 2x2 transport grid
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 2.2,
+                    children: TransportType.values.map((type) {
+                      return _GlassTransportTile(
+                        type: type,
+                        onTap: () => onSelected(type),
+                      );
+                    }).toList(),
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Quick trip
+                  _GlassQuickTripTile(onTap: onQuickTrip),
+                  const SizedBox(height: 8),
+                ],
               ),
-              const SizedBox(height: 20),
-
-              // 2x2 transport grid
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 2.2,
-                children: TransportType.values.map((type) {
-                  return _TransportTile(
-                    type: type,
-                    onTap: () => onSelected(type),
-                  );
-                }).toList(),
-              ),
-
-              const SizedBox(height: 10),
-
-              // Quick trip full-width
-              _QuickTripTile(onTap: onQuickTrip),
-              const SizedBox(height: 8),
-            ],
+            ),
           ),
         ),
       ),
@@ -707,104 +1045,133 @@ class _AddJourneySheet extends StatelessWidget {
   }
 }
 
-class _TransportTile extends StatelessWidget {
+class _GlassTransportTile extends StatelessWidget {
   final TransportType type;
   final VoidCallback onTap;
-
-  const _TransportTile({required this.type, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          decoration: BoxDecoration(
-            color: type.color.withValues(alpha: 0.07),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: type.color.withValues(alpha: 0.22)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: type.color.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(type.icon, size: 20, color: type.color),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  type.label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: type.color,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickTripTile extends StatelessWidget {
-  final VoidCallback onTap;
-  const _QuickTripTile({required this.onTap});
+  const _GlassTransportTile({required this.type, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [AppTheme.successColor, Color.lerp(AppTheme.successColor, Colors.teal, 0.4)!],
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: type.color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: type.color.withValues(alpha: 0.25),
+              ),
             ),
-            borderRadius: BorderRadius.circular(14),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: type.color.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: type.color.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Icon(type.icon, size: 20, color: type.color),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    type.label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      color: type.color,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.flash_on_rounded, size: 20, color: Colors.white),
+        ),
+      ),
+    );
+  }
+}
+
+class _GlassQuickTripTile extends StatelessWidget {
+  final VoidCallback onTap;
+  const _GlassQuickTripTile({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF27AE60).withValues(alpha: 0.8),
+                  const Color(0xFF009688).withValues(alpha: 0.6),
+                ],
               ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Quick Trip',
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.2),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF27AE60).withValues(alpha: 0.2),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.flash_on_rounded,
+                      size: 20, color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Quick Trip',
                         style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 14,
-                            color: Colors.white)),
-                    Text('Start tracking right away',
-                        style: TextStyle(fontSize: 11, color: Colors.white70)),
-                  ],
+                          fontWeight: FontWeight.w800,
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
+                      ),
+                      Text(
+                        'Start tracking right away',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18),
-            ],
+                Icon(Icons.arrow_forward_rounded,
+                    color: Colors.white.withValues(alpha: 0.7), size: 18),
+              ],
+            ),
           ),
         ),
       ),
@@ -813,12 +1180,12 @@ class _QuickTripTile extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Empty & Error States
+// Glass Empty & Error States
 // ─────────────────────────────────────────────
 
-class _EmptyState extends StatelessWidget {
+class _GlassEmptyState extends StatelessWidget {
   final VoidCallback onAdd;
-  const _EmptyState({required this.onAdd});
+  const _GlassEmptyState({required this.onAdd});
 
   @override
   Widget build(BuildContext context) {
@@ -827,18 +1194,24 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(36),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppTheme.primaryColor.withValues(alpha: 0.08),
-                  AppTheme.secondaryColor.withValues(alpha: 0.06),
-                ],
+          // Glass icon circle
+          ClipRRect(
+            borderRadius: BorderRadius.circular(50),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: _kAccent.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: _kAccent.withValues(alpha: 0.2),
+                  ),
+                ),
+                child: Icon(Icons.train_rounded,
+                    size: 56, color: _kAccent.withValues(alpha: 0.8)),
               ),
-              shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.train_rounded, size: 64, color: AppTheme.primaryColor),
           ),
           const SizedBox(height: 32),
           const Text(
@@ -846,33 +1219,65 @@ class _EmptyState extends StatelessWidget {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: AppTheme.textPrimary,
+              color: Colors.white,
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 12),
           Text(
-            'Add your first journey to start receiving GPS arrival alerts for trains, buses, metro, and more.',
+            'Add your first journey to start receiving\nGPS arrival alerts for trains, buses,\nmetro, and more.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: AppTheme.textSecondary,
+              color: Colors.white.withValues(alpha: 0.5),
               height: 1.6,
             ),
           ),
           const SizedBox(height: 36),
-          FilledButton.icon(
-            onPressed: onAdd,
-            style: FilledButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              foregroundColor: Colors.white,
-              minimumSize: const Size.fromHeight(52),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              textStyle:
-                  const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          GestureDetector(
+            onTap: onAdd,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  height: 52,
+                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [_kAccent, _kAccent.withValues(alpha: 0.8)],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _kAccent.withValues(alpha: 0.3),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                      SizedBox(width: 8),
+                      Text(
+                        'Add Your First Journey',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Add Your First Journey'),
           ),
         ],
       ),
@@ -880,9 +1285,9 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-class _ErrorState extends StatelessWidget {
+class _GlassErrorState extends StatelessWidget {
   final VoidCallback onRetry;
-  const _ErrorState({required this.onRetry});
+  const _GlassErrorState({required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -890,33 +1295,76 @@ class _ErrorState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: AppTheme.dangerColor.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(40),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE74C3C).withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFFE74C3C).withValues(alpha: 0.2),
+                  ),
+                ),
+                child: const Icon(Icons.error_outline_rounded,
+                    size: 48, color: Color(0xFFE74C3C)),
+              ),
             ),
-            child: const Icon(Icons.error_outline_rounded,
-                size: 52, color: AppTheme.dangerColor),
           ),
           const SizedBox(height: 24),
           const Text(
             'Something went wrong',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
             'Check your connection and try again.',
-            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.5),
+              fontSize: 14,
+            ),
           ),
           const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: onRetry,
-            icon: const Icon(Icons.refresh_rounded),
-            label: const Text('Retry'),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppTheme.primaryColor,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          GestureDetector(
+            onTap: onRetry,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.refresh_rounded,
+                          size: 18,
+                          color: Colors.white.withValues(alpha: 0.8)),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Retry',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.8),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
         ],
