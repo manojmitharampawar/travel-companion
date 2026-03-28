@@ -4,6 +4,34 @@
 
 A smart Indian transit companion app that monitors your journey and triggers GPS-based alarms as you approach your destination. Supports Train, Bus, Metro, and Local Train transport types.
 
+## Claude Coding Agent Instructions
+
+Claude must always:
+- Follow standard coding practices and idiomatic Dart/Flutter conventions
+- Apply clean architecture and design patterns as used in this codebase (Provider, Repository, Service, Singleton)
+- Ensure all code passes SonarQube/SonarCloud quality checks (no critical/major issues)
+- Adhere to SOLID and KISS principles:
+  - **S**ingle Responsibility: Each class/function has one job
+  - **O**pen/Closed: Open for extension, closed for modification
+  - **L**iskov Substitution: Subtypes must be substitutable for base types
+  - **I**nterface Segregation: Prefer small, focused interfaces
+  - **D**ependency Inversion: Depend on abstractions, not concretions
+  - **KISS**: Keep code as simple as possible, avoid over-engineering
+- Write maintainable, readable, and well-documented code
+- Use Riverpod for state management and follow the provider patterns in `lib/providers/app_providers.dart`
+- Separate UI, business logic, and data access into distinct layers
+- Follow Material Design and mobile UX standards:
+  - Consistent padding, spacing, and typography
+  - Responsive layouts for all device sizes
+  - Clear feedback for user actions (loading, errors)
+  - Intuitive navigation and minimal user input (auto-fill, smart defaults)
+- Extract reusable UI components into `widgets/` where appropriate
+- Add/update unit tests for new features or bug fixes
+- Reference and update `AGENTS.md` if introducing new patterns/conventions
+
+**Summary:**
+Claude must always produce code that is clean, maintainable, and adheres to SOLID and KISS principles, passes Sonar quality checks, and follows mobile UI/UX best practices for Flutter. When in doubt, prefer simplicity and consistency with the existing codebase.
+
 ## Tech Stack
 
 - **Framework:** Flutter (Dart 3.11.1+), Material Design

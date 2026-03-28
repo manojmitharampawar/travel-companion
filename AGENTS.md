@@ -9,7 +9,8 @@ This Flutter app helps Indian travelers sleep safely by tracking them to their d
 - **Core Tracking**: `AlarmService` monitors distance-based thresholds (transport-specific) using location streams, triggers multi-stage alerts (30min/10min/arrived), plays alarms
 - **State Management**: Riverpod providers in `app_providers.dart` manage singleton services (AlarmService, LocationService, Repositories)
 - **Data Layer**: SQLite database via `sqflite` with models for Journey, Station, TrainRoute; repositories provide sync CRUD operations
-- **Background Services**: `JourneyReminderService` runs periodic timer every 30 minutes; `RepeatJourneyService` auto-creates recurring journey instances
+  - **Background Services**: `JourneyReminderService` runs periodic timer every 30 minutes; `RepeatJourneyService` auto-creates recurring journey instances
+  - **Additional Services**: `EmailService` (IRCTC email parsing), `RoutingService` (route calculations), `TileCacheService` (map tile caching)
 - **UI Layers**: Feature-specific screens under `/features/{home,journey,map,history,settings,sms}` with transport-specific sub-screens (train/, bus/, metro/, local_train/)
 
 ### Key Design Decisions
@@ -43,10 +44,12 @@ User creates Journey
 
 ## Essential Workflows
 
+
 ### Adding a Transport-Specific Journey
 - Train: `/features/journey/train/add_train_journey_screen.dart` → lookup stations → confirm schedule
 - Bus/Metro/LocalTrain: `/features/journey/{bus,metro,local_train}/add_*_journey_screen.dart` → map search → manual coordinates
-- All funnel through `JourneyRepository.insertJourney()` 
+- Quick Trip: `/features/journey/quick_trip_screen.dart` → ad-hoc journey setup
+- All funnel through `JourneyRepository.insertJourney()`
 
 ### Starting Tracking (Offline-Capable)
 1. User opens `JourneyDetailScreen` → taps "Start Tracking"
@@ -104,7 +107,7 @@ await db.update('journeys', {'status': status.name}, ...);
 ## Critical Integration Points
 
 ### Notifications
-- `NotificationService` manages 3 channels: reminders, alarms, tracking
+- `NotificationService` manages 3 channels: reminders, alarms, tracking (see `AppConstants.reminderChannelId`, `AppConstants.reminderChannelName`, `AppConstants.alarmChannelId`, `AppConstants.alarmChannelName`)
 - JourneyReminderService calls `NotificationService.showReminder()` at T-24h, T-3h, T-0
 - AlarmService calls `NotificationService.showArrivalNotification()` when distance < threshold
 - Alarm audio: `AlarmService` loads `assets/sounds/{alarm.mp3, alarm.wav}` via `just_audio`
@@ -121,7 +124,9 @@ await db.update('journeys', {'status': status.name}, ...);
 
 ### External APIs
 - `TrainStatusApi` in `data/datasources/remote/` — checks real-time train status (via Dio)
+- `MetroStationApi` in `data/datasources/remote/` — metro station lookups
 - SMS parsing: `sms_service.dart` intercepts IRCTC SMS for auto-booking detection
+- Email parsing: `email_service.dart` parses IRCTC ticket emails for auto-booking detection
 - Geocoding: `GeocodingService` converts address ↔ lat/lon (currently placeholder for Google Maps integration)
 
 ## Dependency Tree (Key Providers)
@@ -138,6 +143,12 @@ alarmServiceProvider
   └─ used by: JourneyTrackingScreen
 trainStatusApiProvider
   └─ used by: train detail fetching
+metroRepositoryProvider
+  └─ used by: metro journey screens
+localTrainRepositoryProvider
+  └─ used by: local train journey screens
+locationRepositoryProvider
+  └─ used by: location lookups, map features
 ```
 
 ## Build & Test Commands
@@ -168,10 +179,12 @@ Note: First run may take ~30s for DB initialization and service startup.
 ## File Organization Logic
 
 - **`lib/core/`**: Shared utilities (constants, services, theme, date/transport utils)
+- **`lib/core/services/`**: Alarm, location, notification, journey reminder, repeat journey, geocoding, SMS, email, routing, and tile cache services
 - **`lib/data/`**: Database, models, repositories (data layer — no UI)
+- **`lib/data/repositories/`**: Journey, station, train, metro, local train, and location repositories
 - **`lib/features/`**: UI screens by feature; transport-specific folders (train/, bus/); shared widgets in `/widgets/`
 - **`lib/providers/`**: Riverpod provider definitions (app_providers.dart is the only file)
-- **`assets/db/`**: CSV station data, seed SQLite dumps
+- **`assets/db/`**: CSV station data (`stations.csv`, `train_routes.csv`), seed SQLite dumps
 - **`assets/sounds/`**: Alarm audio files (alarm.mp3, alarm.wav)
 
 ## Debugging Tips
