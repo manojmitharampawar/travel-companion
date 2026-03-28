@@ -147,6 +147,8 @@ class TileCacheService {
         }
       }));
       onProgress?.call(downloaded + skipped, tiles.length);
+      // Yield to UI thread between batches
+      await Future.delayed(Duration.zero);
     }
 
     dev.log(
@@ -201,6 +203,8 @@ class TileCacheService {
         done++;
       }));
       onProgress?.call(done, tiles.length);
+      // Yield to UI thread between batches
+      await Future.delayed(Duration.zero);
     }
 
     return done;
@@ -298,36 +302,55 @@ class CachedTileImageProvider extends ImageProvider<CachedTileImageProvider> {
     );
   }
 
+  // Minimal valid 1x1 transparent PNG (67 bytes)
+  static const _kTransparentPng = <int>[
+    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+    0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
+    0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x62, 0x00, 0x00, 0x00, 0x02,
+    0x00, 0x01, 0xE5, 0x27, 0xDE, 0xFC, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
+    0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+  ];
+
   Future<ui.Codec> _loadTile(ImageDecoderCallback decode) async {
-    // Try disk cache first
-    final cached = await TileCacheService.getCachedTile(z, x, y);
-    if (cached != null) {
-      final bytes = await cached.readAsBytes();
+    try {
+      // Try disk cache first
+      final cached = await TileCacheService.getCachedTile(z, x, y);
+      if (cached != null) {
+        final bytes = await cached.readAsBytes();
+        final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+        return decode(buffer);
+      }
+
+      // Download and cache
+      final file = await TileCacheService.downloadTile(urlTemplate, z, x, y);
+      if (file != null) {
+        final bytes = await file.readAsBytes();
+        final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
+        return decode(buffer);
+      }
+
+      // Fallback: try network directly (no caching)
+      final url = urlTemplate
+          .replaceAll('{z}', z.toString())
+          .replaceAll('{x}', x.toString())
+          .replaceAll('{y}', y.toString());
+      final resp = await Dio().get<List<int>>(
+        url,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final buffer = await ui.ImmutableBuffer.fromUint8List(
+        Uint8List.fromList(resp.data!),
+      );
+      return decode(buffer);
+    } catch (e) {
+      dev.log('CachedTileImageProvider: failed to load tile $z/$x/$y: $e',
+          name: 'TileCache');
+      // Return a transparent 1x1 pixel PNG to avoid crashing the widget tree
+      final bytes = Uint8List.fromList(_kTransparentPng);
       final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
       return decode(buffer);
     }
-
-    // Download and cache
-    final file = await TileCacheService.downloadTile(urlTemplate, z, x, y);
-    if (file != null) {
-      final bytes = await file.readAsBytes();
-      final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-      return decode(buffer);
-    }
-
-    // Fallback: try network directly (no caching)
-    final url = urlTemplate
-        .replaceAll('{z}', z.toString())
-        .replaceAll('{x}', x.toString())
-        .replaceAll('{y}', y.toString());
-    final resp = await Dio().get<List<int>>(
-      url,
-      options: Options(responseType: ResponseType.bytes),
-    );
-    final buffer = await ui.ImmutableBuffer.fromUint8List(
-      Uint8List.fromList(resp.data!),
-    );
-    return decode(buffer);
   }
 
   @override

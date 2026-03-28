@@ -31,7 +31,7 @@ class AppTheme {
         secondary: secondaryColor,
         brightness: Brightness.light,
       ),
-      scaffoldBackgroundColor: backgroundColor,
+      scaffoldBackgroundColor: const Color(0xFFF2F4F8),
       appBarTheme: const AppBarTheme(
         centerTitle: true,
         elevation: 0,
@@ -176,7 +176,7 @@ class AppTheme {
         secondary: secondaryColor,
         brightness: Brightness.dark,
       ),
-      scaffoldBackgroundColor: const Color(0xFF121212),
+      scaffoldBackgroundColor: const Color(0xFF0A0E21),
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,

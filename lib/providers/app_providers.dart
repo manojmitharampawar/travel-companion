@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_companion/core/services/alarm_service.dart';
@@ -52,6 +53,39 @@ final alarmServiceProvider = Provider<AlarmService>((ref) {
   ref.onDispose(() => service.dispose());
   return service;
 });
+
+// ─────────────────────────────────────────────
+// Theme Mode Setting
+// ─────────────────────────────────────────────
+
+/// Persisted theme mode toggle (system, light, dark).
+class ThemeModeNotifier extends StateNotifier<ThemeMode> {
+  static const _key = 'themeMode';
+
+  ThemeModeNotifier() : super(ThemeMode.dark) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString(_key) ?? 'dark';
+    state = ThemeMode.values.firstWhere(
+      (m) => m.name == value,
+      orElse: () => ThemeMode.dark,
+    );
+  }
+
+  Future<void> setMode(ThemeMode mode) async {
+    state = mode;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_key, mode.name);
+  }
+}
+
+final themeModeProvider =
+    StateNotifierProvider<ThemeModeNotifier, ThemeMode>(
+  (ref) => ThemeModeNotifier(),
+);
 
 // ─────────────────────────────────────────────
 // Railway Map Overlay Setting

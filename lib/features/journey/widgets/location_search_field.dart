@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
@@ -12,10 +14,10 @@ class LocationSearchField extends StatefulWidget {
   final LocationRepository locationRepository;
   final VoidCallback? onPickOnMap;
   final VoidCallback? onUseCurrentLocation;
-  
+
   /// Transport type for filtering stations (metro/local train only)
   final TransportType? transportType;
-  
+
   /// Whether to show map and current location buttons
   final bool allowMapSelection;
 
@@ -36,13 +38,15 @@ class LocationSearchField extends StatefulWidget {
   State<LocationSearchField> createState() => _LocationSearchFieldState();
 }
 
+const _kDropdownBg = Color(0xFF1A2340);
+
 class _LocationSearchFieldState extends State<LocationSearchField> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   List<LocationPoint> _suggestions = [];
   bool _showSuggestions = false;
   LocationPoint? _selected;
-  LocationPoint? _tentativeSelection; // Temp selection pending confirmation
+  LocationPoint? _tentativeSelection;
   bool _isSearching = false;
 
   @override
@@ -62,7 +66,6 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
   @override
   void didUpdateWidget(LocationSearchField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Sync when parent changes the value externally (e.g., map picker, current location)
     if (widget.initialValue != oldWidget.initialValue) {
       _selected = widget.initialValue;
       _controller.text = _selected?.displayName ?? '';
@@ -89,25 +92,29 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
 
     try {
       List<LocationPoint> stations = [];
-      
-      // For metro and local train, search only stations
+
       if (widget.transportType == TransportType.metro) {
-        final metroStations = await widget.stationRepository.searchMetroStations(query);
-        stations = metroStations.map((s) => LocationPoint.fromStation(s)).toList();
+        final metroStations =
+            await widget.stationRepository.searchMetroStations(query);
+        stations =
+            metroStations.map((s) => LocationPoint.fromStation(s)).toList();
       } else if (widget.transportType == TransportType.localTrain) {
-        final localStations = await widget.stationRepository.searchLocalTrainStations(query);
-        stations = localStations.map((s) => LocationPoint.fromStation(s)).toList();
+        final localStations = await widget.stationRepository
+            .searchLocalTrainStations(query);
+        stations =
+            localStations.map((s) => LocationPoint.fromStation(s)).toList();
       } else {
-        // For bus and other types, search both stations and custom locations
-        final foundStations = await widget.stationRepository.searchStations(query);
-        stations = foundStations.map((s) => LocationPoint.fromStation(s)).toList();
+        final foundStations =
+            await widget.stationRepository.searchStations(query);
+        stations =
+            foundStations.map((s) => LocationPoint.fromStation(s)).toList();
       }
 
-      // For bus, also include custom locations
       List<LocationPoint> customLocations = [];
-      if (widget.transportType != TransportType.metro && 
+      if (widget.transportType != TransportType.metro &&
           widget.transportType != TransportType.localTrain) {
-        customLocations = await widget.locationRepository.searchLocations(query);
+        customLocations =
+            await widget.locationRepository.searchLocations(query);
       }
 
       setState(() {
@@ -124,7 +131,6 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
   void _selectLocation(LocationPoint location) {
     setState(() {
       _tentativeSelection = location;
-      // Don't immediately call onSelected - wait for confirmation
     });
   }
 
@@ -159,7 +165,9 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
               Icon(
                 isStation ? Icons.train : Icons.location_on,
                 size: 24,
-                color: isStation ? Colors.blue : Colors.red,
+                color: isStation
+                    ? const Color(0xFF3498DB)
+                    : const Color(0xFFE74C3C),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -168,15 +176,19 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
                   children: [
                     Text(
                       'Confirm selection?',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: Colors.grey[600],
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withValues(alpha: 0.45),
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       _tentativeSelection!.displayName,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: Colors.white.withValues(alpha: 0.9),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -190,8 +202,9 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
             const SizedBox(height: 8),
             Text(
               _tentativeSelection!.address!,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.white.withValues(alpha: 0.45),
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -201,22 +214,46 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton(
-                  onPressed: _discardTentativeSelection,
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.15)),
                   ),
-                  child: const Text('Change'),
+                  child: TextButton(
+                    onPressed: _discardTentativeSelection,
+                    style: TextButton.styleFrom(
+                      foregroundColor:
+                          Colors.white.withValues(alpha: 0.7),
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    child: const Text('Change'),
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: ElevatedButton(
-                  onPressed: () => _confirmSelection(_tentativeSelection!),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3498DB),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF3498DB)
+                            .withValues(alpha: 0.3),
+                        blurRadius: 8,
+                      ),
+                    ],
                   ),
-                  child: const Text('Confirm'),
+                  child: TextButton(
+                    onPressed: () =>
+                        _confirmSelection(_tentativeSelection!),
+                    style: TextButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    child: const Text('Confirm'),
+                  ),
                 ),
               ),
             ],
@@ -234,36 +271,77 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
         TextFormField(
           controller: _controller,
           focusNode: _focusNode,
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
           decoration: InputDecoration(
             labelText: widget.label,
-            border: const OutlineInputBorder(),
+            labelStyle:
+                TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: const BorderSide(
+                  color: Color(0xFF3498DB), width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide:
+                  const BorderSide(color: Color(0xFFE74C3C)),
+            ),
+            errorStyle: const TextStyle(color: Color(0xFFE74C3C)),
+            filled: true,
+            fillColor: Colors.white.withValues(alpha: 0.06),
+            contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 14),
             suffixIcon: _isSearching
-                ? const Padding(
-                    padding: EdgeInsets.all(12),
+                ? Padding(
+                    padding: const EdgeInsets.all(12),
                     child: SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      ),
                     ),
                   )
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      if (widget.allowMapSelection && widget.onUseCurrentLocation != null)
+                      if (widget.allowMapSelection &&
+                          widget.onUseCurrentLocation != null)
                         IconButton(
-                          icon: const Icon(Icons.my_location, size: 20),
+                          icon: Icon(Icons.my_location,
+                              size: 20,
+                              color: Colors.white
+                                  .withValues(alpha: 0.5)),
                           tooltip: 'Use current location',
                           onPressed: widget.onUseCurrentLocation,
                         ),
-                      if (widget.allowMapSelection && widget.onPickOnMap != null)
+                      if (widget.allowMapSelection &&
+                          widget.onPickOnMap != null)
                         IconButton(
-                          icon: const Icon(Icons.map, size: 20),
+                          icon: Icon(Icons.map,
+                              size: 20,
+                              color: Colors.white
+                                  .withValues(alpha: 0.5)),
                           tooltip: 'Pick on map',
                           onPressed: widget.onPickOnMap,
                         ),
                       if (_selected != null)
                         IconButton(
-                          icon: const Icon(Icons.clear, size: 20),
+                          icon: Icon(Icons.clear,
+                              size: 20,
+                              color: Colors.white
+                                  .withValues(alpha: 0.5)),
                           onPressed: () {
                             _controller.clear();
                             setState(() {
@@ -286,46 +364,65 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
           },
         ),
         if (_showSuggestions || _tentativeSelection != null)
-          Container(
-            constraints: const BoxConstraints(maxHeight: 400),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              border: Border.all(color: Theme.of(context).colorScheme.outline),
-              borderRadius: BorderRadius.circular(4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 400),
+                decoration: BoxDecoration(
+                  color: _kDropdownBg.withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1)),
+                ),
+                child: _tentativeSelection != null
+                    ? _buildConfirmationUI(context)
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _suggestions.length,
+                        itemBuilder: (context, index) {
+                          final loc = _suggestions[index];
+                          final isStation = loc.stationCode != null;
+                          return ListTile(
+                            dense: true,
+                            leading: Icon(
+                              isStation
+                                  ? Icons.train
+                                  : Icons.location_on,
+                              size: 20,
+                              color: isStation
+                                  ? const Color(0xFF3498DB)
+                                  : const Color(0xFFE74C3C),
+                            ),
+                            title: Text(
+                              loc.displayName,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.white
+                                    .withValues(alpha: 0.9),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: loc.address != null
+                                ? Text(
+                                    loc.address!,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white
+                                          .withValues(alpha: 0.4),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  )
+                                : null,
+                            onTap: () => _selectLocation(loc),
+                          );
+                        },
+                      ),
+              ),
             ),
-            child: _tentativeSelection != null
-                ? _buildConfirmationUI(context)
-                : ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _suggestions.length,
-                    itemBuilder: (context, index) {
-                      final loc = _suggestions[index];
-                      final isStation = loc.stationCode != null;
-                      return ListTile(
-                        dense: true,
-                        leading: Icon(
-                          isStation ? Icons.train : Icons.location_on,
-                          size: 20,
-                          color: isStation ? Colors.blue : Colors.red,
-                        ),
-                        title: Text(
-                          loc.displayName,
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: loc.address != null
-                            ? Text(
-                                loc.address!,
-                                style: const TextStyle(fontSize: 12),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              )
-                            : null,
-                        onTap: () => _selectLocation(loc),
-                      );
-                    },
-                  ),
           ),
       ],
     );

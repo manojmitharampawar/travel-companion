@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/core/theme/glass_widgets.dart';
 import 'package:travel_companion/data/models/metro_line.dart';
 import 'package:travel_companion/data/models/metro_schedule.dart';
@@ -35,7 +36,7 @@ class AddMetroJourneyScreen extends ConsumerWidget {
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: GlassColors.of(context).bg,
       body: GlassMeshBackground(
         primaryColor: _accent,
         child: CustomScrollView(
@@ -47,7 +48,7 @@ class AddMetroJourneyScreen extends ConsumerWidget {
                   kToolbarHeight +
                   80,
               backgroundColor: Colors.transparent,
-              foregroundColor: Colors.white,
+              foregroundColor: GlassColors.of(context).appBarForeground,
               elevation: 0,
               scrolledUnderElevation: 0,
               flexibleSpace: FlexibleSpaceBar(
@@ -181,11 +182,12 @@ class _GlassCitySelection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     if (isLoading) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
+      return Padding(
+        padding: const EdgeInsets.all(40),
         child: Center(
-            child: CircularProgressIndicator(color: Colors.white70)),
+            child: CircularProgressIndicator(color: g.textAlpha(0.7))),
       );
     }
 
@@ -201,7 +203,7 @@ class _GlassCitySelection extends StatelessWidget {
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.9),
+                color: g.textAlpha(0.9),
               ),
             ),
           ),
@@ -219,10 +221,10 @@ class _GlassCitySelection extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
+                        color: g.cardFill(0.08),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.15),
+                          color: g.border(0.15),
                         ),
                       ),
                       child: Row(
@@ -236,9 +238,9 @@ class _GlassCitySelection extends StatelessWidget {
                           const SizedBox(width: 8),
                           Text(
                             city,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: Colors.white,
+                              color: g.text,
                               fontSize: 14,
                             ),
                           ),
@@ -275,6 +277,7 @@ class _GlassSelectedChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
       child: Row(
@@ -288,11 +291,11 @@ class _GlassSelectedChip extends StatelessWidget {
           TextButton.icon(
             onPressed: onChangePressed,
             icon: Icon(Icons.swap_horiz,
-                size: 16, color: Colors.white.withValues(alpha: 0.6)),
+                size: 16, color: g.textAlpha(0.6)),
             label: Text('Change',
                 style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.6))),
+                    color: g.textAlpha(0.6))),
             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
           ),
         ],
@@ -318,11 +321,12 @@ class _GlassMetroLineSelection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     if (isLoading) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
+      return Padding(
+        padding: const EdgeInsets.all(40),
         child: Center(
-            child: CircularProgressIndicator(color: Colors.white70)),
+            child: CircularProgressIndicator(color: g.textAlpha(0.7))),
       );
     }
 
@@ -332,7 +336,7 @@ class _GlassMetroLineSelection extends StatelessWidget {
         child: Center(
           child: Text('No metro lines available',
               style:
-                  TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                  TextStyle(color: g.textAlpha(0.5))),
         ),
       );
     }
@@ -349,7 +353,7 @@ class _GlassMetroLineSelection extends StatelessWidget {
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.9),
+                color: g.textAlpha(0.9),
               ),
             ),
           ),
@@ -381,17 +385,16 @@ class _GlassMetroLineSelection extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(line.lineName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontSize: 15,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white)),
+                                    color: g.text)),
                             if (line.lineCode != null) ...[
                               const SizedBox(height: 3),
                               Text(line.lineCode!,
                                   style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.white
-                                          .withValues(alpha: 0.5))),
+                                      color: g.textAlpha(0.5))),
                             ],
                           ],
                         ),
@@ -404,7 +407,7 @@ class _GlassMetroLineSelection extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Icon(Icons.chevron_right,
-                          color: Colors.white.withValues(alpha: 0.3)),
+                          color: g.textAlpha(0.3)),
                     ],
                   ),
                 ),
@@ -426,6 +429,7 @@ class _GlassSelectedLineChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Row(
@@ -452,11 +456,11 @@ class _GlassSelectedLineChip extends StatelessWidget {
           TextButton.icon(
             onPressed: onChangePressed,
             icon: Icon(Icons.swap_horiz,
-                size: 16, color: Colors.white.withValues(alpha: 0.6)),
+                size: 16, color: g.textAlpha(0.6)),
             label: Text('Change',
                 style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.6))),
+                    color: g.textAlpha(0.6))),
             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
           ),
         ],
@@ -595,6 +599,7 @@ class _GlassScheduleResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return GlassSectionCard(
       title: 'NEXT METROS',
       icon: Icons.schedule,
@@ -608,12 +613,12 @@ class _GlassScheduleResults extends StatelessWidget {
               child: Row(
                 children: [
                   Icon(Icons.refresh,
-                      size: 16, color: Colors.white.withValues(alpha: 0.5)),
+                      size: 16, color: g.textAlpha(0.5)),
                   const SizedBox(width: 4),
                   Text('Refresh',
                       style: TextStyle(
                           fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.5))),
+                          color: g.textAlpha(0.5))),
                 ],
               ),
             ),
@@ -621,10 +626,10 @@ class _GlassScheduleResults extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         if (isLoading)
-          const Padding(
-            padding: EdgeInsets.all(24),
+          Padding(
+            padding: const EdgeInsets.all(24),
             child: Center(
-                child: CircularProgressIndicator(color: Colors.white70)),
+                child: CircularProgressIndicator(color: g.textAlpha(0.7))),
           )
         else if (trains.isEmpty)
           Padding(
@@ -633,16 +638,16 @@ class _GlassScheduleResults extends StatelessWidget {
               child: Column(
                 children: [
                   Icon(Icons.directions_subway_outlined,
-                      size: 40, color: Colors.white.withValues(alpha: 0.3)),
+                      size: 40, color: g.textAlpha(0.3)),
                   const SizedBox(height: 8),
                   Text('No more metros today',
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.5))),
+                          color: g.textAlpha(0.5))),
                   const SizedBox(height: 4),
                   Text('Try swapping direction or check tomorrow',
                       style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.3))),
+                          color: g.textAlpha(0.3))),
                 ],
               ),
             ),

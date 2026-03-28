@@ -10,7 +10,8 @@
       "Bash(xargs grep:*)",
       "Bash(find /d/PraxiaSystem/Workspace/travel-companion/lib/features/history -type f -name *.dart)",
       "Bash(grep -E \"\\\\.\\(dart\\)$\")",
-      "Bash(wc -l /d/PraxiaSystem/Workspace/travel-companion/lib/features/journey/journey_tracking_screen.dart /d/PraxiaSystem/Workspace/travel-companion/lib/features/journey/journey_detail_screen.dart /d/PraxiaSystem/Workspace/travel-companion/lib/features/map/*.dart /d/PraxiaSystem/Workspace/travel-companion/lib/features/settings/settings_screen.dart)"
+      "Bash(wc -l /d/PraxiaSystem/Workspace/travel-companion/lib/features/journey/journey_tracking_screen.dart /d/PraxiaSystem/Workspace/travel-companion/lib/features/journey/journey_detail_screen.dart /d/PraxiaSystem/Workspace/travel-companion/lib/features/map/*.dart /d/PraxiaSystem/Workspace/travel-companion/lib/features/settings/settings_screen.dart)",
+      "Bash(grep -A 40 \"CREATE TABLE.*journeys\\\\|CREATE TABLE \\\\`journeys\\\\`\" /d/PraxiaSystem/Workspace/travel-companion/lib/data/database/app_database.dart)"
     ]
   }
 }

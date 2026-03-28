@@ -1,13 +1,16 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
-import 'package:travel_companion/core/theme/app_theme.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/journey/widgets/location_search_field.dart';
 import 'package:travel_companion/features/map/map_location_picker.dart';
 import 'package:travel_companion/providers/app_providers.dart';
+
+const _kBgColor = Color(0xFF0A0E21);
 
 class EditJourneyScreen extends ConsumerStatefulWidget {
   final Journey journey;
@@ -31,15 +34,17 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
   LocationPoint? _originLocation;
   LocationPoint? _destinationLocation;
   bool _isRepeating = false;
-  int _repeatDays = 0; // Bitmask
+  int _repeatDays = 0;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     final j = widget.journey;
-    _vehicleNumberController = TextEditingController(text: j.vehicleNumber ?? '');
-    _vehicleNameController = TextEditingController(text: j.vehicleName ?? '');
+    _vehicleNumberController =
+        TextEditingController(text: j.vehicleNumber ?? '');
+    _vehicleNameController =
+        TextEditingController(text: j.vehicleName ?? '');
     _pnrController = TextEditingController(text: j.pnr ?? '');
     _classController = TextEditingController(text: j.travelClass ?? '');
     _berthController = TextEditingController(text: j.berth ?? '');
@@ -111,194 +116,233 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
   @override
   Widget build(BuildContext context) {
     final type = widget.journey.transportType;
+    final accentColor = type.color;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Edit ${type.label} Journey'),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Vehicle info
-              if (type == TransportType.train) ...[
-                TextFormField(
-                  controller: _pnrController,
-                  decoration: const InputDecoration(
-                    labelText: 'PNR Number',
-                    prefixIcon: Icon(Icons.confirmation_number),
-                  ),
-                  maxLength: 10,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _vehicleNumberController,
-                  decoration: const InputDecoration(
-                    labelText: 'Train Number',
-                    prefixIcon: Icon(Icons.train),
+      backgroundColor: _kBgColor,
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        children: [
+          _EditBackground(accentColor: accentColor),
+          CustomScrollView(
+            slivers: [
+              // Glass AppBar
+              SliverAppBar(
+                pinned: true,
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                title: Text(
+                  'Edit ${type.label} Journey',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
                   ),
                 ),
-              ] else ...[
-                TextFormField(
-                  controller: _vehicleNumberController,
-                  decoration: InputDecoration(
-                    labelText: '${type.label} Route/Number',
-                    prefixIcon: Icon(type.icon),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 12),
-
-              TextFormField(
-                controller: _vehicleNameController,
-                decoration: InputDecoration(
-                  labelText: '${type.label} Name',
-                  prefixIcon: const Icon(Icons.label),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Location fields
-              if (type != TransportType.train) ...[
-                LocationSearchField(
-                  label: 'Origin',
-                  initialValue: _originLocation,
-                  onSelected: (loc) => setState(() => _originLocation = loc),
-                  stationRepository: ref.read(stationRepositoryProvider),
-                  locationRepository: ref.read(locationRepositoryProvider),
-                  onPickOnMap: () => _pickOnMap(isOrigin: true),
-                ),
-                const SizedBox(height: 16),
-                LocationSearchField(
-                  label: 'Destination',
-                  initialValue: _destinationLocation,
-                  onSelected: (loc) => setState(() => _destinationLocation = loc),
-                  stationRepository: ref.read(stationRepositoryProvider),
-                  locationRepository: ref.read(locationRepositoryProvider),
-                  onPickOnMap: () => _pickOnMap(isOrigin: false),
-                ),
-              ],
-              const SizedBox(height: 16),
-
-              // Date
-              InkWell(
-                onTap: _selectDate,
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Journey Date',
-                    prefixIcon: Icon(Icons.calendar_today),
-                  ),
-                  child: Text(DateFormat('dd MMM yyyy (EEEE)').format(_journeyDate)),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Time
-              InkWell(
-                onTap: _selectTime,
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Departure Time',
-                    prefixIcon: Icon(Icons.access_time),
-                  ),
-                  child: Text(
-                    _journeyTime != null ? _journeyTime!.format(context) : 'Not set',
+                flexibleSpace: ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: Container(color: Colors.transparent),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
 
-              if (type == TransportType.train) ...[
-                TextFormField(
-                  controller: _classController,
-                  decoration: const InputDecoration(
-                    labelText: 'Class',
-                    prefixIcon: Icon(Icons.airline_seat_recline_normal),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _berthController,
-                  decoration: const InputDecoration(
-                    labelText: 'Berth/Seat',
-                    prefixIcon: Icon(Icons.event_seat),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Vehicle info
+                          if (type == TransportType.train) ...[
+                            _glassTextField(
+                              controller: _pnrController,
+                              label: 'PNR Number',
+                              icon: Icons.confirmation_number,
+                              accentColor: accentColor,
+                              maxLength: 10,
+                            ),
+                            const SizedBox(height: 12),
+                            _glassTextField(
+                              controller: _vehicleNumberController,
+                              label: 'Train Number',
+                              icon: Icons.train,
+                              accentColor: accentColor,
+                            ),
+                          ] else ...[
+                            _glassTextField(
+                              controller: _vehicleNumberController,
+                              label: '${type.label} Route/Number',
+                              icon: type.icon,
+                              accentColor: accentColor,
+                            ),
+                          ],
+                          const SizedBox(height: 12),
 
-              // Repeat section
-              const Divider(),
-              SwitchListTile(
-                title: const Text('Repeat Journey'),
-                subtitle: _isRepeating
-                    ? Text(_repeatDaysDisplay())
-                    : const Text('Set as a recurring journey'),
-                value: _isRepeating,
-                onChanged: (val) => setState(() {
-                  _isRepeating = val;
-                  if (!val) _repeatDays = 0;
-                }),
-              ),
+                          _glassTextField(
+                            controller: _vehicleNameController,
+                            label: '${type.label} Name',
+                            icon: Icons.label,
+                            accentColor: accentColor,
+                          ),
+                          const SizedBox(height: 16),
 
-              if (_isRepeating) _buildDaySelector(),
+                          // Location fields
+                          if (type != TransportType.train) ...[
+                            LocationSearchField(
+                              label: 'Origin',
+                              initialValue: _originLocation,
+                              onSelected: (loc) =>
+                                  setState(() => _originLocation = loc),
+                              stationRepository:
+                                  ref.read(stationRepositoryProvider),
+                              locationRepository:
+                                  ref.read(locationRepositoryProvider),
+                              onPickOnMap: () =>
+                                  _pickOnMap(isOrigin: true),
+                            ),
+                            const SizedBox(height: 16),
+                            LocationSearchField(
+                              label: 'Destination',
+                              initialValue: _destinationLocation,
+                              onSelected: (loc) => setState(
+                                  () => _destinationLocation = loc),
+                              stationRepository:
+                                  ref.read(stationRepositoryProvider),
+                              locationRepository:
+                                  ref.read(locationRepositoryProvider),
+                              onPickOnMap: () =>
+                                  _pickOnMap(isOrigin: false),
+                            ),
+                          ],
+                          const SizedBox(height: 16),
 
-              const SizedBox(height: 32),
+                          // Date
+                          _GlassDateField(
+                            label: 'Journey Date',
+                            value: DateFormat('dd MMM yyyy (EEEE)')
+                                .format(_journeyDate),
+                            icon: Icons.calendar_today,
+                            accentColor: accentColor,
+                            onTap: _selectDate,
+                          ),
+                          const SizedBox(height: 16),
 
-              // Save
-              SizedBox(
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _saveChanges,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 24, width: 24,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Save Changes', style: TextStyle(fontSize: 16)),
+                          // Time
+                          _GlassDateField(
+                            label: 'Departure Time',
+                            value: _journeyTime != null
+                                ? _journeyTime!.format(context)
+                                : 'Not set',
+                            icon: Icons.access_time,
+                            accentColor: accentColor,
+                            onTap: _selectTime,
+                            isEmpty: _journeyTime == null,
+                          ),
+                          const SizedBox(height: 16),
+
+                          if (type == TransportType.train) ...[
+                            _glassTextField(
+                              controller: _classController,
+                              label: 'Class',
+                              icon: Icons.airline_seat_recline_normal,
+                              accentColor: accentColor,
+                            ),
+                            const SizedBox(height: 12),
+                            _glassTextField(
+                              controller: _berthController,
+                              label: 'Berth/Seat',
+                              icon: Icons.event_seat,
+                              accentColor: accentColor,
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
+                          // Repeat section
+                          _GlassRepeatSection(
+                            isRepeating: _isRepeating,
+                            repeatDays: _repeatDays,
+                            accentColor: accentColor,
+                            onRepeatingChanged: (val) => setState(() {
+                              _isRepeating = val;
+                              if (!val) _repeatDays = 0;
+                            }),
+                            onDayToggled: (i, selected) =>
+                                setState(() {
+                              if (selected) {
+                                _repeatDays |= (1 << i);
+                              } else {
+                                _repeatDays &= ~(1 << i);
+                              }
+                            }),
+                          ),
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ]),
                 ),
               ),
             ],
           ),
-        ),
+        ],
+      ),
+
+      // Glass save button
+      bottomNavigationBar: _GlassSaveBar(
+        accentColor: accentColor,
+        isLoading: _isLoading,
+        onSave: _saveChanges,
       ),
     );
   }
 
-  Widget _buildDaySelector() {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    return Wrap(
-      spacing: 8,
-      children: List.generate(7, (i) {
-        final isSelected = _repeatDays & (1 << i) != 0;
-        return FilterChip(
-          label: Text(days[i]),
-          selected: isSelected,
-          onSelected: (selected) {
-            setState(() {
-              if (selected) {
-                _repeatDays |= (1 << i);
-              } else {
-                _repeatDays &= ~(1 << i);
-              }
-            });
-          },
-        );
-      }),
+  Widget _glassTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required Color accentColor,
+    int? maxLength,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLength: maxLength,
+      validator: validator,
+      style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        prefixIcon: Icon(icon, color: accentColor),
+        counterStyle:
+            TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide:
+              BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide:
+              BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: accentColor, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFFE74C3C)),
+        ),
+        filled: true,
+        fillColor: Colors.white.withValues(alpha: 0.06),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      ),
     );
-  }
-
-  String _repeatDaysDisplay() {
-    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    final active = <String>[];
-    for (var i = 0; i < 7; i++) {
-      if (_repeatDays & (1 << i) != 0) active.add(days[i]);
-    }
-    if (active.length == 7) return 'Daily';
-    return active.join(', ');
   }
 
   Future<void> _selectDate() async {
@@ -327,20 +371,28 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
       DateTime journeyDateTime = _journeyDate;
       if (_journeyTime != null) {
         journeyDateTime = DateTime(
-          _journeyDate.year, _journeyDate.month, _journeyDate.day,
-          _journeyTime!.hour, _journeyTime!.minute,
+          _journeyDate.year,
+          _journeyDate.month,
+          _journeyDate.day,
+          _journeyTime!.hour,
+          _journeyTime!.minute,
         );
       }
 
       final updated = widget.journey.copyWith(
         vehicleNumber: _vehicleNumberController.text.isEmpty
-            ? null : _vehicleNumberController.text,
+            ? null
+            : _vehicleNumberController.text,
         vehicleName: _vehicleNameController.text.isEmpty
-            ? null : _vehicleNameController.text,
+            ? null
+            : _vehicleNameController.text,
         pnr: _pnrController.text.isEmpty ? null : _pnrController.text,
         journeyDate: journeyDateTime,
-        travelClass: _classController.text.isEmpty ? null : _classController.text,
-        berth: _berthController.text.isEmpty ? null : _berthController.text,
+        travelClass: _classController.text.isEmpty
+            ? null
+            : _classController.text,
+        berth:
+            _berthController.text.isEmpty ? null : _berthController.text,
         originLatitude: _originLocation?.latitude,
         originLongitude: _originLocation?.longitude,
         originName: _originLocation?.name,
@@ -357,9 +409,12 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Journey updated!'),
-            backgroundColor: AppTheme.successColor,
+          SnackBar(
+            content: const Text('Journey updated!'),
+            backgroundColor: const Color(0xFF27AE60),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
           ),
         );
         Navigator.pop(context, true);
@@ -367,11 +422,372 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: AppTheme.dangerColor),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: const Color(0xFFE74C3C),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
+          ),
         );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+}
+
+// ─────────────────────────────────────────────
+// Background
+// ─────────────────────────────────────────────
+
+class _EditBackground extends StatelessWidget {
+  final Color accentColor;
+  const _EditBackground({required this.accentColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned(
+          top: -80,
+          right: -60,
+          child: Container(
+            width: 240,
+            height: 240,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  accentColor.withValues(alpha: 0.12),
+                  accentColor.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 160,
+          left: -80,
+          child: Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  accentColor.withValues(alpha: 0.06),
+                  accentColor.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Glass Date/Time Field
+// ─────────────────────────────────────────────
+
+class _GlassDateField extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color accentColor;
+  final VoidCallback onTap;
+  final bool isEmpty;
+
+  const _GlassDateField({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.accentColor,
+    required this.onTap,
+    this.isEmpty = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle:
+              TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+          prefixIcon: Icon(icon, color: accentColor),
+          suffixIcon: Icon(Icons.keyboard_arrow_down_rounded,
+              color: accentColor),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide:
+                BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide:
+                BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+          ),
+          filled: true,
+          fillColor: Colors.white.withValues(alpha: 0.06),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+        child: Text(
+          value,
+          style: TextStyle(
+            fontSize: 15,
+            color: isEmpty
+                ? Colors.white.withValues(alpha: 0.35)
+                : Colors.white.withValues(alpha: 0.9),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Glass Repeat Section
+// ─────────────────────────────────────────────
+
+class _GlassRepeatSection extends StatelessWidget {
+  final bool isRepeating;
+  final int repeatDays;
+  final Color accentColor;
+  final ValueChanged<bool> onRepeatingChanged;
+  final void Function(int index, bool selected) onDayToggled;
+
+  const _GlassRepeatSection({
+    required this.isRepeating,
+    required this.repeatDays,
+    required this.accentColor,
+    required this.onRepeatingChanged,
+    required this.onDayToggled,
+  });
+
+  String _repeatDaysDisplay() {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final active = <String>[];
+    for (var i = 0; i < 7; i++) {
+      if (repeatDays & (1 << i) != 0) active.add(days[i]);
+    }
+    if (active.length == 7) return 'Daily';
+    return active.join(', ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(14),
+            border:
+                Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(Icons.repeat_rounded, color: accentColor, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Repeat Journey',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color:
+                                  Colors.white.withValues(alpha: 0.9),
+                            ),
+                          ),
+                          Text(
+                            isRepeating
+                                ? _repeatDaysDisplay()
+                                : 'Set as a recurring journey',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.white
+                                  .withValues(alpha: 0.45),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: isRepeating,
+                      onChanged: onRepeatingChanged,
+                      activeThumbColor: accentColor,
+                      activeTrackColor:
+                          accentColor.withValues(alpha: 0.35),
+                      inactiveThumbColor:
+                          Colors.white.withValues(alpha: 0.5),
+                      inactiveTrackColor:
+                          Colors.white.withValues(alpha: 0.1),
+                    ),
+                  ],
+                ),
+              ),
+              if (isRepeating) ...[
+                Divider(
+                    color: Colors.white.withValues(alpha: 0.06),
+                    height: 0),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: _buildDaySelector(),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDaySelector() {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    return Wrap(
+      spacing: 8,
+      runSpacing: 4,
+      children: List.generate(7, (i) {
+        final isSelected = repeatDays & (1 << i) != 0;
+        return GestureDetector(
+          onTap: () => onDayToggled(i, !isSelected),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? accentColor.withValues(alpha: 0.2)
+                  : Colors.white.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isSelected
+                    ? accentColor.withValues(alpha: 0.5)
+                    : Colors.white.withValues(alpha: 0.1),
+              ),
+            ),
+            child: Text(
+              days[i],
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight:
+                    isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected
+                    ? accentColor
+                    : Colors.white.withValues(alpha: 0.5),
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Glass Save Bar
+// ─────────────────────────────────────────────
+
+class _GlassSaveBar extends StatelessWidget {
+  final Color accentColor;
+  final bool isLoading;
+  final VoidCallback onSave;
+
+  const _GlassSaveBar({
+    required this.accentColor,
+    required this.isLoading,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: _kBgColor.withValues(alpha: 0.85),
+            border: Border(
+              top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.1), width: 1),
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+              child: Container(
+                height: 50,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      accentColor,
+                      accentColor.withValues(alpha: 0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: isLoading ? null : onSave,
+                    borderRadius: BorderRadius.circular(14),
+                    child: Center(
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle_outline,
+                                    color: Colors.white),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Save Changes',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

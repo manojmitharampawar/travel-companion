@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/core/theme/glass_widgets.dart';
 import 'package:travel_companion/data/models/local_train_line.dart';
 import 'package:travel_companion/data/models/local_train_schedule.dart';
@@ -35,7 +36,7 @@ class AddLocalTrainJourneyScreen extends ConsumerWidget {
 
     return Scaffold(
       extendBodyBehindAppBar: true,
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: GlassColors.of(context).bg,
       body: GlassMeshBackground(
         primaryColor: _accent,
         child: CustomScrollView(
@@ -47,7 +48,7 @@ class AddLocalTrainJourneyScreen extends ConsumerWidget {
                   kToolbarHeight +
                   80,
               backgroundColor: Colors.transparent,
-              foregroundColor: Colors.white,
+              foregroundColor: GlassColors.of(context).appBarForeground,
               elevation: 0,
               scrolledUnderElevation: 0,
               flexibleSpace: FlexibleSpaceBar(

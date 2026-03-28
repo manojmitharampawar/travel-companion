@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'dart:ui' as ui;
+
+import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -28,6 +29,12 @@ class TrainJourneyMapWidget extends ConsumerStatefulWidget {
   /// Stops before this index are rendered as "passed".
   final int nextStopIndex;
 
+  /// Whether to show control overlay buttons.
+  final bool showControls;
+
+  /// Called when user taps fullscreen button. If null, button is hidden.
+  final VoidCallback? onFullscreen;
+
   const TrainJourneyMapWidget({
     super.key,
     this.origin,
@@ -35,6 +42,8 @@ class TrainJourneyMapWidget extends ConsumerStatefulWidget {
     this.currentPosition,
     this.routeStops = const [],
     this.nextStopIndex = 0,
+    this.showControls = true,
+    this.onFullscreen,
   });
 
   @override
@@ -45,19 +54,63 @@ class TrainJourneyMapWidget extends ConsumerStatefulWidget {
 class _TrainJourneyMapWidgetState
     extends ConsumerState<TrainJourneyMapWidget> {
   final _mapController = MapController();
+  bool _isFollowingUser = true;
 
   @override
   void didUpdateWidget(TrainJourneyMapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Auto-pan to current position when it updates
+    // Auto-pan to current position when it updates (if following)
     if (widget.currentPosition != null &&
-        widget.currentPosition != oldWidget.currentPosition) {
+        widget.currentPosition != oldWidget.currentPosition &&
+        _isFollowingUser) {
       _mapController.move(
         LatLng(widget.currentPosition!.latitude,
             widget.currentPosition!.longitude),
-        _mapController.camera.zoom,
+        _isFollowingUser ? 14.0 : _mapController.camera.zoom,
       );
     }
+  }
+
+  void _zoomToCurrentLocation() {
+    if (widget.currentPosition != null) {
+      setState(() => _isFollowingUser = true);
+      _mapController.move(
+        LatLng(widget.currentPosition!.latitude,
+            widget.currentPosition!.longitude),
+        14.0,
+      );
+    }
+  }
+
+  void _zoomToFullRoute() {
+    setState(() => _isFollowingUser = false);
+    final boundsPoints = _allBoundsPoints();
+    if (boundsPoints.length < 2) return;
+
+    final bounds = LatLngBounds.fromPoints(boundsPoints);
+    _mapController.fitCamera(CameraFit.bounds(
+      bounds: bounds,
+      padding: const EdgeInsets.all(40),
+    ));
+  }
+
+  List<LatLng> _allBoundsPoints() {
+    final points = <LatLng>[];
+    final destLatLng =
+        LatLng(widget.destination.latitude, widget.destination.longitude);
+    if (widget.origin != null) {
+      points.add(
+          LatLng(widget.origin!.latitude, widget.origin!.longitude));
+    }
+    if (widget.currentPosition != null) {
+      points.add(LatLng(widget.currentPosition!.latitude,
+          widget.currentPosition!.longitude));
+    }
+    points.add(destLatLng);
+    for (final s in widget.routeStops) {
+      points.add(s.latLng);
+    }
+    return points;
   }
 
   @override
@@ -70,7 +123,7 @@ class _TrainJourneyMapWidgetState
     // ── Markers ─────────────────────────────
     final markers = <Marker>[];
 
-    // Station markers (only when route stops are available)
+    // Station markers
     for (var i = 0; i < widget.routeStops.length; i++) {
       final stop = widget.routeStops[i];
       final isFirst = i == 0;
@@ -105,100 +158,157 @@ class _TrainJourneyMapWidgetState
     // ── Bounds ──────────────────────────────
     final boundsPoints = <LatLng>[destLatLng];
     if (widget.origin != null) {
-      boundsPoints.add(LatLng(widget.origin!.latitude, widget.origin!.longitude));
+      boundsPoints.add(
+          LatLng(widget.origin!.latitude, widget.origin!.longitude));
     }
     if (widget.currentPosition != null) {
-      boundsPoints.add(LatLng(
-          widget.currentPosition!.latitude, widget.currentPosition!.longitude));
+      boundsPoints.add(LatLng(widget.currentPosition!.latitude,
+          widget.currentPosition!.longitude));
     }
     for (final s in widget.routeStops) {
       boundsPoints.add(s.latLng);
     }
 
     final center = _resolveCenter(destLatLng);
-    final zoom = _calculateZoom(boundsPoints);
+    final zoom = _isFollowingUser && widget.currentPosition != null
+        ? 14.0
+        : _calculateZoom(boundsPoints);
 
     // ── Route polyline ───────────────────────
     final routePoints = widget.routeStops.isNotEmpty
         ? widget.routeStops.map((s) => s.latLng).toList()
         : _fallbackPoints(destLatLng);
 
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        initialCenter: center,
-        initialZoom: zoom,
-        interactionOptions: const InteractionOptions(
-          flags: InteractiveFlag.pinchZoom |
-              InteractiveFlag.drag |
-              InteractiveFlag.doubleTapZoom,
-        ),
-      ),
+    return Stack(
       children: [
-        // 1. Base map
-        TileLayer(
-          urlTemplate:
-              'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
-          userAgentPackageName: 'com.travel_companion.app',
-          fallbackUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        ),
-
-        // 2. OpenRailwayMap overlay (actual railway tracks)
-        if (showRailwayOverlay)
-          TileLayer(
-            urlTemplate:
-                'https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
-            subdomains: const ['a', 'b', 'c'],
-            userAgentPackageName: 'com.travel_companion.app',
-            tileProvider: NetworkTileProvider(),
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: center,
+            initialZoom: zoom,
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.pinchZoom |
+                  InteractiveFlag.drag |
+                  InteractiveFlag.doubleTapZoom,
+            ),
+            onPositionChanged: (pos, hasGesture) {
+              if (hasGesture && _isFollowingUser) {
+                setState(() => _isFollowingUser = false);
+              }
+            },
           ),
+          children: [
+            // 1. Base map
+            TileLayer(
+              urlTemplate:
+                  'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
+              userAgentPackageName: 'com.travel_companion.app',
+              fallbackUrl:
+                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            ),
 
-        // 3. Route polyline (station-to-station)
-        if (routePoints.length >= 2)
-          PolylineLayer(
-            polylines: [
-              // Passed segment: gray
-              if (widget.nextStopIndex > 0 &&
-                  widget.nextStopIndex < widget.routeStops.length)
-                Polyline(
-                  points: widget.routeStops
-                      .sublist(0,
-                          (widget.nextStopIndex + 1).clamp(0, widget.routeStops.length))
-                      .map((s) => s.latLng)
-                      .toList(),
-                  strokeWidth: 3,
-                  color: Colors.grey.shade400,
-                  pattern: const StrokePattern.solid(),
-                ),
-              // Upcoming segment: railway blue
-              Polyline(
-                points: widget.routeStops.isNotEmpty
-                    ? widget.routeStops
-                        .sublist(widget.nextStopIndex
-                            .clamp(0, widget.routeStops.length))
-                        .map((s) => s.latLng)
-                        .toList()
-                    : routePoints,
-                strokeWidth: 4.5,
-                color: const Color(0xFF1565C0),
-                pattern: const StrokePattern.solid(),
-              ),
-            ],
-          ),
-
-        // 4 + 5. Station markers + current position
-        MarkerLayer(markers: markers),
-
-        // 6. Attribution
-        RichAttributionWidget(
-          attributions: [
-            TextSourceAttribution('© OpenStreetMap contributors'),
-            TextSourceAttribution('© CARTO'),
+            // 2. OpenRailwayMap overlay
             if (showRailwayOverlay)
-              TextSourceAttribution('© OpenRailwayMap'),
+              TileLayer(
+                urlTemplate:
+                    'https://{s}.tiles.openrailwaymap.org/standard/{z}/{x}/{y}.png',
+                subdomains: const ['a', 'b', 'c'],
+                userAgentPackageName: 'com.travel_companion.app',
+                tileProvider: NetworkTileProvider(),
+              ),
+
+            // 3. Route polyline
+            if (routePoints.length >= 2)
+              PolylineLayer(
+                polylines: [
+                  // Passed segment: gray
+                  if (widget.nextStopIndex > 0 &&
+                      widget.nextStopIndex < widget.routeStops.length)
+                    Polyline(
+                      points: widget.routeStops
+                          .sublist(
+                              0,
+                              (widget.nextStopIndex + 1)
+                                  .clamp(0, widget.routeStops.length))
+                          .map((s) => s.latLng)
+                          .toList(),
+                      strokeWidth: 3,
+                      color: Colors.grey.shade400,
+                      pattern: const StrokePattern.solid(),
+                    ),
+                  // Upcoming segment: railway blue
+                  Polyline(
+                    points: widget.routeStops.isNotEmpty
+                        ? widget.routeStops
+                            .sublist(widget.nextStopIndex
+                                .clamp(0, widget.routeStops.length))
+                            .map((s) => s.latLng)
+                            .toList()
+                        : routePoints,
+                    strokeWidth: 4.5,
+                    color: const Color(0xFF1565C0),
+                    pattern: const StrokePattern.solid(),
+                  ),
+                ],
+              ),
+
+            // 4 + 5. Station markers + current position
+            MarkerLayer(markers: markers),
+
+            // 6. Attribution
+            RichAttributionWidget(
+              attributions: [
+                TextSourceAttribution(
+                    '© OpenStreetMap contributors'),
+                TextSourceAttribution('© CARTO'),
+                if (showRailwayOverlay)
+                  TextSourceAttribution('© OpenRailwayMap'),
+              ],
+            ),
           ],
         ),
+
+        // Map control overlay
+        if (widget.showControls) _buildControlOverlay(),
       ],
+    );
+  }
+
+  Widget _buildControlOverlay() {
+    return Positioned(
+      right: 12,
+      bottom: 32,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Fullscreen button
+          if (widget.onFullscreen != null)
+            _GlassMapButton(
+              icon: Icons.fullscreen_rounded,
+              onTap: widget.onFullscreen!,
+              tooltip: 'Fullscreen',
+            ),
+          if (widget.onFullscreen != null) const SizedBox(height: 8),
+
+          // Zoom to full route
+          _GlassMapButton(
+            icon: Icons.zoom_out_map_rounded,
+            onTap: _zoomToFullRoute,
+            tooltip: 'View full route',
+          ),
+          const SizedBox(height: 8),
+
+          // Recenter on current location
+          _GlassMapButton(
+            icon: _isFollowingUser
+                ? Icons.my_location_rounded
+                : Icons.location_searching_rounded,
+            onTap: _zoomToCurrentLocation,
+            isActive: _isFollowingUser,
+            tooltip: 'My location',
+          ),
+        ],
+      ),
     );
   }
 
@@ -211,7 +321,6 @@ class _TrainJourneyMapWidgetState
     required bool isNext,
   }) {
     if (isNext) {
-      // Next stop: orange callout bubble
       return Marker(
         point: point,
         width: 120,
@@ -222,7 +331,6 @@ class _TrainJourneyMapWidgetState
     }
 
     if (isLast) {
-      // Destination: red pin
       return Marker(
         point: point,
         width: 36,
@@ -233,7 +341,6 @@ class _TrainJourneyMapWidgetState
       );
     }
 
-    // Regular stop dot
     final color = isPassed
         ? Colors.grey.shade400
         : isFirst
@@ -252,7 +359,8 @@ class _TrainJourneyMapWidgetState
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: color,
-          border: Border.all(color: Colors.white, width: isPassed ? 1 : 1.5),
+          border:
+              Border.all(color: Colors.white, width: isPassed ? 1 : 1.5),
           boxShadow: isPassed
               ? null
               : [
@@ -283,7 +391,8 @@ class _TrainJourneyMapWidgetState
   List<LatLng> _fallbackPoints(LatLng destLatLng) {
     final pts = <LatLng>[];
     if (widget.origin != null) {
-      pts.add(LatLng(widget.origin!.latitude, widget.origin!.longitude));
+      pts.add(
+          LatLng(widget.origin!.latitude, widget.origin!.longitude));
     }
     if (widget.currentPosition != null) {
       pts.add(LatLng(widget.currentPosition!.latitude,
@@ -324,6 +433,74 @@ class _TrainJourneyMapWidgetState
 }
 
 // ─────────────────────────────────────────────
+// Glass Map Button
+// ─────────────────────────────────────────────
+
+class _GlassMapButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool isActive;
+  final String? tooltip;
+
+  const _GlassMapButton({
+    required this.icon,
+    required this.onTap,
+    this.isActive = false,
+    this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Material(
+          color: Colors.transparent,
+          child: Tooltip(
+            message: tooltip ?? '',
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: isActive
+                      ? const Color(0xFF3498DB).withValues(alpha: 0.2)
+                      : const Color(0xFF0A0E21).withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isActive
+                        ? const Color(0xFF3498DB)
+                            .withValues(alpha: 0.4)
+                        : Colors.white.withValues(alpha: 0.15),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  icon,
+                  size: 20,
+                  color: isActive
+                      ? const Color(0xFF3498DB)
+                      : Colors.white.withValues(alpha: 0.8),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
 // Next-stop callout bubble
 // ─────────────────────────────────────────────
 
@@ -338,13 +515,15 @@ class _NextStopCallout extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.orange.shade700,
             borderRadius: BorderRadius.circular(8),
             boxShadow: [
               BoxShadow(
-                color: Colors.orange.shade700.withValues(alpha: 0.4),
+                color:
+                    Colors.orange.shade700.withValues(alpha: 0.4),
                 blurRadius: 6,
                 offset: const Offset(0, 2),
               ),
@@ -373,12 +552,11 @@ class _NextStopCallout extends StatelessWidget {
             ],
           ),
         ),
-        // Callout tail
         CustomPaint(
           size: const Size(10, 6),
-          painter: _CalloutTailPainter(color: Colors.orange.shade700),
+          painter:
+              _CalloutTailPainter(color: Colors.orange.shade700),
         ),
-        // Dot at station point
         Container(
           width: 10,
           height: 10,
@@ -418,7 +596,8 @@ class _CalloutTailPainter extends CustomPainter {
 
 class _PulsingPositionMarker extends StatefulWidget {
   @override
-  State<_PulsingPositionMarker> createState() => _PulsingPositionMarkerState();
+  State<_PulsingPositionMarker> createState() =>
+      _PulsingPositionMarkerState();
 }
 
 class _PulsingPositionMarkerState extends State<_PulsingPositionMarker>
@@ -448,19 +627,18 @@ class _PulsingPositionMarkerState extends State<_PulsingPositionMarker>
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _anim,
-      builder: (_, __) => Stack(
+      builder: (_, _) => Stack(
         alignment: Alignment.center,
         children: [
-          // Outer pulse ring
           Container(
             width: 44 * _anim.value,
             height: 44 * _anim.value,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.blue.withValues(alpha: 0.15 * _anim.value),
+              color: Colors.blue
+                  .withValues(alpha: 0.15 * _anim.value),
             ),
           ),
-          // Inner dot
           Container(
             width: 18,
             height: 18,
@@ -470,7 +648,8 @@ class _PulsingPositionMarkerState extends State<_PulsingPositionMarker>
               border: Border.all(color: Colors.white, width: 2.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blue.shade700.withValues(alpha: 0.5),
+                  color: Colors.blue.shade700
+                      .withValues(alpha: 0.5),
                   blurRadius: 6,
                 ),
               ],

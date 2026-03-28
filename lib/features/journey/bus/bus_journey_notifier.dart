@@ -269,7 +269,10 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
     } catch (e) {
       dev.log('Tile caching failed: $e', name: 'BusJourney');
       if (mounted) {
-        state = state.copyWith(isCachingTiles: false);
+        state = state.copyWith(
+          isCachingTiles: false,
+          errorMessage: 'Map download failed. Please try again.',
+        );
       }
     }
   }

@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_companion/core/theme/app_logo.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/core/theme/glass_widgets.dart';
 import 'package:travel_companion/core/utils/date_utils.dart';
 import 'package:travel_companion/data/models/journey.dart';
@@ -28,8 +30,9 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final journeysAsync = ref.watch(upcomingJourneysProvider);
 
+    final g = GlassColors.of(context);
     return Scaffold(
-      backgroundColor: _kBgColor,
+      backgroundColor: g.bg,
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
@@ -43,7 +46,7 @@ class HomeScreen extends ConsumerWidget {
               ref.invalidate(historyJourneysProvider);
             },
             color: _kSecondaryAccent,
-            backgroundColor: const Color(0xFF1A2340),
+            backgroundColor: g.dropdownBg,
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
@@ -182,8 +185,9 @@ class _HomeBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Container(
-      color: _kBgColor,
+      color: g.bg,
       child: Stack(
         children: [
           Positioned(
@@ -219,6 +223,7 @@ class _GlowOrb extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Container(
       width: size,
       height: size,
@@ -226,9 +231,9 @@ class _GlowOrb extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            color.withValues(alpha: 0.25),
-            color.withValues(alpha: 0.06),
-            color.withValues(alpha: 0.0),
+            g.orbAlpha(color, 0.25),
+            g.orbAlpha(color, 0.06),
+            g.orbAlpha(color, 0.0),
           ],
         ),
       ),
@@ -247,6 +252,7 @@ class _GlassIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Padding(
       padding: const EdgeInsets.only(right: 4),
       child: GestureDetector(
@@ -259,13 +265,13 @@ class _GlassIconButton extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: g.cardFill(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: g.border(0.15),
                 ),
               ),
-              child: Icon(icon, size: 20, color: Colors.white.withValues(alpha: 0.85)),
+              child: Icon(icon, size: 20, color: g.iconAlpha(0.85)),
             ),
           ),
         ),
@@ -291,6 +297,7 @@ class _GlassAppBarContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     final topPad = MediaQuery.paddingOf(context).top;
     final journeys = journeysAsync.valueOrNull ?? [];
     final activeCount =
@@ -303,7 +310,7 @@ class _GlassAppBarContent extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             _kAccent.withValues(alpha: 0.6),
-            _kBgColor,
+            g.bg,
           ],
         ),
       ),
@@ -320,8 +327,8 @@ class _GlassAppBarContent extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.08),
-                    Colors.white.withValues(alpha: 0.0),
+                    g.orbAlpha(Colors.white, 0.08),
+                    g.orbAlpha(Colors.white, 0.0),
                   ],
                 ),
               ),
@@ -337,8 +344,8 @@ class _GlassAppBarContent extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    _kSecondaryAccent.withValues(alpha: 0.1),
-                    _kSecondaryAccent.withValues(alpha: 0.0),
+                    g.orbAlpha(_kSecondaryAccent, 0.1),
+                    g.orbAlpha(_kSecondaryAccent, 0.0),
                   ],
                 ),
               ),
@@ -353,25 +360,8 @@ class _GlassAppBarContent extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Glass icon
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(16),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: const Icon(Icons.navigation_rounded,
-                          size: 28, color: Colors.white),
-                    ),
-                  ),
-                ),
+                // App logo
+                const AppLogo(size: 56),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -381,17 +371,17 @@ class _GlassAppBarContent extends StatelessWidget {
                       Text(
                         _greeting(),
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: g.textAlpha(0.6),
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.8,
                         ),
                       ),
                       const SizedBox(height: 3),
-                      const Text(
+                      Text(
                         'Your Journeys',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: g.text,
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.5,
@@ -420,6 +410,7 @@ class _JourneySummaryBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -427,20 +418,20 @@ class _JourneySummaryBadge extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.1),
+            color: g.cardFill(0.1),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+            border: Border.all(color: g.border(0.18)),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.route_rounded,
-                  size: 14, color: Colors.white.withValues(alpha: 0.8)),
+                  size: 14, color: g.iconAlpha(0.8)),
               const SizedBox(width: 5),
               Text(
                 '$total',
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: g.text,
                   fontWeight: FontWeight.w800,
                   fontSize: 15,
                 ),
@@ -465,7 +456,7 @@ class _JourneySummaryBadge extends StatelessWidget {
                 Text(
                   '$activeCount active',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: g.textAlpha(0.8),
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -489,6 +480,7 @@ class _GlassJourneyCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final g = GlassColors.of(context);
     final journey = enrichedJourney.journey;
     final isActive = journey.status == JourneyStatus.active;
     final isToday = journey.isToday;
@@ -513,12 +505,12 @@ class _GlassJourneyCard extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: isActive
                     ? const Color(0xFF27AE60).withValues(alpha: 0.1)
-                    : Colors.white.withValues(alpha: 0.08),
+                    : g.cardFill(0.08),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isActive
                       ? const Color(0xFF27AE60).withValues(alpha: 0.35)
-                      : Colors.white.withValues(alpha: 0.15),
+                      : g.border(0.15),
                   width: isActive ? 1.5 : 1,
                 ),
                 boxShadow: isActive
@@ -573,25 +565,13 @@ class _GlassJourneyCard extends ConsumerWidget {
                                     style: TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 14,
-                                      color: Colors.white.withValues(alpha: 0.92),
+                                      color: g.textAlpha(0.92),
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                                 const SizedBox(width: 6),
                                 _GlassStatusBadge(status: journey.status),
-                                const SizedBox(width: 4),
-                                _GlassFavoriteButton(
-                                  isFavorite: journey.isFavorite,
-                                  onToggle: () async {
-                                    final repo = ref.read(journeyRepositoryProvider);
-                                    await repo.toggleFavorite(
-                                        journey.id!, !journey.isFavorite);
-                                    ref.invalidate(upcomingJourneysProvider);
-                                    ref.invalidate(historyJourneysProvider);
-                                    ref.invalidate(favoriteJourneysProvider);
-                                  },
-                                ),
                               ],
                             ),
 
@@ -622,7 +602,7 @@ class _GlassJourneyCard extends ConsumerWidget {
                                     style: TextStyle(
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.white.withValues(alpha: 0.8),
+                                      color: g.textAlpha(0.8),
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -632,7 +612,7 @@ class _GlassJourneyCard extends ConsumerWidget {
                                       const EdgeInsets.symmetric(horizontal: 6),
                                   child: Icon(Icons.arrow_forward_rounded,
                                       size: 13,
-                                      color: Colors.white.withValues(alpha: 0.3)),
+                                      color: g.iconAlpha(0.3)),
                                 ),
                                 Expanded(
                                   child: Text(
@@ -640,7 +620,7 @@ class _GlassJourneyCard extends ConsumerWidget {
                                     style: TextStyle(
                                       fontSize: 12.5,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.white.withValues(alpha: 0.8),
+                                      color: g.textAlpha(0.8),
                                     ),
                                     overflow: TextOverflow.ellipsis,
                                     textAlign: TextAlign.end,
@@ -710,6 +690,24 @@ class _GlassJourneyCard extends ConsumerWidget {
                                 ],
                               ),
                             ),
+
+                            const SizedBox(height: 10),
+                            // Row 4: Quick actions
+                            Row(
+                              children: [
+                                const Spacer(),
+                                _GlassFavoritePill(
+                                  isFavorite: journey.isFavorite,
+                                  onToggle: () async {
+                                    final repo = ref.read(journeyRepositoryProvider);
+                                    await repo.toggleFavorite(journey.id!, !journey.isFavorite);
+                                    ref.invalidate(upcomingJourneysProvider);
+                                    ref.invalidate(historyJourneysProvider);
+                                    ref.invalidate(favoriteJourneysProvider);
+                                  },
+                                ),
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -721,7 +719,7 @@ class _GlassJourneyCard extends ConsumerWidget {
                       child: Center(
                         child: Icon(Icons.chevron_right_rounded,
                             size: 20,
-                            color: Colors.white.withValues(alpha: 0.25)),
+                            color: g.iconAlpha(0.25)),
                       ),
                     ),
                   ],
@@ -849,24 +847,52 @@ class _GlassInfoChip extends StatelessWidget {
   }
 }
 
-class _GlassFavoriteButton extends StatelessWidget {
+class _GlassFavoritePill extends StatelessWidget {
   final bool isFavorite;
   final VoidCallback onToggle;
-  const _GlassFavoriteButton({required this.isFavorite, required this.onToggle});
+  const _GlassFavoritePill({required this.isFavorite, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onToggle,
       behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.all(2),
-        child: Icon(
-          isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-          size: 18,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
           color: isFavorite
-              ? const Color(0xFFFF5252)
-              : Colors.white.withValues(alpha: 0.3),
+              ? const Color(0xFFFF5252).withValues(alpha: 0.15)
+              : Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isFavorite
+                ? const Color(0xFFFF5252).withValues(alpha: 0.35)
+                : Colors.white.withValues(alpha: 0.12),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+              size: 14,
+              color: isFavorite
+                  ? const Color(0xFFFF5252)
+                  : Colors.white.withValues(alpha: 0.5),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              isFavorite ? 'Favourited' : 'Favourite',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: isFavorite
+                    ? const Color(0xFFFF5252)
+                    : Colors.white.withValues(alpha: 0.5),
+              ),
+            ),
+          ],
         ),
       ),
     );

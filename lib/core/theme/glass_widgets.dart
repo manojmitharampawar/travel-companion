@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 
 // ═══════════════════════════════════════════════════
 // Glassmorphism Design System
@@ -181,7 +182,7 @@ class GlassCard extends StatelessWidget {
     final bgColor = tintColor ??
         (isDark ? Colors.white : Colors.white);
     final bgOpacity = opacity ??
-        (isDark ? GlassConstants.darkCardOpacity : GlassConstants.cardOpacity);
+        (isDark ? GlassConstants.darkCardOpacity : 0.65);
     final blurAmt = blur ?? GlassConstants.blurAmount;
 
     Widget content = ClipRRect(
@@ -194,8 +195,9 @@ class GlassCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(radius),
             border: border ??
                 Border.all(
-                  color: (isDark ? Colors.white : Colors.white)
-                      .withValues(alpha: GlassConstants.borderOpacity),
+                  color: isDark
+                      ? Colors.white.withValues(alpha: GlassConstants.borderOpacity)
+                      : Colors.black.withValues(alpha: 0.08),
                   width: GlassConstants.borderWidth,
                 ),
           ),
@@ -416,12 +418,12 @@ class GlassChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: highlight
             ? chipColor.withValues(alpha: 0.15)
-            : (isDark ? Colors.white : Colors.white).withValues(alpha: 0.08),
+            : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.white.withValues(alpha: 0.6)),
         borderRadius: BorderRadius.circular(GlassConstants.chipRadius),
         border: Border.all(
           color: highlight
               ? chipColor.withValues(alpha: 0.3)
-              : Colors.white.withValues(alpha: 0.12),
+              : (isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08)),
         ),
       ),
       child: Row(
@@ -600,10 +602,14 @@ class GlassStepIndicator extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.white.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white.withValues(alpha: 0.12)
+                    : Colors.black.withValues(alpha: 0.08),
               ),
             ),
             child: Row(
@@ -620,11 +626,11 @@ class GlassStepIndicator extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: isActive
                               ? accent.withValues(alpha: isCurrent ? 1.0 : 0.7)
-                              : Colors.white.withValues(alpha: 0.08),
+                              : GlassColors.of(context).cardFill(0.08),
                           shape: BoxShape.circle,
                           border: isCurrent
                               ? Border.all(
-                                  color: Colors.white.withValues(alpha: 0.4),
+                                  color: GlassColors.of(context).border(0.4),
                                   width: 2,
                                 )
                               : null,
@@ -648,7 +654,7 @@ class GlassStepIndicator extends StatelessWidget {
                                     fontWeight: FontWeight.w700,
                                     color: isActive
                                         ? Colors.white
-                                        : Colors.white.withValues(alpha: 0.4),
+                                        : GlassColors.of(context).textTertiary,
                                   ),
                                 ),
                         ),
@@ -662,8 +668,8 @@ class GlassStepIndicator extends StatelessWidget {
                             fontWeight:
                                 isCurrent ? FontWeight.w700 : FontWeight.w500,
                             color: isActive
-                                ? Colors.white.withValues(alpha: 0.9)
-                                : Colors.white.withValues(alpha: 0.35),
+                                ? GlassColors.of(context).text
+                                : GlassColors.of(context).textTertiary,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -712,6 +718,7 @@ class GlassTrainCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
@@ -726,12 +733,12 @@ class GlassTrainCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isSelected
                     ? accent.withValues(alpha: 0.18)
-                    : Colors.white.withValues(alpha: 0.07),
+                    : g.cardFill(),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: isSelected
                       ? accent.withValues(alpha: 0.6)
-                      : Colors.white.withValues(alpha: 0.12),
+                      : g.border(),
                   width: isSelected ? 2 : 1,
                 ),
                 boxShadow: isSelected
@@ -778,7 +785,7 @@ class GlassTrainCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.1),
+                                color: g.cardFill(0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -786,7 +793,7 @@ class GlassTrainCard extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: Colors.white.withValues(alpha: 0.8),
+                                  color: g.textAlpha(0.8),
                                 ),
                               ),
                             ),
@@ -806,7 +813,7 @@ class GlassTrainCard extends StatelessWidget {
                             ),
                             Icon(Icons.arrow_forward_ios,
                                 size: 10,
-                                color: Colors.white.withValues(alpha: 0.4)),
+                                color: g.textTertiary),
                           ],
                         ),
                         const SizedBox(height: 6),
@@ -825,7 +832,7 @@ class GlassTrainCard extends StatelessWidget {
                               '$stopsCount stops',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.white.withValues(alpha: 0.5),
+                                color: g.textSecondary,
                               ),
                             ),
                           ],
@@ -871,6 +878,7 @@ class _TimeColumn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Column(
       children: [
         Text(
@@ -878,9 +886,7 @@ class _TimeColumn extends StatelessWidget {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: isSelected
-                ? accent
-                : Colors.white.withValues(alpha: 0.9),
+            color: isSelected ? accent : g.text,
           ),
         ),
         const SizedBox(height: 2),
@@ -889,7 +895,7 @@ class _TimeColumn extends StatelessWidget {
           style: TextStyle(
             fontSize: 9,
             fontWeight: FontWeight.w600,
-            color: Colors.white.withValues(alpha: 0.4),
+            color: g.textTertiary,
             letterSpacing: 0.5,
           ),
         ),
@@ -967,6 +973,7 @@ class GlassDropdownField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return DropdownButtonFormField<T>(
       initialValue: value,
       decoration: InputDecoration(
@@ -976,40 +983,28 @@ class GlassDropdownField<T> extends StatelessWidget {
             : null,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: Colors.white.withValues(alpha: 0.2),
-          ),
+          borderSide: BorderSide(color: g.inputFocusBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: Colors.white.withValues(alpha: 0.15),
-          ),
+          borderSide: BorderSide(color: g.inputBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(
-            color: Colors.white.withValues(alpha: 0.35),
-            width: 2,
-          ),
+          borderSide: BorderSide(color: g.inputFocusBorder, width: 2),
         ),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.06),
+        fillColor: g.inputFill,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        labelStyle: TextStyle(
-          color: Colors.white.withValues(alpha: 0.6),
-        ),
+        labelStyle: TextStyle(color: g.textSecondary),
       ),
-      dropdownColor: const Color(0xFF1A2340),
+      dropdownColor: g.dropdownBg,
       isExpanded: isExpanded,
       menuMaxHeight: menuMaxHeight,
       borderRadius: BorderRadius.circular(14),
-      style: TextStyle(
-        color: Colors.white.withValues(alpha: 0.9),
-        fontSize: 14,
-      ),
-      iconEnabledColor: Colors.white.withValues(alpha: 0.5),
+      style: TextStyle(color: g.text, fontSize: 14),
+      iconEnabledColor: g.textSecondary,
       items: items,
       onChanged: onChanged,
     );

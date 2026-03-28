@@ -1,8 +1,9 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
-import 'package:travel_companion/core/theme/app_theme.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/station.dart';
@@ -10,6 +11,8 @@ import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/journey/widgets/location_search_field.dart';
 import 'package:travel_companion/features/map/map_location_picker.dart';
 import 'package:travel_companion/providers/app_providers.dart';
+
+const _kBgColor = Color(0xFF0A0E21);
 
 class AddJourneyScreen extends ConsumerStatefulWidget {
   final TransportType initialType;
@@ -33,11 +36,8 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
 
   late TransportType _transportType;
 
-  // For train journeys (station-based)
   Station? _boardingStation;
   Station? _destinationStation;
-
-  // For non-train journeys (location-based)
   LocationPoint? _originLocation;
   LocationPoint? _destinationLocation;
 
@@ -45,6 +45,8 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
   TimeOfDay? _journeyTime;
   bool _isLoading = false;
   bool _isAutoFilling = false;
+
+  Color get _accentColor => _transportType.color;
 
   @override
   void initState() {
@@ -79,16 +81,19 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
           final stationRepo = ref.read(stationRepositoryProvider);
 
           if (_boardingStation == null) {
-            final from = await stationRepo.getStationByCode(endpoints['from_station']!);
+            final from = await stationRepo
+                .getStationByCode(endpoints['from_station']!);
             if (from != null) setState(() => _boardingStation = from);
           }
 
           if (_destinationStation == null) {
-            final to = await stationRepo.getStationByCode(endpoints['to_station']!);
+            final to = await stationRepo
+                .getStationByCode(endpoints['to_station']!);
             if (to != null) setState(() => _destinationStation = to);
           }
         }
-      } else if (value.length == 5 && _vehicleNameController.text.isEmpty) {
+      } else if (value.length == 5 &&
+          _vehicleNameController.text.isEmpty) {
         final api = ref.read(trainStatusApiProvider);
         final details = await api.getTrainDetails(value);
         if (details != null && details['train_name'] != null) {
@@ -108,7 +113,8 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
   Future<void> _useCurrentLocation({required bool isOrigin}) async {
     try {
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.high),
       );
       final location = LocationPoint(
         name: 'Current Location',
@@ -125,7 +131,12 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not get current location')),
+          SnackBar(
+            content: const Text('Could not get current location'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
+          ),
         );
       }
     }
@@ -137,7 +148,8 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
       MaterialPageRoute(
         builder: (_) => MapLocationPicker(
           title: isOrigin ? 'Pick Origin' : 'Pick Destination',
-          initialLocation: isOrigin ? _originLocation : _destinationLocation,
+          initialLocation:
+              isOrigin ? _originLocation : _destinationLocation,
         ),
       ),
     );
@@ -155,397 +167,384 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: Text('Add ${_transportType.label} Journey'),
-        elevation: 0,
-        backgroundColor: AppTheme.primaryColor,
-      ),
-      body: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Transport type selector with improved styling
-              Container(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'What are you traveling by?',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _buildTransportTypeSelector(),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Divider(color: Colors.grey[200]),
-              ),
-
-              // Transport-specific fields
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (_transportType == TransportType.train) ..._buildTrainFields(),
-                    if (_transportType == TransportType.bus) ..._buildBusFields(),
-                    if (_transportType == TransportType.metro ||
-                        _transportType == TransportType.localTrain)
-                      ..._buildMetroLocalFields(),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 32),
-
-              // Submit Button with improved styling
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-                child: SizedBox(
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _saveJourney,
-                    style: ElevatedButton.styleFrom(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: _isLoading
-                        ? const SizedBox(
-                            height: 24,
-                            width: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.check_circle_outline),
-                              SizedBox(width: 8),
-                              Text(
-                                'Save Journey',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
+      backgroundColor: _kBgColor,
+      extendBodyBehindAppBar: true,
+      body: Stack(
+        children: [
+          _AddJourneyBackground(accentColor: _accentColor),
+          CustomScrollView(
+            slivers: [
+              // Glass AppBar
+              SliverAppBar(
+                pinned: true,
+                backgroundColor: Colors.transparent,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                title: Text(
+                  'Add ${_transportType.label} Journey',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
                   ),
+                ),
+                flexibleSpace: ClipRect(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: Container(color: Colors.transparent),
+                  ),
+                ),
+              ),
+
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Transport type selector
+                          Text(
+                            'What are you traveling by?',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              color:
+                                  Colors.white.withValues(alpha: 0.8),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          _GlassTransportTypeSelector(
+                            selected: _transportType,
+                            onChanged: (type) {
+                              setState(() {
+                                _transportType = type;
+                                _boardingStation = null;
+                                _destinationStation = null;
+                                _originLocation = null;
+                                _destinationLocation = null;
+                                _vehicleNumberController.clear();
+                                _vehicleNameController.clear();
+                                _pnrController.clear();
+                                _classController.clear();
+                                _berthController.clear();
+                              });
+                            },
+                          ),
+
+                          Padding(
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                            child: Divider(
+                                color: Colors.white
+                                    .withValues(alpha: 0.06)),
+                          ),
+
+                          // Transport-specific fields
+                          if (_transportType == TransportType.train)
+                            ..._buildTrainFields(),
+                          if (_transportType == TransportType.bus)
+                            ..._buildBusFields(),
+                          if (_transportType == TransportType.metro ||
+                              _transportType ==
+                                  TransportType.localTrain)
+                            ..._buildMetroLocalFields(),
+
+                          const SizedBox(height: 32),
+                        ],
+                      ),
+                    ),
+                  ]),
                 ),
               ),
             ],
           ),
+        ],
+      ),
+
+      // Glass save button
+      bottomNavigationBar: _GlassSaveBar(
+        accentColor: _accentColor,
+        isLoading: _isLoading,
+        onSave: _saveJourney,
+      ),
+    );
+  }
+
+  // ─── Glass Input Helpers ──────────────────────
+
+  InputDecoration _glassInputDecoration({
+    required String labelText,
+    String? hintText,
+    String? helperText,
+    required IconData prefixIcon,
+    Widget? suffixIcon,
+  }) {
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      helperText: helperText,
+      labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+      helperStyle:
+          TextStyle(color: Colors.white.withValues(alpha: 0.35)),
+      counterStyle:
+          TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+      prefixIcon: Icon(prefixIcon, color: _accentColor),
+      suffixIcon: suffixIcon,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide:
+            BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide:
+            BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: _accentColor, width: 2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFE74C3C)),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFFE74C3C), width: 2),
+      ),
+      errorStyle: const TextStyle(color: Color(0xFFE74C3C)),
+      filled: true,
+      fillColor: Colors.white.withValues(alpha: 0.06),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
+  TextStyle get _glassTextStyle =>
+      TextStyle(color: Colors.white.withValues(alpha: 0.9));
+
+  Widget _glassSectionLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 14,
+          color: _accentColor.withValues(alpha: 0.9),
+          letterSpacing: 0.3,
         ),
       ),
     );
   }
 
-  Widget _buildTransportTypeSelector() {
-    return SegmentedButton<TransportType>(
-      segments: TransportType.values.map((type) {
-        return ButtonSegment<TransportType>(
-          value: type,
-          label: Text(type.label, style: const TextStyle(fontSize: 12)),
-          icon: Icon(type.icon, size: 18),
-        );
-      }).toList(),
-      selected: {_transportType},
-      onSelectionChanged: (selected) {
-        setState(() {
-          _transportType = selected.first;
-          // Reset type-specific fields
-          _boardingStation = null;
-          _destinationStation = null;
-          _originLocation = null;
-          _destinationLocation = null;
-          _vehicleNumberController.clear();
-          _vehicleNameController.clear();
-          _pnrController.clear();
-          _classController.clear();
-          _berthController.clear();
-        });
-      },
-    );
-  }
+  // ─── Train Fields ─────────────────────────────
 
   List<Widget> _buildTrainFields() {
     return [
-      Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Text(
-          'Train Details',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      _glassSectionLabel('Train Details'),
       TextFormField(
         controller: _pnrController,
-        decoration: InputDecoration(
+        style: _glassTextStyle,
+        decoration: _glassInputDecoration(
           labelText: 'PNR Number (optional)',
           hintText: '10-digit PNR',
-          prefixIcon: const Icon(Icons.confirmation_number_outlined),
           helperText: 'Example: 1234567890',
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          prefixIcon: Icons.confirmation_number_outlined,
         ),
         keyboardType: TextInputType.number,
         maxLength: 10,
       ),
       const SizedBox(height: 16),
-
       TextFormField(
         controller: _vehicleNumberController,
-        decoration: InputDecoration(
+        style: _glassTextStyle,
+        decoration: _glassInputDecoration(
           labelText: 'Train Number *',
           hintText: 'e.g., 12345',
-          prefixIcon: const Icon(Icons.train),
+          helperText: 'Train name will auto-fill when number is entered',
+          prefixIcon: Icons.train,
           suffixIcon: _isAutoFilling
-              ? const Padding(
-                  padding: EdgeInsets.all(12),
+              ? Padding(
+                  padding: const EdgeInsets.all(12),
                   child: SizedBox(
                     width: 20,
                     height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
                   ),
                 )
               : null,
-          helperText: 'Train name will auto-fill when number is entered',
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
         ),
         keyboardType: TextInputType.number,
         maxLength: 5,
         onChanged: _onTrainNumberChanged,
         validator: (value) {
-          if (value == null || value.isEmpty) return 'Train number is required';
-          if (value.length < 4 || value.length > 5) return 'Enter a valid train number';
+          if (value == null || value.isEmpty) {
+            return 'Train number is required';
+          }
+          if (value.length < 4 || value.length > 5) {
+            return 'Enter a valid train number';
+          }
           return null;
         },
       ),
       const SizedBox(height: 16),
-
       TextFormField(
         controller: _vehicleNameController,
-        decoration: InputDecoration(
+        style: _glassTextStyle,
+        decoration: _glassInputDecoration(
           labelText: 'Train Name (optional)',
           hintText: 'e.g., Rajdhani Express',
-          prefixIcon: const Icon(Icons.label_outline),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          prefixIcon: Icons.label_outline,
         ),
       ),
       const SizedBox(height: 24),
-
-      Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Text(
-          'Journey Route',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      _StationSearchField(
+      _glassSectionLabel('Journey Route'),
+      _GlassStationSearchField(
         label: 'Boarding Station *',
         selectedStation: _boardingStation,
-        onSelected: (station) => setState(() => _boardingStation = station),
+        accentColor: _accentColor,
+        onSelected: (station) =>
+            setState(() => _boardingStation = station),
       ),
       const SizedBox(height: 16),
-
-      _StationSearchField(
+      _GlassStationSearchField(
         label: 'Destination Station *',
         selectedStation: _destinationStation,
-        onSelected: (station) => setState(() => _destinationStation = station),
+        accentColor: _accentColor,
+        onSelected: (station) =>
+            setState(() => _destinationStation = station),
       ),
       const SizedBox(height: 24),
-
-      Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Text(
-          'Travel Information',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      _glassSectionLabel('Travel Information'),
       _buildDatePicker(),
       const SizedBox(height: 16),
-
       DropdownButtonFormField<String>(
-        initialValue: _classController.text.isEmpty ? null : _classController.text,
-        decoration: InputDecoration(
+        initialValue: _classController.text.isEmpty
+            ? null
+            : _classController.text,
+        style: _glassTextStyle,
+        dropdownColor: const Color(0xFF1A2340),
+        decoration: _glassInputDecoration(
           labelText: 'Class (optional)',
-          prefixIcon: const Icon(Icons.airline_seat_recline_normal),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          prefixIcon: Icons.airline_seat_recline_normal,
         ),
         items: const [
           DropdownMenuItem(value: 'SL', child: Text('Sleeper (SL)')),
-          DropdownMenuItem(value: '3A', child: Text('AC 3 Tier (3A)')),
-          DropdownMenuItem(value: '2A', child: Text('AC 2 Tier (2A)')),
-          DropdownMenuItem(value: '1A', child: Text('AC First (1A)')),
-          DropdownMenuItem(value: '3E', child: Text('AC 3 Economy (3E)')),
-          DropdownMenuItem(value: 'CC', child: Text('Chair Car (CC)')),
-          DropdownMenuItem(value: 'EC', child: Text('Exec Chair (EC)')),
-          DropdownMenuItem(value: '2S', child: Text('Second Sitting (2S)')),
+          DropdownMenuItem(
+              value: '3A', child: Text('AC 3 Tier (3A)')),
+          DropdownMenuItem(
+              value: '2A', child: Text('AC 2 Tier (2A)')),
+          DropdownMenuItem(
+              value: '1A', child: Text('AC First (1A)')),
+          DropdownMenuItem(
+              value: '3E', child: Text('AC 3 Economy (3E)')),
+          DropdownMenuItem(
+              value: 'CC', child: Text('Chair Car (CC)')),
+          DropdownMenuItem(
+              value: 'EC', child: Text('Exec Chair (EC)')),
+          DropdownMenuItem(
+              value: '2S', child: Text('Second Sitting (2S)')),
         ],
         onChanged: (value) => _classController.text = value ?? '',
       ),
       const SizedBox(height: 16),
-
       TextFormField(
         controller: _berthController,
-        decoration: InputDecoration(
+        style: _glassTextStyle,
+        decoration: _glassInputDecoration(
           labelText: 'Berth/Seat (optional)',
           hintText: 'e.g., S5/32/SU',
-          prefixIcon: const Icon(Icons.event_seat),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          prefixIcon: Icons.event_seat,
         ),
       ),
     ];
   }
 
+  // ─── Bus Fields ───────────────────────────────
+
   List<Widget> _buildBusFields() {
     return [
-      Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Text(
-          'Bus Details',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      _glassSectionLabel('Bus Details'),
       TextFormField(
         controller: _vehicleNumberController,
-        decoration: InputDecoration(
+        style: _glassTextStyle,
+        decoration: _glassInputDecoration(
           labelText: 'Route Number (optional)',
           hintText: 'e.g., Route 101',
-          prefixIcon: const Icon(Icons.route),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          prefixIcon: Icons.route,
         ),
       ),
       const SizedBox(height: 16),
-
       TextFormField(
         controller: _vehicleNameController,
-        decoration: InputDecoration(
+        style: _glassTextStyle,
+        decoration: _glassInputDecoration(
           labelText: 'Bus Operator (optional)',
           hintText: 'e.g., KSRTC, RedBus',
-          prefixIcon: const Icon(Icons.directions_bus),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          prefixIcon: Icons.directions_bus,
         ),
       ),
       const SizedBox(height: 24),
-
-      Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Text(
-          'Journey Route',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      _glassSectionLabel('Journey Route'),
       LocationSearchField(
         label: 'Origin *',
         initialValue: _originLocation,
         onSelected: (loc) => setState(() => _originLocation = loc),
         stationRepository: ref.read(stationRepositoryProvider),
         locationRepository: ref.read(locationRepositoryProvider),
-        onUseCurrentLocation: () => _useCurrentLocation(isOrigin: true),
+        onUseCurrentLocation: () =>
+            _useCurrentLocation(isOrigin: true),
         onPickOnMap: () => _pickOnMap(isOrigin: true),
         transportType: TransportType.bus,
         allowMapSelection: true,
       ),
       const SizedBox(height: 16),
-
       LocationSearchField(
         label: 'Destination *',
         initialValue: _destinationLocation,
-        onSelected: (loc) => setState(() => _destinationLocation = loc),
+        onSelected: (loc) =>
+            setState(() => _destinationLocation = loc),
         stationRepository: ref.read(stationRepositoryProvider),
         locationRepository: ref.read(locationRepositoryProvider),
-        onUseCurrentLocation: () => _useCurrentLocation(isOrigin: false),
+        onUseCurrentLocation: () =>
+            _useCurrentLocation(isOrigin: false),
         onPickOnMap: () => _pickOnMap(isOrigin: false),
         transportType: TransportType.bus,
         allowMapSelection: true,
       ),
       const SizedBox(height: 24),
-
-      Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Text(
-          'Travel Information',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      _glassSectionLabel('Travel Information'),
       _buildDatePicker(),
       const SizedBox(height: 16),
       _buildTimePicker(),
     ];
   }
 
+  // ─── Metro/Local Fields ───────────────────────
+
   List<Widget> _buildMetroLocalFields() {
     return [
-      Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Text(
-          'Journey Details',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      _glassSectionLabel('Journey Details'),
       TextFormField(
         controller: _vehicleNameController,
-        decoration: InputDecoration(
+        style: _glassTextStyle,
+        decoration: _glassInputDecoration(
           labelText: _transportType.vehicleNameLabel,
           hintText: _transportType == TransportType.metro
               ? 'e.g., Blue Line'
               : 'e.g., Western Line',
-          prefixIcon: Icon(_transportType.icon),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
+          prefixIcon: _transportType.icon,
         ),
       ),
       const SizedBox(height: 24),
-
-      Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Text(
-          'Journey Route',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      _glassSectionLabel('Journey Route'),
       LocationSearchField(
         label: 'Origin Station *',
         initialValue: _originLocation,
@@ -556,18 +555,17 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
         allowMapSelection: false,
       ),
       const SizedBox(height: 16),
-
       LocationSearchField(
         label: 'Destination Station *',
         initialValue: _destinationLocation,
-        onSelected: (loc) => setState(() => _destinationLocation = loc),
+        onSelected: (loc) =>
+            setState(() => _destinationLocation = loc),
         stationRepository: ref.read(stationRepositoryProvider),
         locationRepository: ref.read(locationRepositoryProvider),
         transportType: _transportType,
         allowMapSelection: false,
       ),
       const SizedBox(height: 16),
-
       _buildDatePicker(),
       const SizedBox(height: 16),
       _buildTimePicker(),
@@ -577,26 +575,23 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
   Widget _buildDatePicker() {
     return InkWell(
       onTap: _selectDate,
+      borderRadius: BorderRadius.circular(14),
       child: InputDecorator(
-        decoration: InputDecoration(
+        decoration: _glassInputDecoration(
           labelText: 'Journey Date *',
-          prefixIcon: const Icon(Icons.calendar_today),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          prefixIcon: Icons.calendar_today,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
               DateFormat('dd MMM yyyy (EEEE)').format(_journeyDate),
-              style: const TextStyle(fontSize: 15),
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
             ),
-            Icon(
-              Icons.arrow_drop_down,
-              color: Colors.grey[600],
-            ),
+            Icon(Icons.arrow_drop_down, color: _accentColor),
           ],
         ),
       ),
@@ -606,29 +601,27 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
   Widget _buildTimePicker() {
     return InkWell(
       onTap: _selectTime,
+      borderRadius: BorderRadius.circular(14),
       child: InputDecorator(
-        decoration: InputDecoration(
+        decoration: _glassInputDecoration(
           labelText: 'Departure Time (optional)',
-          prefixIcon: const Icon(Icons.access_time),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          prefixIcon: Icons.access_time,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              _journeyTime != null ? _journeyTime!.format(context) : 'Select time',
+              _journeyTime != null
+                  ? _journeyTime!.format(context)
+                  : 'Select time',
               style: TextStyle(
                 fontSize: 15,
-                color: _journeyTime != null ? Colors.black : Colors.grey[500],
+                color: _journeyTime != null
+                    ? Colors.white.withValues(alpha: 0.9)
+                    : Colors.white.withValues(alpha: 0.35),
               ),
             ),
-            Icon(
-              Icons.arrow_drop_down,
-              color: Colors.grey[600],
-            ),
+            Icon(Icons.arrow_drop_down, color: _accentColor),
           ],
         ),
       ),
@@ -656,16 +649,24 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
   Future<void> _saveJourney() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Validate based on transport type
     if (_transportType == TransportType.train) {
-      if (_boardingStation == null) return _showError('Please select a boarding station');
-      if (_destinationStation == null) return _showError('Please select a destination station');
+      if (_boardingStation == null) {
+        return _showError('Please select a boarding station');
+      }
+      if (_destinationStation == null) {
+        return _showError('Please select a destination station');
+      }
       if (_boardingStation!.code == _destinationStation!.code) {
-        return _showError('Boarding and destination cannot be the same');
+        return _showError(
+            'Boarding and destination cannot be the same');
       }
     } else {
-      if (_originLocation == null) return _showError('Please select an origin');
-      if (_destinationLocation == null) return _showError('Please select a destination');
+      if (_originLocation == null) {
+        return _showError('Please select an origin');
+      }
+      if (_destinationLocation == null) {
+        return _showError('Please select a destination');
+      }
     }
 
     setState(() => _isLoading = true);
@@ -674,8 +675,11 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
       DateTime journeyDateTime = _journeyDate;
       if (_journeyTime != null) {
         journeyDateTime = DateTime(
-          _journeyDate.year, _journeyDate.month, _journeyDate.day,
-          _journeyTime!.hour, _journeyTime!.minute,
+          _journeyDate.year,
+          _journeyDate.month,
+          _journeyDate.day,
+          _journeyTime!.hour,
+          _journeyTime!.minute,
         );
       }
 
@@ -683,9 +687,11 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
         transportType: _transportType,
         pnr: _pnrController.text.isEmpty ? null : _pnrController.text,
         vehicleNumber: _vehicleNumberController.text.isEmpty
-            ? null : _vehicleNumberController.text,
+            ? null
+            : _vehicleNumberController.text,
         vehicleName: _vehicleNameController.text.isEmpty
-            ? null : _vehicleNameController.text,
+            ? null
+            : _vehicleNameController.text,
         journeyDate: journeyDateTime,
         boardingStationCode: _boardingStation?.code,
         destinationStationCode: _destinationStation?.code,
@@ -695,20 +701,25 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
         destinationLongitude: _destinationLocation?.longitude,
         originName: _originLocation?.name,
         destinationName: _destinationLocation?.name,
-        travelClass: _classController.text.isEmpty ? null : _classController.text,
-        berth: _berthController.text.isEmpty ? null : _berthController.text,
+        travelClass: _classController.text.isEmpty
+            ? null
+            : _classController.text,
+        berth: _berthController.text.isEmpty
+            ? null
+            : _berthController.text,
         scheduledTime: _journeyTime != null
             ? '${_journeyTime!.hour.toString().padLeft(2, '0')}:${_journeyTime!.minute.toString().padLeft(2, '0')}'
             : null,
         createdAt: DateTime.now(),
       );
 
-      // Save custom locations for reuse
       final locationRepo = ref.read(locationRepositoryProvider);
-      if (_originLocation != null && _originLocation!.stationCode == null) {
+      if (_originLocation != null &&
+          _originLocation!.stationCode == null) {
         await locationRepo.saveLocation(_originLocation!);
       }
-      if (_destinationLocation != null && _destinationLocation!.stationCode == null) {
+      if (_destinationLocation != null &&
+          _destinationLocation!.stationCode == null) {
         await locationRepo.saveLocation(_destinationLocation!);
       }
 
@@ -716,9 +727,12 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Journey added successfully!'),
-            backgroundColor: AppTheme.successColor,
+          SnackBar(
+            content: const Text('Journey added successfully!'),
+            backgroundColor: const Color(0xFF27AE60),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
           ),
         );
         Navigator.pop(context, true);
@@ -732,28 +746,176 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
 
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: AppTheme.dangerColor),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: const Color(0xFFE74C3C),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10)),
+      ),
     );
   }
 }
 
-// Keep the existing train-specific station search field for backward compat
-class _StationSearchField extends ConsumerStatefulWidget {
+// ─────────────────────────────────────────────
+// Background
+// ─────────────────────────────────────────────
+
+class _AddJourneyBackground extends StatelessWidget {
+  final Color accentColor;
+  const _AddJourneyBackground({required this.accentColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned(
+          top: -80,
+          right: -60,
+          child: Container(
+            width: 260,
+            height: 260,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  accentColor.withValues(alpha: 0.12),
+                  accentColor.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 200,
+          left: -80,
+          child: Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  accentColor.withValues(alpha: 0.06),
+                  accentColor.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Glass Transport Type Selector
+// ─────────────────────────────────────────────
+
+class _GlassTransportTypeSelector extends StatelessWidget {
+  final TransportType selected;
+  final ValueChanged<TransportType> onChanged;
+
+  const _GlassTransportTypeSelector({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(14),
+            border:
+                Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Row(
+            children: TransportType.values.map((type) {
+              final isSelected = type == selected;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () => onChanged(type),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? type.color.withValues(alpha: 0.2)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                      border: isSelected
+                          ? Border.all(
+                              color:
+                                  type.color.withValues(alpha: 0.4))
+                          : null,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          type.icon,
+                          size: 18,
+                          color: isSelected
+                              ? type.color
+                              : Colors.white.withValues(alpha: 0.35),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          type.label,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                            color: isSelected
+                                ? type.color
+                                : Colors.white
+                                    .withValues(alpha: 0.35),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Glass Station Search (train-specific)
+// ─────────────────────────────────────────────
+
+class _GlassStationSearchField extends ConsumerStatefulWidget {
   final String label;
   final Station? selectedStation;
+  final Color accentColor;
   final ValueChanged<Station> onSelected;
 
-  const _StationSearchField({
+  const _GlassStationSearchField({
     required this.label,
     required this.selectedStation,
+    required this.accentColor,
     required this.onSelected,
   });
 
   @override
-  ConsumerState<_StationSearchField> createState() => _StationSearchFieldState();
+  ConsumerState<_GlassStationSearchField> createState() =>
+      _GlassStationSearchFieldState();
 }
 
-class _StationSearchFieldState extends ConsumerState<_StationSearchField> {
+class _GlassStationSearchFieldState
+    extends ConsumerState<_GlassStationSearchField> {
   final _controller = TextEditingController();
   List<Station> _suggestions = [];
   bool _showSuggestions = false;
@@ -767,7 +929,7 @@ class _StationSearchFieldState extends ConsumerState<_StationSearchField> {
   }
 
   @override
-  void didUpdateWidget(_StationSearchField oldWidget) {
+  void didUpdateWidget(_GlassStationSearchField oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.selectedStation != oldWidget.selectedStation &&
         widget.selectedStation != null) {
@@ -788,12 +950,18 @@ class _StationSearchFieldState extends ConsumerState<_StationSearchField> {
       children: [
         TextFormField(
           controller: _controller,
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
           decoration: InputDecoration(
             labelText: widget.label,
-            prefixIcon: const Icon(Icons.location_on),
+            labelStyle:
+                TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+            prefixIcon:
+                Icon(Icons.location_on, color: widget.accentColor),
             suffixIcon: widget.selectedStation != null
                 ? IconButton(
-                    icon: const Icon(Icons.clear),
+                    icon: Icon(Icons.clear,
+                        color:
+                            Colors.white.withValues(alpha: 0.5)),
                     onPressed: () {
                       _controller.clear();
                       setState(() {
@@ -803,47 +971,90 @@ class _StationSearchFieldState extends ConsumerState<_StationSearchField> {
                     },
                   )
                 : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide:
+                  BorderSide(color: widget.accentColor, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(14),
+              borderSide:
+                  const BorderSide(color: Color(0xFFE74C3C)),
+            ),
+            errorStyle: const TextStyle(color: Color(0xFFE74C3C)),
+            filled: true,
+            fillColor: Colors.white.withValues(alpha: 0.06),
+            contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16, vertical: 14),
           ),
           onChanged: _onSearchChanged,
           validator: (_) {
-            if (widget.selectedStation == null) return 'Please select a station';
+            if (widget.selectedStation == null) {
+              return 'Please select a station';
+            }
             return null;
           },
         ),
         if (_showSuggestions && _suggestions.isNotEmpty)
-          Container(
-            constraints: const BoxConstraints(maxHeight: 200),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 200),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A2340).withValues(alpha: 0.95),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.1)),
                 ),
-              ],
-            ),
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _suggestions.length,
-              itemBuilder: (context, index) {
-                final station = _suggestions[index];
-                return ListTile(
-                  dense: true,
-                  leading: const Icon(Icons.train, size: 20),
-                  title: Text(station.name),
-                  subtitle: Text(station.code),
-                  onTap: () {
-                    _controller.text = station.displayName;
-                    widget.onSelected(station);
-                    setState(() {
-                      _showSuggestions = false;
-                      _suggestions = [];
-                    });
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: _suggestions.length,
+                  itemBuilder: (context, index) {
+                    final station = _suggestions[index];
+                    return ListTile(
+                      dense: true,
+                      leading: Icon(Icons.train,
+                          size: 20, color: widget.accentColor),
+                      title: Text(
+                        station.name,
+                        style: TextStyle(
+                          color:
+                              Colors.white.withValues(alpha: 0.9),
+                          fontSize: 14,
+                        ),
+                      ),
+                      subtitle: Text(
+                        station.code,
+                        style: TextStyle(
+                          color:
+                              Colors.white.withValues(alpha: 0.45),
+                          fontSize: 12,
+                        ),
+                      ),
+                      onTap: () {
+                        _controller.text = station.displayName;
+                        widget.onSelected(station);
+                        setState(() {
+                          _showSuggestions = false;
+                          _suggestions = [];
+                        });
+                      },
+                    );
                   },
-                );
-              },
+                ),
+              ),
             ),
           ),
       ],
@@ -866,5 +1077,98 @@ class _StationSearchFieldState extends ConsumerState<_StationSearchField> {
       _suggestions = results;
       _showSuggestions = true;
     });
+  }
+}
+
+// ─────────────────────────────────────────────
+// Glass Save Bar
+// ─────────────────────────────────────────────
+
+class _GlassSaveBar extends StatelessWidget {
+  final Color accentColor;
+  final bool isLoading;
+  final VoidCallback onSave;
+
+  const _GlassSaveBar({
+    required this.accentColor,
+    required this.isLoading,
+    required this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: _kBgColor.withValues(alpha: 0.85),
+            border: Border(
+              top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.1), width: 1),
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+              child: Container(
+                height: 50,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      accentColor,
+                      accentColor.withValues(alpha: 0.8),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accentColor.withValues(alpha: 0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: isLoading ? null : onSave,
+                    borderRadius: BorderRadius.circular(14),
+                    child: Center(
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 24,
+                              width: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisAlignment:
+                                  MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.check_circle_outline,
+                                    color: Colors.white),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Save Journey',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

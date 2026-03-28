@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,15 +10,18 @@ import 'package:travel_companion/core/services/alarm_service.dart';
 import 'package:travel_companion/core/services/location_service.dart';
 import 'package:travel_companion/core/services/routing_service.dart';
 import 'package:travel_companion/core/utils/date_utils.dart';
-import 'package:travel_companion/core/theme/app_theme.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/train_route.dart';
 import 'package:travel_companion/data/models/train_route_stop.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
+import 'package:travel_companion/features/map/fullscreen_map_screen.dart';
 import 'package:travel_companion/features/map/journey_map_widget.dart';
 import 'package:travel_companion/features/map/train_journey_map_widget.dart';
 import 'package:travel_companion/providers/app_providers.dart';
+
+const _kBgColor = Color(0xFF0A0E21);
 
 class JourneyTrackingScreen extends ConsumerStatefulWidget {
   final Journey journey;
@@ -34,12 +38,8 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
   TrackingState _trackingState = TrackingState.idle;
   double _distanceToDestination = 0;
 
-  /// Legacy route stops (station codes only) — kept for non-train fallback
   List<TrainRoute> _routeStops = [];
-
-  /// Enriched route stops with coordinates — used for train/local-train map
   List<TrainRouteStop> _routeStopsWithCoords = [];
-
   List<LatLng> _roadRoutePoints = [];
   StreamSubscription<TrackingState>? _stateSub;
   StreamSubscription<double>? _distanceSub;
@@ -47,16 +47,13 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
   Position? _currentPosition;
   LocationPoint? _destinationPoint;
   LocationPoint? _originPoint;
-  bool _mapExpanded = true; // expanded by default for trains
+  bool _mapExpanded = true;
 
-  /// Index of the next upcoming stop (within _routeStopsWithCoords)
   int _nextStopIndex = 0;
 
-  // Pulse animation for "tracking" state indicator
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
 
-  // ScrollController for the route strip
   final _stripScrollCtrl = ScrollController();
 
   TransportType get _type => widget.journey.transportType;
@@ -101,7 +98,9 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
       final station = await ref
           .read(stationRepositoryProvider)
           .getStationByCode(journey.destinationStationCode!);
-      if (station != null) _destinationPoint = LocationPoint.fromStation(station);
+      if (station != null) {
+        _destinationPoint = LocationPoint.fromStation(station);
+      }
     }
 
     if (journey.originLatitude != null && journey.originLongitude != null) {
@@ -121,7 +120,8 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
     if (_destinationPoint == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Destination location data not available')),
+          const SnackBar(
+              content: Text('Destination location data not available')),
         );
       }
       return;
@@ -152,7 +152,6 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
       if (j.vehicleNumber != null &&
           j.boardingStationCode != null &&
           j.destinationStationCode != null) {
-        // Load enriched stops with coordinates for map rendering
         final stopsWithCoords = await ref
             .read(trainRepositoryProvider)
             .getRouteSegmentWithCoordinates(
@@ -161,7 +160,6 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
               toStation: j.destinationStationCode!,
             );
 
-        // Also load legacy stops for AlarmService compatibility
         final legacyStops = await ref
             .read(trainRepositoryProvider)
             .getRouteBetweenStations(
@@ -179,7 +177,6 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
       }
     }
 
-    // For bus journeys: fetch the actual road route polyline from OSRM.
     if (_type == TransportType.bus &&
         _originPoint != null &&
         _destinationPoint != null) {
@@ -203,12 +200,9 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
     if (mounted) setState(() => _trackingState = TrackingState.tracking);
   }
 
-  /// Determines which stop in the route is the "next" one based on
-  /// distance from current position to each stop's location.
   void _updateNextStopIndex() {
     if (_routeStopsWithCoords.isEmpty || _currentPosition == null) return;
 
-    // Find the first upcoming stop closer than 3 km (near mode) to advance
     for (var i = _nextStopIndex; i < _routeStopsWithCoords.length - 1; i++) {
       final stop = _routeStopsWithCoords[i];
       final distToStop = LocationService.calculateDistance(
@@ -217,8 +211,6 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
         stop.latitude,
         stop.longitude,
       );
-      // If we're within 1.5 km of a stop and it's before the destination,
-      // advance the next-stop pointer past it
       if (distToStop < 1500 && i == _nextStopIndex) {
         _nextStopIndex = (i + 1).clamp(0, _routeStopsWithCoords.length - 1);
         _scrollStripToIndex(_nextStopIndex);
@@ -230,25 +222,21 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
   void _scrollStripToIndex(int index) {
     if (!_stripScrollCtrl.hasClients) return;
     const itemWidth = 80.0;
-    final offset = (index * itemWidth - 80).clamp(
-        0.0, _stripScrollCtrl.position.maxScrollExtent);
+    final offset = (index * itemWidth - 80)
+        .clamp(0.0, _stripScrollCtrl.position.maxScrollExtent);
     _stripScrollCtrl.animateTo(offset,
         duration: const Duration(milliseconds: 400), curve: Curves.easeOut);
   }
 
   Color _distanceColor() {
     if (_distanceToDestination <= AppConstants.alertNear(_type)) {
-      return AppTheme.dangerColor;
+      return const Color(0xFFE74C3C);
     }
     if (_distanceToDestination <= AppConstants.alertFar(_type)) {
-      return AppTheme.warningColor;
+      return const Color(0xFFF39C12);
     }
-    return AppTheme.successColor;
+    return const Color(0xFF27AE60);
   }
-
-  Color _appBarColor() => _trackingState == TrackingState.approaching
-      ? AppTheme.dangerColor
-      : _type.color;
 
   @override
   Widget build(BuildContext context) {
@@ -260,149 +248,110 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
     final etaText = AppDateUtils.formatDuration(eta);
 
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        backgroundColor: _appBarColor(),
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: false,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${_type.label} Tracking',
-              style: const TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
-            ),
-            if (_destinationPoint != null)
-              Text(
-                _destinationPoint!.name,
-                style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.8)),
-              ),
-          ],
-        ),
-        actions: [
-          // GPS status dot
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(
-              child: _trackingState == TrackingState.tracking
-                  ? AnimatedBuilder(
-                      animation: _pulseAnim,
-                      builder: (context, _) => Transform.scale(
-                        scale: _pulseAnim.value,
-                        child: Container(
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    )
-                  : Icon(
-                      _trackingState == TrackingState.idle
-                          ? Icons.gps_off_rounded
-                          : Icons.gps_fixed_rounded,
-                      size: 18,
-                      color: Colors.white,
-                    ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
+      backgroundColor: _kBgColor,
+      extendBodyBehindAppBar: true,
+      body: Stack(
         children: [
-          // ── State Banner ────────────────────────
-          _TrackingStateBanner(state: _trackingState),
+          // Background orbs
+          _TrackingBackground(
+            accentColor: _type.color,
+            isApproaching: _trackingState == TrackingState.approaching,
+          ),
 
-          // ── Scrollable Content ──────────────────
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              child: Column(
-                children: [
-                  // Dashboard: Distance + ETA side by side
-                  Row(
+          Column(
+            children: [
+              // ── Glass AppBar ────────────────────────
+              _buildGlassAppBar(context),
+
+              // ── State Banner ────────────────────────
+              _GlassTrackingStateBanner(state: _trackingState),
+
+              // ── Scrollable Content ──────────────────
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: _MetricCard(
-                          label: 'Distance',
-                          value: '$distanceKm km',
-                          icon: Icons.near_me_rounded,
-                          accentColor: _distanceColor(),
-                        ),
+                      // Dashboard: Distance + ETA
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _GlassMetricCard(
+                              label: 'Distance',
+                              value: '$distanceKm km',
+                              icon: Icons.near_me_rounded,
+                              accentColor: _distanceColor(),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _GlassMetricCard(
+                              label: 'ETA',
+                              value: etaText,
+                              icon: Icons.schedule_rounded,
+                              accentColor: _type.color,
+                              subLabel: 'approx.',
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _MetricCard(
-                          label: 'ETA',
-                          value: etaText,
-                          icon: Icons.schedule_rounded,
-                          accentColor: _type.color,
-                          subLabel: 'approx.',
+                      const SizedBox(height: 12),
+
+                      // Next stop card (rail journeys with coord data)
+                      if (_isRailType &&
+                          _routeStopsWithCoords.isNotEmpty &&
+                          _nextStopIndex <
+                              _routeStopsWithCoords.length - 1) ...[
+                        _GlassNextStopCard(
+                          stop: _routeStopsWithCoords[_nextStopIndex],
+                          type: _type,
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                      ] else if (_destinationPoint != null) ...[
+                        _GlassDestinationCard(
+                          point: _destinationPoint!,
+                          type: _type,
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // Map section
+                      if (_destinationPoint != null) _buildMapSection(),
+
+                      // Horizontal route strip (trains with coord data)
+                      if (_isRailType &&
+                          _routeStopsWithCoords.length > 1) ...[
+                        const SizedBox(height: 12),
+                        _GlassHorizontalRouteStrip(
+                          stops: _routeStopsWithCoords,
+                          nextStopIndex: _nextStopIndex,
+                          type: _type,
+                          scrollController: _stripScrollCtrl,
+                        ),
+                      ] else if (_routeStops.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        _GlassRouteTimeline(
+                            routeStops: _routeStops, type: _type),
+                      ] else if (_originPoint != null &&
+                          _destinationPoint != null) ...[
+                        const SizedBox(height: 12),
+                        _GlassSimpleRouteCard(
+                          origin: _originPoint!,
+                          destination: _destinationPoint!,
+                          type: _type,
+                        ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: 12),
-
-                  // Next stop card (rail journeys with coord data)
-                  if (_isRailType &&
-                      _routeStopsWithCoords.isNotEmpty &&
-                      _nextStopIndex < _routeStopsWithCoords.length - 1) ...[
-                    _NextStopCard(
-                      stop: _routeStopsWithCoords[_nextStopIndex],
-                      type: _type,
-                    ),
-                    const SizedBox(height: 12),
-                  ] else if (_destinationPoint != null) ...[
-                    _DestinationCard(
-                      point: _destinationPoint!,
-                      type: _type,
-                    ),
-                    const SizedBox(height: 12),
-                  ],
-
-                  // Map section
-                  if (_destinationPoint != null) _buildMapSection(),
-
-                  // Horizontal route strip (trains with coord data)
-                  if (_isRailType && _routeStopsWithCoords.length > 1) ...[
-                    const SizedBox(height: 12),
-                    _HorizontalRouteStrip(
-                      stops: _routeStopsWithCoords,
-                      nextStopIndex: _nextStopIndex,
-                      type: _type,
-                      scrollController: _stripScrollCtrl,
-                    ),
-                  ]
-                  // Legacy vertical timeline fallback
-                  else if (_routeStops.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    _ModernRouteTimeline(
-                        routeStops: _routeStops, type: _type),
-                  ] else if (_originPoint != null &&
-                      _destinationPoint != null) ...[
-                    const SizedBox(height: 12),
-                    _SimpleRouteCard(
-                      origin: _originPoint!,
-                      destination: _destinationPoint!,
-                      type: _type,
-                    ),
-                  ],
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
 
       // ── Sticky Action Bar ───────────────────────
-      bottomNavigationBar: _StickyActionBar(
+      bottomNavigationBar: _GlassStickyActionBar(
         state: _trackingState,
         type: _type,
         onDismiss: _dismissAlarm,
@@ -411,93 +360,215 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
     );
   }
 
-  Widget _buildMapSection() {
-    final useTrainMap =
-        _isRailType && _routeStopsWithCoords.isNotEmpty;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        children: [
-          // Toggle header
-          InkWell(
-            onTap: () => setState(() => _mapExpanded = !_mapExpanded),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: _type.color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Icon(Icons.map_rounded, size: 16, color: _type.color),
-                  ),
-                  const SizedBox(width: 10),
-                  Text(
-                    _mapExpanded ? 'Hide Map' : 'Show Map',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: _type.color),
-                  ),
-                  if (useTrainMap) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1565C0).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'Railway',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1565C0),
-                        ),
-                      ),
-                    ),
-                  ],
-                  const Spacer(),
-                  Icon(
-                    _mapExpanded
-                        ? Icons.expand_less_rounded
-                        : Icons.expand_more_rounded,
-                    color: _type.color,
-                  ),
-                ],
-              ),
+  Widget _buildGlassAppBar(BuildContext context) {
+    final topPad = MediaQuery.paddingOf(context).top;
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: EdgeInsets.fromLTRB(8, topPad, 8, 8),
+          decoration: BoxDecoration(
+            color: _trackingState == TrackingState.approaching
+                ? const Color(0xFFE74C3C).withValues(alpha: 0.15)
+                : _type.color.withValues(alpha: 0.1),
+            border: Border(
+              bottom: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.08), width: 1),
             ),
           ),
-          if (_mapExpanded)
-            SizedBox(
-              height: 300,
-              child: useTrainMap
-                  ? TrainJourneyMapWidget(
-                      origin: _originPoint,
-                      destination: _destinationPoint!,
-                      currentPosition: _currentPosition,
-                      routeStops: _routeStopsWithCoords,
-                      nextStopIndex: _nextStopIndex,
-                    )
-                  : JourneyMapWidget(
-                      origin: _originPoint,
-                      destination: _destinationPoint!,
-                      currentPosition: _currentPosition,
-                      routeStops: _routeStops,
-                      transportType: _type,
-                      roadRoutePoints: _roadRoutePoints,
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_rounded,
+                    color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${_type.label} Tracking',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
                     ),
-            ),
-        ],
+                    if (_destinationPoint != null)
+                      Text(
+                        _destinationPoint!.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.6),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              // GPS status dot
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _trackingState == TrackingState.tracking
+                    ? AnimatedBuilder(
+                        animation: _pulseAnim,
+                        builder: (context, _) => Transform.scale(
+                          scale: _pulseAnim.value,
+                          child: Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFF27AE60),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFF27AE60)
+                                      .withValues(alpha: 0.5),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )
+                    : Icon(
+                        _trackingState == TrackingState.idle
+                            ? Icons.gps_off_rounded
+                            : Icons.gps_fixed_rounded,
+                        size: 18,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openFullscreenMap({required bool useTrainMap}) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FullscreenMapScreen(
+          origin: _originPoint,
+          destination: _destinationPoint!,
+          currentPosition: _currentPosition,
+          transportType: _type,
+          useTrainMap: useTrainMap,
+          routeStops: _routeStops,
+          roadRoutePoints: _roadRoutePoints,
+          trainRouteStops: _routeStopsWithCoords,
+          nextStopIndex: _nextStopIndex,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapSection() {
+    final useTrainMap = _isRailType && _routeStopsWithCoords.isNotEmpty;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(16),
+            border:
+                Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            children: [
+              // Toggle header
+              InkWell(
+                onTap: () => setState(() => _mapExpanded = !_mapExpanded),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: _type.color.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(Icons.map_rounded,
+                            size: 16, color: _type.color),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        _mapExpanded ? 'Hide Map' : 'Show Map',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: _type.color,
+                        ),
+                      ),
+                      if (useTrainMap) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1565C0)
+                                .withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                                color: const Color(0xFF1565C0)
+                                    .withValues(alpha: 0.3)),
+                          ),
+                          child: const Text(
+                            'Railway',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1565C0),
+                            ),
+                          ),
+                        ),
+                      ],
+                      const Spacer(),
+                      Icon(
+                        _mapExpanded
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        color: _type.color,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (_mapExpanded)
+                SizedBox(
+                  height: 300,
+                  child: useTrainMap
+                      ? TrainJourneyMapWidget(
+                          origin: _originPoint,
+                          destination: _destinationPoint!,
+                          currentPosition: _currentPosition,
+                          routeStops: _routeStopsWithCoords,
+                          nextStopIndex: _nextStopIndex,
+                          onFullscreen: () => _openFullscreenMap(
+                              useTrainMap: true),
+                        )
+                      : JourneyMapWidget(
+                          origin: _originPoint,
+                          destination: _destinationPoint!,
+                          currentPosition: _currentPosition,
+                          routeStops: _routeStops,
+                          transportType: _type,
+                          roadRoutePoints: _roadRoutePoints,
+                          onFullscreen: () => _openFullscreenMap(
+                              useTrainMap: false),
+                        ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -509,24 +580,14 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
   Future<void> _stopTracking() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Stop Tracking?',
-            style: TextStyle(fontWeight: FontWeight.w700)),
-        content: const Text(
-          'You will no longer receive arrival alerts for this journey.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Keep Tracking'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.dangerColor),
-            child: const Text('Stop'),
-          ),
-        ],
+      builder: (context) => _GlassConfirmDialog(
+        title: 'Stop Tracking?',
+        message:
+            'You will no longer receive arrival alerts for this journey.',
+        confirmLabel: 'Stop',
+        confirmColor: const Color(0xFFE74C3C),
+        onConfirm: () => Navigator.pop(context, true),
+        onCancel: () => Navigator.pop(context, false),
       ),
     );
 
@@ -538,71 +599,165 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
 }
 
 // ─────────────────────────────────────────────
-// Tracking State Banner (animated)
+// Background Orbs
 // ─────────────────────────────────────────────
 
-class _TrackingStateBanner extends StatelessWidget {
+class _TrackingBackground extends StatelessWidget {
+  final Color accentColor;
+  final bool isApproaching;
+
+  const _TrackingBackground({
+    required this.accentColor,
+    this.isApproaching = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final alertColor =
+        isApproaching ? const Color(0xFFE74C3C) : accentColor;
+    return Stack(
+      children: [
+        Positioned(
+          top: -60,
+          right: -80,
+          child: Container(
+            width: 240,
+            height: 240,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  alertColor.withValues(alpha: 0.15),
+                  alertColor.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          bottom: 200,
+          left: -60,
+          child: Container(
+            width: 180,
+            height: 180,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  accentColor.withValues(alpha: 0.08),
+                  accentColor.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (isApproaching)
+          Positioned(
+            bottom: 80,
+            right: -40,
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(0xFFE74C3C).withValues(alpha: 0.12),
+                    const Color(0xFFE74C3C).withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Glass Tracking State Banner
+// ─────────────────────────────────────────────
+
+class _GlassTrackingStateBanner extends StatelessWidget {
   final TrackingState state;
-  const _TrackingStateBanner({required this.state});
+  const _GlassTrackingStateBanner({required this.state});
 
   @override
   Widget build(BuildContext context) {
     final (color, icon, text) = switch (state) {
-      TrackingState.idle =>
-        (Colors.grey.shade600, Icons.gps_off_rounded, 'Initializing...'),
+      TrackingState.idle => (
+          Colors.grey.shade600,
+          Icons.gps_off_rounded,
+          'Initializing...'
+        ),
       TrackingState.tracking => (
-          AppTheme.successColor,
+          const Color(0xFF27AE60),
           Icons.gps_fixed_rounded,
           'Tracking your journey'
         ),
       TrackingState.approaching => (
-          AppTheme.dangerColor,
+          const Color(0xFFE74C3C),
           Icons.warning_rounded,
           'APPROACHING DESTINATION!'
         ),
       TrackingState.arrived => (
-          AppTheme.primaryColor,
+          const Color(0xFF3498DB),
           Icons.check_circle_rounded,
           'You have arrived!'
         ),
     };
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      color: color,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 200),
-            child: Icon(icon, color: Colors.white, size: 17, key: ValueKey(state)),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.15),
+            border: Border(
+              bottom:
+                  BorderSide(color: color.withValues(alpha: 0.3), width: 1),
+            ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 200),
+                child:
+                    Icon(icon, color: color, size: 17, key: ValueKey(state)),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                text,
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// Metric Card (Distance / ETA)
+// Glass Metric Card
 // ─────────────────────────────────────────────
 
-class _MetricCard extends StatelessWidget {
+class _GlassMetricCard extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
   final Color accentColor;
   final String? subLabel;
 
-  const _MetricCard({
+  const _GlassMetricCard({
     required this.label,
     required this.value,
     required this.icon,
@@ -612,223 +767,244 @@ class _MetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: accentColor.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.07),
+            borderRadius: BorderRadius.circular(16),
+            border:
+                Border.all(color: Colors.white.withValues(alpha: 0.12)),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: accentColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 18, color: accentColor),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.w800,
-              color: accentColor,
-              letterSpacing: -0.5,
-            ),
-          ),
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                    fontSize: 12,
-                    color: AppTheme.textSecondary,
-                    fontWeight: FontWeight.w500),
-              ),
-              if (subLabel != null) ...[
-                const SizedBox(width: 4),
-                Text(
-                  subLabel!,
-                  style: TextStyle(
-                      fontSize: 10,
-                      color: AppTheme.textSecondary.withValues(alpha: 0.6)),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: accentColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-              ],
+                child: Icon(icon, size: 18, color: accentColor),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w800,
+                  color: accentColor,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              Row(
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (subLabel != null) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      subLabel!,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white.withValues(alpha: 0.3),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// Next Stop Card (rail journeys)
+// Glass Next Stop Card
 // ─────────────────────────────────────────────
 
-class _NextStopCard extends StatelessWidget {
+class _GlassNextStopCard extends StatelessWidget {
   final TrainRouteStop stop;
   final TransportType type;
 
-  const _NextStopCard({required this.stop, required this.type});
+  const _GlassNextStopCard({required this.stop, required this.type});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.orange.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+    const orangeAccent = Color(0xFFF39C12);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: orangeAccent.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border:
+                Border.all(color: orangeAccent.withValues(alpha: 0.25)),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.orange.shade50,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(Icons.train_rounded, size: 20, color: Colors.orange.shade700),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: orangeAccent.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.train_rounded,
+                    size: 20, color: orangeAccent),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Next Stop',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.4,
+                        )),
+                    Text(
+                      stop.stationName,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                    Text(
+                      stop.stationCode,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (stop.timeDisplay.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('Arr.',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.white.withValues(alpha: 0.4),
+                        )),
+                    const Text(
+                      '',
+                      style: TextStyle(fontSize: 0),
+                    ),
+                    Text(
+                      stop.timeDisplay,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: orangeAccent,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Next Stop',
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: AppTheme.textSecondary,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.4)),
-                Text(
-                  stop.stationName,
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  stop.stationCode,
-                  style: TextStyle(
-                      fontSize: 12, color: Colors.grey.shade500),
-                ),
-              ],
-            ),
-          ),
-          if (stop.timeDisplay.isNotEmpty)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                const Text('Arr.',
-                    style: TextStyle(
-                        fontSize: 10, color: AppTheme.textSecondary)),
-                Text(
-                  stop.timeDisplay,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.orange.shade700,
-                  ),
-                ),
-              ],
-            ),
-        ],
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// Destination Card
+// Glass Destination Card
 // ─────────────────────────────────────────────
 
-class _DestinationCard extends StatelessWidget {
+class _GlassDestinationCard extends StatelessWidget {
   final LocationPoint point;
   final TransportType type;
 
-  const _DestinationCard({required this.point, required this.type});
+  const _GlassDestinationCard({required this.point, required this.type});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppTheme.dangerColor.withValues(alpha: 0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+    const dangerColor = Color(0xFFE74C3C);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: dangerColor.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(14),
+            border:
+                Border.all(color: dangerColor.withValues(alpha: 0.25)),
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: AppTheme.dangerColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(Icons.place_rounded,
-                size: 20, color: AppTheme.dangerColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Destination',
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: AppTheme.textSecondary,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.4)),
-                Text(
-                  point.name,
-                  style: const TextStyle(
-                      fontSize: 15, fontWeight: FontWeight.w700),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: dangerColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
+                child: const Icon(Icons.place_rounded,
+                    size: 20, color: dangerColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Destination',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.4,
+                        )),
+                    Text(
+                      point.name,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white.withValues(alpha: 0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// Horizontal Route Strip
+// Glass Horizontal Route Strip
 // ─────────────────────────────────────────────
 
-class _HorizontalRouteStrip extends StatelessWidget {
+class _GlassHorizontalRouteStrip extends StatelessWidget {
   final List<TrainRouteStop> stops;
   final int nextStopIndex;
   final TransportType type;
   final ScrollController scrollController;
 
-  const _HorizontalRouteStrip({
+  const _GlassHorizontalRouteStrip({
     required this.stops,
     required this.nextStopIndex,
     required this.type,
@@ -837,81 +1013,85 @@ class _HorizontalRouteStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(16),
+            border:
+                Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: type.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.route_rounded, size: 14, color: type.color),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: type.color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.route_rounded,
+                        size: 14, color: type.color),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Route · ${stops.length} stops',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      color: type.color,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (nextStopIndex > 0)
+                    Text(
+                      '$nextStopIndex passed',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withValues(alpha: 0.4),
+                      ),
+                    ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Route · ${stops.length} stops',
-                style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: type.color),
-              ),
-              const Spacer(),
-              if (nextStopIndex > 0)
-                Text(
-                  '$nextStopIndex passed',
-                  style: TextStyle(
-                      fontSize: 11, color: Colors.grey.shade500),
+              const SizedBox(height: 14),
+              SingleChildScrollView(
+                controller: scrollController,
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: List.generate(stops.length, (i) {
+                    final stop = stops[i];
+                    final isPassed = i < nextStopIndex;
+                    final isNext = i == nextStopIndex;
+                    final isFirst = i == 0;
+                    final isLast = i == stops.length - 1;
+
+                    return _GlassStripNode(
+                      stop: stop,
+                      isPassed: isPassed,
+                      isNext: isNext,
+                      isFirst: isFirst,
+                      isLast: isLast,
+                      accentColor: type.color,
+                    );
+                  }),
                 ),
+              ),
             ],
           ),
-          const SizedBox(height: 14),
-          SingleChildScrollView(
-            controller: scrollController,
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: List.generate(stops.length, (i) {
-                final stop = stops[i];
-                final isPassed = i < nextStopIndex;
-                final isNext = i == nextStopIndex;
-                final isFirst = i == 0;
-                final isLast = i == stops.length - 1;
-
-                return _StripNode(
-                  stop: stop,
-                  isPassed: isPassed,
-                  isNext: isNext,
-                  isFirst: isFirst,
-                  isLast: isLast,
-                  accentColor: type.color,
-                );
-              }),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _StripNode extends StatelessWidget {
+class _GlassStripNode extends StatelessWidget {
   final TrainRouteStop stop;
   final bool isPassed;
   final bool isNext;
@@ -919,7 +1099,7 @@ class _StripNode extends StatelessWidget {
   final bool isLast;
   final Color accentColor;
 
-  const _StripNode({
+  const _GlassStripNode({
     required this.stop,
     required this.isPassed,
     required this.isNext,
@@ -930,32 +1110,32 @@ class _StripNode extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const orangeAccent = Color(0xFFF39C12);
     final dotColor = isNext
-        ? Colors.orange.shade700
+        ? orangeAccent
         : isPassed
-            ? Colors.grey.shade400
+            ? Colors.white.withValues(alpha: 0.25)
             : isFirst
-                ? Colors.green.shade600
+                ? const Color(0xFF27AE60)
                 : isLast
-                    ? AppTheme.dangerColor
+                    ? const Color(0xFFE74C3C)
                     : accentColor.withValues(alpha: 0.6);
 
     final dotSize = isNext || isFirst || isLast ? 12.0 : 8.0;
 
     final labelColor = isNext
-        ? Colors.orange.shade700
+        ? orangeAccent
         : isPassed
-            ? Colors.grey.shade400
+            ? Colors.white.withValues(alpha: 0.3)
             : isFirst || isLast
-                ? Colors.black87
-                : Colors.grey.shade700;
+                ? Colors.white.withValues(alpha: 0.9)
+                : Colors.white.withValues(alpha: 0.5);
 
     return SizedBox(
       width: 76,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Connector row
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -964,8 +1144,8 @@ class _StripNode extends StatelessWidget {
                   child: Container(
                     height: 2,
                     color: isPassed
-                        ? Colors.grey.shade300
-                        : accentColor.withValues(alpha: 0.25),
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : accentColor.withValues(alpha: 0.2),
                   ),
                 )
               else
@@ -977,13 +1157,15 @@ class _StripNode extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: dotColor,
                   border: (isNext || isFirst || isLast)
-                      ? Border.all(color: Colors.white, width: 1.5)
+                      ? Border.all(
+                          color: Colors.white.withValues(alpha: 0.4),
+                          width: 1.5)
                       : null,
                   boxShadow: isNext
                       ? [
                           BoxShadow(
-                            color: Colors.orange.withValues(alpha: 0.4),
-                            blurRadius: 6,
+                            color: orangeAccent.withValues(alpha: 0.5),
+                            blurRadius: 8,
                           )
                         ]
                       : null,
@@ -994,8 +1176,8 @@ class _StripNode extends StatelessWidget {
                   child: Container(
                     height: 2,
                     color: isPassed
-                        ? Colors.grey.shade300
-                        : accentColor.withValues(alpha: 0.25),
+                        ? Colors.white.withValues(alpha: 0.15)
+                        : accentColor.withValues(alpha: 0.2),
                   ),
                 )
               else
@@ -1003,13 +1185,13 @@ class _StripNode extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          // Station code
           Text(
             stop.stationCode,
             style: TextStyle(
               fontSize: isNext ? 11 : 10,
-              fontWeight:
-                  isNext || isFirst || isLast ? FontWeight.w700 : FontWeight.w500,
+              fontWeight: isNext || isFirst || isLast
+                  ? FontWeight.w700
+                  : FontWeight.w500,
               color: labelColor,
             ),
             textAlign: TextAlign.center,
@@ -1019,9 +1201,10 @@ class _StripNode extends StatelessWidget {
             Text(
               '← Next',
               style: TextStyle(
-                  fontSize: 9,
-                  color: Colors.orange.shade700,
-                  fontWeight: FontWeight.w600),
+                fontSize: 9,
+                color: orangeAccent,
+                fontWeight: FontWeight.w600,
+              ),
             ),
         ],
       ),
@@ -1030,148 +1213,160 @@ class _StripNode extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────
-// Modern Route Timeline (legacy / no-coord fallback)
+// Glass Route Timeline (legacy fallback)
 // ─────────────────────────────────────────────
 
-class _ModernRouteTimeline extends StatelessWidget {
+class _GlassRouteTimeline extends StatelessWidget {
   final List<TrainRoute> routeStops;
   final TransportType type;
 
-  const _ModernRouteTimeline({required this.routeStops, required this.type});
+  const _GlassRouteTimeline(
+      {required this.routeStops, required this.type});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(16),
+            border:
+                Border.all(color: Colors.white.withValues(alpha: 0.1)),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: type.color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.route_rounded, size: 14, color: type.color),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: type.color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.route_rounded,
+                        size: 14, color: type.color),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Route · ${routeStops.length} stops',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                      color: type.color,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Route · ${routeStops.length} stops',
-                style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: type.color),
+              const SizedBox(height: 14),
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: routeStops.length,
+                itemBuilder: (_, i) {
+                  final stop = routeStops[i];
+                  final isFirst = i == 0;
+                  final isLast = i == routeStops.length - 1;
+                  final isTerminal = isFirst || isLast;
+
+                  return IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          child: Column(
+                            children: [
+                              Container(
+                                width: isTerminal ? 12 : 8,
+                                height: isTerminal ? 12 : 8,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isFirst
+                                      ? const Color(0xFF27AE60)
+                                      : isLast
+                                          ? const Color(0xFFE74C3C)
+                                          : Colors.white
+                                              .withValues(alpha: 0.25),
+                                ),
+                              ),
+                              if (!isLast)
+                                Expanded(
+                                  child: Container(
+                                    width: 2,
+                                    color: type.color
+                                        .withValues(alpha: 0.18),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.only(bottom: 10),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    stop.stationCode,
+                                    style: TextStyle(
+                                      fontSize:
+                                          isTerminal ? 14 : 13,
+                                      fontWeight: isTerminal
+                                          ? FontWeight.w700
+                                          : FontWeight.w400,
+                                      color: isTerminal
+                                          ? Colors.white.withValues(
+                                              alpha: 0.9)
+                                          : Colors.white.withValues(
+                                              alpha: 0.5),
+                                    ),
+                                  ),
+                                ),
+                                if (stop.departureTime != null ||
+                                    stop.arrivalTime != null)
+                                  Text(
+                                    stop.departureTime ??
+                                        stop.arrivalTime!,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white
+                                          .withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: routeStops.length,
-            itemBuilder: (_, i) {
-              final stop = routeStops[i];
-              final isFirst = i == 0;
-              final isLast = i == routeStops.length - 1;
-              final isTerminal = isFirst || isLast;
-
-              return IntrinsicHeight(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    SizedBox(
-                      width: 20,
-                      child: Column(
-                        children: [
-                          Container(
-                            width: isTerminal ? 12 : 8,
-                            height: isTerminal ? 12 : 8,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: isFirst
-                                  ? AppTheme.successColor
-                                  : isLast
-                                      ? AppTheme.dangerColor
-                                      : Colors.grey.shade300,
-                            ),
-                          ),
-                          if (!isLast)
-                            Expanded(
-                              child: Container(
-                                width: 2,
-                                color: type.color.withValues(alpha: 0.18),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                stop.stationCode,
-                                style: TextStyle(
-                                  fontSize: isTerminal ? 14 : 13,
-                                  fontWeight: isTerminal
-                                      ? FontWeight.w700
-                                      : FontWeight.w400,
-                                  color: isTerminal
-                                      ? AppTheme.textPrimary
-                                      : AppTheme.textSecondary,
-                                ),
-                              ),
-                            ),
-                            if (stop.departureTime != null ||
-                                stop.arrivalTime != null)
-                              Text(
-                                stop.departureTime ?? stop.arrivalTime!,
-                                style: const TextStyle(
-                                    fontSize: 12,
-                                    color: AppTheme.textSecondary),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// Simple Route Card (non-train)
+// Glass Simple Route Card (non-train)
 // ─────────────────────────────────────────────
 
-class _SimpleRouteCard extends StatelessWidget {
+class _GlassSimpleRouteCard extends StatelessWidget {
   final LocationPoint origin;
   final LocationPoint destination;
   final TransportType type;
 
-  const _SimpleRouteCard({
+  const _GlassSimpleRouteCard({
     required this.origin,
     required this.destination,
     required this.type,
@@ -1179,70 +1374,107 @@ class _SimpleRouteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          Column(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(14),
+            border:
+                Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          ),
+          child: Row(
             children: [
+              Column(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFF27AE60),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF27AE60)
+                              .withValues(alpha: 0.4),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 2,
+                    height: 30,
+                    color: Colors.white.withValues(alpha: 0.15),
+                  ),
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFE74C3C),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFE74C3C)
+                              .withValues(alpha: 0.4),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(origin.displayName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        )),
+                    const SizedBox(height: 18),
+                    Text(destination.displayName,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Colors.white.withValues(alpha: 0.9),
+                        )),
+                  ],
+                ),
+              ),
               Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                      shape: BoxShape.circle, color: AppTheme.successColor)),
-              Container(width: 2, height: 30, color: Colors.grey.shade300),
-              Container(
-                  width: 10,
-                  height: 10,
-                  decoration: const BoxDecoration(
-                      shape: BoxShape.circle, color: AppTheme.dangerColor)),
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: type.color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(type.icon, size: 20, color: type.color),
+              ),
             ],
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(origin.displayName,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 14)),
-                const SizedBox(height: 18),
-                Text(destination.displayName,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 14)),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: type.color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(type.icon, size: 20, color: type.color),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
 // ─────────────────────────────────────────────
-// Sticky Action Bar
+// Glass Sticky Action Bar
 // ─────────────────────────────────────────────
 
-class _StickyActionBar extends StatelessWidget {
+class _GlassStickyActionBar extends StatelessWidget {
   final TrackingState state;
   final TransportType type;
   final VoidCallback onDismiss;
   final VoidCallback onStop;
 
-  const _StickyActionBar({
+  const _GlassStickyActionBar({
     required this.state,
     required this.type,
     required this.onDismiss,
@@ -1251,55 +1483,218 @@ class _StickyActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 12,
-            offset: const Offset(0, -3),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: _kBgColor.withValues(alpha: 0.85),
+            border: Border(
+              top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.1), width: 1),
+            ),
           ),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (state == TrackingState.approaching) ...[
-                FilledButton.icon(
-                  onPressed: onDismiss,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.dangerColor,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size.fromHeight(52),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
-                    textStyle: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.w700),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (state == TrackingState.approaching) ...[
+                    Container(
+                      width: double.infinity,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFFE74C3C),
+                            Color(0xFFC0392B),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFE74C3C)
+                                .withValues(alpha: 0.4),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: onDismiss,
+                          borderRadius: BorderRadius.circular(14),
+                          child: const Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.alarm_off_rounded,
+                                    color: Colors.white),
+                                SizedBox(width: 8),
+                                Text(
+                                  "I'm Awake! Dismiss Alarm",
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  Container(
+                    width: double.infinity,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                          color: type.color.withValues(alpha: 0.5),
+                          width: 1.5),
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: onStop,
+                        borderRadius: BorderRadius.circular(14),
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.stop_circle_outlined,
+                                  color: type.color),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Stop Tracking',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: type.color,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                  icon: const Icon(Icons.alarm_off_rounded),
-                  label: const Text("I'm Awake! Dismiss Alarm"),
-                ),
-                const SizedBox(height: 8),
-              ],
-              OutlinedButton.icon(
-                onPressed: onStop,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                  side: BorderSide(color: type.color, width: 1.5),
-                  foregroundColor: type.color,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
-                  textStyle: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w600),
-                ),
-                icon: const Icon(Icons.stop_circle_outlined),
-                label: const Text('Stop Tracking'),
+                ],
               ),
-            ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────
+// Glass Confirm Dialog
+// ─────────────────────────────────────────────
+
+class _GlassConfirmDialog extends StatelessWidget {
+  final String title;
+  final String message;
+  final String confirmLabel;
+  final Color confirmColor;
+  final VoidCallback onConfirm;
+  final VoidCallback onCancel;
+
+  const _GlassConfirmDialog({
+    required this.title,
+    required this.message,
+    required this.confirmLabel,
+    required this.confirmColor,
+    required this.onConfirm,
+    required this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0A0E21).withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(20),
+              border:
+                  Border.all(color: Colors.white.withValues(alpha: 0.15)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  message,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: onCancel,
+                        style: TextButton.styleFrom(
+                          foregroundColor:
+                              Colors.white.withValues(alpha: 0.7),
+                          padding:
+                              const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('Keep Tracking'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: confirmColor,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  confirmColor.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: TextButton(
+                          onPressed: onConfirm,
+                          style: TextButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 12),
+                          ),
+                          child: Text(confirmLabel),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
