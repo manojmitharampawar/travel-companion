@@ -7,9 +7,9 @@ import 'package:travel_companion/data/models/train_route_stop.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/journey/train/train_journey_notifier.dart';
 import 'package:travel_companion/features/journey/widgets/journey_form_widgets.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/features/journey/widgets/train_stop_selector.dart';
 
-const _kBgColor = Color(0xFF0A0E21);
 const _kAccent = Color(0xFF1565C0);
 
 class AddTrainJourneyScreen extends ConsumerStatefulWidget {
@@ -60,8 +60,10 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
       }
     });
 
+    final g = GlassColors.of(context);
+
     return Scaffold(
-      backgroundColor: _kBgColor,
+      backgroundColor: g.bg,
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
@@ -105,7 +107,7 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                         children: [
                           TextFormField(
                             controller: _pnrCtrl,
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+                            style: TextStyle(color: g.textAlpha(0.9)),
                             decoration: glassInputDecoration(
                               labelText: 'PNR Number (optional)',
                               hintText: '10-digit PNR',
@@ -120,7 +122,7 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
 
                           TextFormField(
                             controller: _trainNumCtrl,
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+                            style: TextStyle(color: g.textAlpha(0.9)),
                             decoration: glassInputDecoration(
                               labelText: 'Train Number *',
                               hintText: 'e.g. 12301',
@@ -153,7 +155,7 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
 
                           TextFormField(
                             controller: _trainNameCtrl,
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+                            style: TextStyle(color: g.textAlpha(0.9)),
                             decoration: glassInputDecoration(
                               labelText: 'Train Name (optional)',
                               hintText: 'e.g. Rajdhani Express',
@@ -290,12 +292,12 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                               labelText: 'Travel Class (optional)',
                               prefixIcon: Icons.airline_seat_recline_normal_outlined,
                             ),
-                            dropdownColor: const Color(0xFF1A2340),
+                            dropdownColor: g.dropdownBg,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.9),
+                              color: g.textAlpha(0.9),
                               fontSize: 14,
                             ),
-                            iconEnabledColor: Colors.white.withValues(alpha: 0.5),
+                            iconEnabledColor: g.textAlpha(0.5),
                             borderRadius: BorderRadius.circular(14),
                             items: const [
                               DropdownMenuItem(value: 'SL', child: Text('Sleeper — SL')),
@@ -313,7 +315,7 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
 
                           TextFormField(
                             controller: _berthCtrl,
-                            style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+                            style: TextStyle(color: g.textAlpha(0.9)),
                             decoration: glassInputDecoration(
                               labelText: 'Berth / Seat (optional)',
                               hintText: 'e.g. S5/32/SU',
@@ -361,7 +363,7 @@ class _TrainBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: _kBgColor,
+      color: GlassColors.of(context).bg,
       child: Stack(
         children: [
           Positioned(
@@ -472,6 +474,7 @@ class _GlassTrainRoutePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     final routeStops = _getRouteStops();
     if (routeStops.isEmpty) return const SizedBox.shrink();
 
@@ -573,7 +576,7 @@ class _GlassTrainRoutePreview extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: g.textAlpha(0.8),
                 ),
                 overflow: TextOverflow.ellipsis,
               ),
@@ -582,7 +585,7 @@ class _GlassTrainRoutePreview extends StatelessWidget {
               '${routeStops.length} stops',
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.white.withValues(alpha: 0.4),
+                color: g.textAlpha(0.4),
               ),
             ),
             const SizedBox(width: 6),
@@ -592,7 +595,7 @@ class _GlassTrainRoutePreview extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white.withValues(alpha: 0.8),
+                  color: g.textAlpha(0.8),
                 ),
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.right,

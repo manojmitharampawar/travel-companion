@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/data/repositories/location_repository.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/repositories/station_repository.dart';
 
 class LocationSearchField extends StatefulWidget {
@@ -37,8 +38,6 @@ class LocationSearchField extends StatefulWidget {
   @override
   State<LocationSearchField> createState() => _LocationSearchFieldState();
 }
-
-const _kDropdownBg = Color(0xFF1A2340);
 
 class _LocationSearchFieldState extends State<LocationSearchField> {
   final _controller = TextEditingController();
@@ -153,6 +152,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
   }
 
   Widget _buildConfirmationUI(BuildContext context) {
+    final g = GlassColors.of(context);
     final isStation = _tentativeSelection!.stationCode != null;
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -178,7 +178,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
                       'Confirm selection?',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: g.textAlpha(0.45),
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -188,7 +188,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         fontSize: 15,
-                        color: Colors.white.withValues(alpha: 0.9),
+                        color: g.textAlpha(0.9),
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -204,7 +204,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
               _tentativeSelection!.address!,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withValues(alpha: 0.45),
+                color: g.textAlpha(0.45),
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -218,13 +218,13 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.15)),
+                        color: g.border(0.15)),
                   ),
                   child: TextButton(
                     onPressed: _discardTentativeSelection,
                     style: TextButton.styleFrom(
                       foregroundColor:
-                          Colors.white.withValues(alpha: 0.7),
+                          g.textAlpha(0.7),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                     child: const Text('Change'),
@@ -265,26 +265,27 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextFormField(
           controller: _controller,
           focusNode: _focusNode,
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+          style: TextStyle(color: g.textAlpha(0.9)),
           decoration: InputDecoration(
             labelText: widget.label,
             labelStyle:
-                TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+                TextStyle(color: g.textAlpha(0.5)),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.15)),
+                  color: g.border(0.15)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.15)),
+                  color: g.border(0.15)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -298,7 +299,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
             ),
             errorStyle: const TextStyle(color: Color(0xFFE74C3C)),
             filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.06),
+            fillColor: g.cardFill(0.06),
             contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16, vertical: 14),
             suffixIcon: _isSearching
@@ -309,7 +310,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white.withValues(alpha: 0.5),
+                        color: g.textAlpha(0.5),
                       ),
                     ),
                   )
@@ -321,8 +322,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
                         IconButton(
                           icon: Icon(Icons.my_location,
                               size: 20,
-                              color: Colors.white
-                                  .withValues(alpha: 0.5)),
+                              color: g.textAlpha(0.5)),
                           tooltip: 'Use current location',
                           onPressed: widget.onUseCurrentLocation,
                         ),
@@ -331,8 +331,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
                         IconButton(
                           icon: Icon(Icons.map,
                               size: 20,
-                              color: Colors.white
-                                  .withValues(alpha: 0.5)),
+                              color: g.textAlpha(0.5)),
                           tooltip: 'Pick on map',
                           onPressed: widget.onPickOnMap,
                         ),
@@ -340,8 +339,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
                         IconButton(
                           icon: Icon(Icons.clear,
                               size: 20,
-                              color: Colors.white
-                                  .withValues(alpha: 0.5)),
+                              color: g.textAlpha(0.5)),
                           onPressed: () {
                             _controller.clear();
                             setState(() {
@@ -371,10 +369,10 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
               child: Container(
                 constraints: const BoxConstraints(maxHeight: 400),
                 decoration: BoxDecoration(
-                  color: _kDropdownBg.withValues(alpha: 0.95),
+                  color: g.dropdownBg.withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1)),
+                      color: g.border(0.1)),
                 ),
                 child: _tentativeSelection != null
                     ? _buildConfirmationUI(context)
@@ -399,8 +397,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
                               loc.displayName,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.white
-                                    .withValues(alpha: 0.9),
+                                color: g.textAlpha(0.9),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -410,8 +407,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
                                     loc.address!,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.white
-                                          .withValues(alpha: 0.4),
+                                      color: g.textAlpha(0.4),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,

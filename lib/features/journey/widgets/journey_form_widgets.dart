@@ -3,12 +3,10 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/core/theme/glass_widgets.dart';
 import 'package:travel_companion/data/models/station.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
-
-// Glass design constants shared across journey forms
-const _kBgColor = Color(0xFF0A0E21);
 
 // ─────────────────────────────────────────────
 // 1. TransportHeroHeader — glass version
@@ -28,6 +26,7 @@ class TransportHeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     final topPad = MediaQuery.paddingOf(context).top + kToolbarHeight + 4;
 
     return Container(
@@ -37,7 +36,7 @@ class TransportHeroHeader extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             type.color.withValues(alpha: 0.6),
-            _kBgColor,
+            g.bg,
           ],
         ),
       ),
@@ -119,7 +118,7 @@ class TransportHeroHeader extends StatelessWidget {
                       Text(
                         subtitle,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
+                          color: g.textAlpha(0.7),
                           fontSize: 13,
                         ),
                       ),
@@ -249,7 +248,9 @@ class JourneyDateField extends StatelessWidget {
           labelText: 'Journey Date',
           prefixIcon: Icons.calendar_today_outlined,
         ),
-        child: Row(
+        child: Builder(builder: (context) {
+          final g = GlassColors.of(context);
+          return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
@@ -257,13 +258,14 @@ class JourneyDateField extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: Colors.white.withValues(alpha: 0.9),
+                color: g.textAlpha(0.9),
               ),
             ),
             Icon(Icons.expand_more,
-                size: 22, color: Colors.white.withValues(alpha: 0.4)),
+                size: 22, color: g.textAlpha(0.4)),
           ],
-        ),
+        );
+        }),
       ),
     );
   }
@@ -308,14 +310,19 @@ class JourneyTimeField extends StatelessWidget {
           labelText: 'Departure Time (optional)',
           prefixIcon: Icons.schedule_outlined,
           suffixIcon: value != null
-              ? IconButton(
+              ? Builder(builder: (context) {
+                  final g = GlassColors.of(context);
+                  return IconButton(
                   icon: Icon(Icons.clear,
-                      size: 18, color: Colors.white.withValues(alpha: 0.5)),
+                      size: 18, color: g.textAlpha(0.5)),
                   onPressed: () => onChanged(null),
-                )
+                );
+                })
               : null,
         ),
-        child: Row(
+        child: Builder(builder: (context) {
+          final g = GlassColors.of(context);
+          return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
@@ -324,15 +331,16 @@ class JourneyTimeField extends StatelessWidget {
                 fontSize: 15,
                 fontWeight: value != null ? FontWeight.w500 : FontWeight.w400,
                 color: value != null
-                    ? Colors.white.withValues(alpha: 0.9)
-                    : Colors.white.withValues(alpha: 0.4),
+                    ? g.textAlpha(0.9)
+                    : g.textAlpha(0.4),
               ),
             ),
             if (value == null)
               Icon(Icons.expand_more,
-                  size: 22, color: Colors.white.withValues(alpha: 0.4)),
+                  size: 22, color: g.textAlpha(0.4)),
           ],
-        ),
+        );
+        }),
       ),
     );
   }
@@ -437,13 +445,15 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
               borderRadius: BorderRadius.circular(14),
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
+                child: Builder(builder: (ctx) {
+                  final g = GlassColors.of(ctx);
+                  return Container(
                   constraints: const BoxConstraints(maxHeight: 240),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A2340).withValues(alpha: 0.95),
+                    color: g.dropdownBg.withValues(alpha: 0.95),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: g.border(0.15),
                     ),
                   ),
                   child: ListView.builder(
@@ -473,21 +483,22 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
                           s.name,
                           style: TextStyle(
                             fontWeight: FontWeight.w500,
-                            color: Colors.white.withValues(alpha: 0.9),
+                            color: g.textAlpha(0.9),
                           ),
                         ),
                         subtitle: Text(
                           '${s.code}${s.state != null ? ' · ${s.state}' : ''}',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.white.withValues(alpha: 0.5),
+                            color: g.textAlpha(0.5),
                           ),
                         ),
                         onTap: () => _select(s),
                       );
                     },
                   ),
-                ),
+                );
+                }),
               ),
             ),
           ),
@@ -545,12 +556,13 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return CompositedTransformTarget(
       link: _layerLink,
       child: TextFormField(
         controller: _controller,
         focusNode: _focusNode,
-        style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+        style: TextStyle(color: g.textAlpha(0.9)),
         decoration: _glassInputDecoration(
           labelText: widget.label,
           hintText: widget.hint,
@@ -563,7 +575,7 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
                     height: 18,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: g.textAlpha(0.5),
                     ),
                   ),
                 )
@@ -571,11 +583,11 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
                   ? IconButton(
                       icon: Icon(Icons.clear,
                           size: 18,
-                          color: Colors.white.withValues(alpha: 0.5)),
+                          color: g.textAlpha(0.5)),
                       onPressed: _clear,
                     )
                   : Icon(Icons.search,
-                      size: 20, color: Colors.white.withValues(alpha: 0.4)),
+                      size: 20, color: g.textAlpha(0.4)),
         ),
         onChanged: _search,
         validator: (_) => widget.validator?.call(widget.selected),

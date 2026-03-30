@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/models/train_route_stop.dart';
 import 'package:travel_companion/features/journey/widgets/journey_form_widgets.dart';
 
@@ -28,6 +29,7 @@ class TrainStopSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     final isDisabled = stops.isEmpty;
     final displayText = selected?.displayLabel ??
         (isDisabled
@@ -47,23 +49,23 @@ class TrainStopSelector extends StatelessWidget {
               labelText: label,
               prefixIcon: Icon(leadingIcon,
                   color: isDisabled
-                      ? Colors.white.withValues(alpha: 0.2)
+                      ? g.textAlpha(0.2)
                       : accentColor),
               suffixIcon: Icon(Icons.keyboard_arrow_down_rounded,
                   color: isDisabled
-                      ? Colors.white.withValues(alpha: 0.2)
+                      ? g.textAlpha(0.2)
                       : accentColor),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide:
-                    BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                    BorderSide(color: g.border(0.2)),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide(
                   color: errorText != null
                       ? const Color(0xFFE74C3C)
-                      : Colors.white.withValues(alpha: 0.15),
+                      : g.border(0.15),
                 ),
               ),
               focusedBorder: OutlineInputBorder(
@@ -74,10 +76,10 @@ class TrainStopSelector extends StatelessWidget {
               errorStyle: const TextStyle(color: Color(0xFFE74C3C)),
               filled: true,
               fillColor: isDisabled
-                  ? Colors.white.withValues(alpha: 0.03)
-                  : Colors.white.withValues(alpha: 0.06),
+                  ? g.cardFill(0.03)
+                  : g.cardFill(0.06),
               labelStyle:
-                  TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+                  TextStyle(color: g.textAlpha(0.6)),
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             ),
@@ -87,8 +89,8 @@ class TrainStopSelector extends StatelessWidget {
               style: TextStyle(
                 fontSize: 15,
                 color: selected != null
-                    ? Colors.white.withValues(alpha: 0.9)
-                    : Colors.white.withValues(alpha: 0.35),
+                    ? g.textAlpha(0.9)
+                    : g.textAlpha(0.35),
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -184,6 +186,7 @@ class _GlassTrainStopSheetState extends State<_GlassTrainStopSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     final maxHeight = MediaQuery.of(context).size.height * 0.82;
 
     return ClipRRect(
@@ -193,19 +196,19 @@ class _GlassTrainStopSheetState extends State<_GlassTrainStopSheet> {
         child: Container(
           constraints: BoxConstraints(maxHeight: maxHeight),
           decoration: BoxDecoration(
-            color: const Color(0xFF0A0E21).withValues(alpha: 0.92),
+            color: g.bg.withValues(alpha: 0.92),
             borderRadius:
                 const BorderRadius.vertical(top: Radius.circular(24)),
             border: Border(
               top: BorderSide(
-                color: Colors.white.withValues(alpha: 0.15),
+                color: g.border(0.15),
                 width: 1.2,
               ),
               left: BorderSide(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: g.border(0.08),
               ),
               right: BorderSide(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: g.border(0.08),
               ),
             ),
           ),
@@ -221,7 +224,7 @@ class _GlassTrainStopSheetState extends State<_GlassTrainStopSheet> {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: g.textAlpha(0.2),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -234,10 +237,10 @@ class _GlassTrainStopSheetState extends State<_GlassTrainStopSheet> {
                         Expanded(
                           child: Text(
                             'Select ${widget.label}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w700,
-                              color: Colors.white,
+                              color: g.text,
                             ),
                           ),
                         ),
@@ -263,7 +266,7 @@ class _GlassTrainStopSheetState extends State<_GlassTrainStopSheet> {
                   controller: _searchCtrl,
                   autofocus: false,
                   style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9)),
+                      color: g.textAlpha(0.9)),
                   decoration: glassInputDecoration(
                     labelText: 'Search station...',
                     hintText: 'Name or code',
@@ -273,7 +276,7 @@ class _GlassTrainStopSheetState extends State<_GlassTrainStopSheet> {
               ),
               Divider(
                 height: 8,
-                color: Colors.white.withValues(alpha: 0.08),
+                color: g.divider,
               ),
 
               // Stop List
@@ -284,7 +287,7 @@ class _GlassTrainStopSheetState extends State<_GlassTrainStopSheet> {
                         child: Text(
                           'No stops match your search',
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: g.textAlpha(0.4),
                           ),
                         ),
                       )
@@ -342,13 +345,14 @@ class _GlassStopTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     final dotColor = isFirst
         ? const Color(0xFF27AE60)
         : isLast
             ? const Color(0xFFE74C3C)
             : isSelected
                 ? accentColor
-                : Colors.white.withValues(alpha: 0.25);
+                : g.textAlpha(0.25);
 
     final dotSize = (isFirst || isLast) ? 12.0 : 8.0;
 
@@ -430,14 +434,14 @@ class _GlassStopTile extends StatelessWidget {
                                     : FontWeight.w400,
                                 color: isSelected
                                     ? accentColor
-                                    : Colors.white.withValues(alpha: 0.85),
+                                    : g.textAlpha(0.85),
                               ),
                             ),
                             Text(
                               stop.stationCode,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.white.withValues(alpha: 0.4),
+                                color: g.textAlpha(0.4),
                                 fontWeight: FontWeight.w500,
                                 letterSpacing: 0.3,
                               ),
@@ -452,7 +456,7 @@ class _GlassStopTile extends StatelessWidget {
                             fontSize: 12,
                             color: isSelected
                                 ? accentColor
-                                : Colors.white.withValues(alpha: 0.5),
+                                : g.textAlpha(0.5),
                             fontWeight:
                                 isSelected ? FontWeight.w700 : FontWeight.w400,
                           ),

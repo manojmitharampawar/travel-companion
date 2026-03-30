@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/train_route.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 
 class JourneyMapWidget extends StatefulWidget {
@@ -356,6 +357,7 @@ class _GlassMapButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: BackdropFilter(
@@ -373,12 +375,12 @@ class _GlassMapButton extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isActive
                       ? const Color(0xFF3498DB).withValues(alpha: 0.2)
-                      : const Color(0xFF0A0E21).withValues(alpha: 0.7),
+                      : g.isDark ? const Color(0xFF0A0E21).withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isActive
                         ? const Color(0xFF3498DB).withValues(alpha: 0.4)
-                        : Colors.white.withValues(alpha: 0.15),
+                        : g.border(0.15),
                   ),
                   boxShadow: [
                     BoxShadow(
@@ -393,7 +395,7 @@ class _GlassMapButton extends StatelessWidget {
                   size: 20,
                   color: isActive
                       ? const Color(0xFF3498DB)
-                      : Colors.white.withValues(alpha: 0.8),
+                      : g.textAlpha(0.8),
                 ),
               ),
             ),

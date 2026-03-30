@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/train_route.dart';
 import 'package:travel_companion/data/models/train_route_stop.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/map/journey_map_widget.dart';
 import 'package:travel_companion/features/map/train_journey_map_widget.dart';
@@ -67,8 +68,9 @@ class _FullscreenMapScreenState extends State<FullscreenMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0E21),
+      backgroundColor: g.bg,
       body: Stack(
         children: [
           // Full-screen map
@@ -142,29 +144,32 @@ class _GlassCloseButton extends StatelessWidget {
             child: InkWell(
               onTap: onTap,
               borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF0A0E21).withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.15),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+              child: Builder(builder: (context) {
+                final g = GlassColors.of(context);
+                return Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: g.isDark ? const Color(0xFF0A0E21).withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: g.border(0.15),
                     ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.fullscreen_exit_rounded,
-                  size: 20,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.fullscreen_exit_rounded,
+                    size: 20,
+                    color: g.textAlpha(0.8),
+                  ),
+                );
+              }),
             ),
           ),
         ),
@@ -188,6 +193,7 @@ class _GlassTransportBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -195,7 +201,7 @@ class _GlassTransportBadge extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: const Color(0xFF0A0E21).withValues(alpha: 0.7),
+            color: g.isDark ? const Color(0xFF0A0E21).withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: transportType.color.withValues(alpha: 0.3),
@@ -224,7 +230,7 @@ class _GlassTransportBadge extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: g.textAlpha(0.9),
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),

@@ -19,7 +19,6 @@ import 'package:travel_companion/features/history/history_screen.dart';
 import 'package:travel_companion/features/settings/settings_screen.dart';
 
 // Glass design constants for home screen
-const _kBgColor = Color(0xFF0A0E21);
 const _kAccent = Color(0xFF0D47A1);
 const _kSecondaryAccent = Color(0xFFFF9800);
 

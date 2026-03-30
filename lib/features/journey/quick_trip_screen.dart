@@ -8,9 +8,8 @@ import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/journey/journey_tracking_screen.dart';
 import 'package:travel_companion/features/journey/widgets/location_search_field.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/providers/app_providers.dart';
-
-const _kBgColor = Color(0xFF0A0E21);
 
 class QuickTripScreen extends ConsumerStatefulWidget {
   final TransportType initialType;
@@ -135,9 +134,10 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
   @override
   Widget build(BuildContext context) {
     final accentColor = _transportType.color;
+    final g = GlassColors.of(context);
 
     return Scaffold(
-      backgroundColor: _kBgColor,
+      backgroundColor: g.bg,
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
@@ -152,8 +152,8 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_rounded,
-                            color: Colors.white),
+                        icon: Icon(Icons.arrow_back_rounded,
+                            color: g.text),
                         onPressed: () => Navigator.pop(context),
                       ),
                       const SizedBox(width: 8),
@@ -162,7 +162,7 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: g.textAlpha(0.9),
                         ),
                       ),
                     ],
@@ -290,6 +290,7 @@ class _GlassTransportSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
@@ -297,10 +298,10 @@ class _GlassTransportSelector extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: g.cardFill(0.06),
             borderRadius: BorderRadius.circular(14),
             border:
-                Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                Border.all(color: g.border(0.1)),
           ),
           child: Row(
             children: types.map((type) {
@@ -329,7 +330,7 @@ class _GlassTransportSelector extends StatelessWidget {
                           size: 20,
                           color: isSelected
                               ? type.color
-                              : Colors.white.withValues(alpha: 0.4),
+                              : g.textAlpha(0.4),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -341,7 +342,7 @@ class _GlassTransportSelector extends StatelessWidget {
                                 : FontWeight.w500,
                             color: isSelected
                                 ? type.color
-                                : Colors.white.withValues(alpha: 0.4),
+                                : g.textAlpha(0.4),
                           ),
                         ),
                       ],
@@ -372,6 +373,7 @@ class _GlassOriginCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
@@ -379,10 +381,10 @@ class _GlassOriginCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: g.cardFill(0.06),
             borderRadius: BorderRadius.circular(14),
             border:
-                Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                Border.all(color: g.border(0.1)),
           ),
           child: Row(
             children: [
@@ -405,7 +407,7 @@ class _GlassOriginCard extends StatelessWidget {
                       'From',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.white.withValues(alpha: 0.45),
+                        color: g.textAlpha(0.45),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -414,7 +416,7 @@ class _GlassOriginCard extends StatelessWidget {
                         'Detecting location...',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withValues(alpha: 0.6),
+                          color: g.textAlpha(0.6),
                         ),
                       )
                     else
@@ -423,7 +425,7 @@ class _GlassOriginCard extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white.withValues(alpha: 0.9),
+                          color: g.textAlpha(0.9),
                         ),
                       ),
                   ],
@@ -435,7 +437,7 @@ class _GlassOriginCard extends StatelessWidget {
                   height: 20,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white.withValues(alpha: 0.5),
+                    color: g.textAlpha(0.5),
                   ),
                 ),
             ],
@@ -465,6 +467,7 @@ class _GlassStartButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Container(
       height: 56,
       decoration: BoxDecoration(
@@ -476,10 +479,10 @@ class _GlassStartButton extends StatelessWidget {
                   accentColor.withValues(alpha: 0.8),
                 ],
               ),
-        color: isDisabled ? Colors.white.withValues(alpha: 0.06) : null,
+        color: isDisabled ? g.cardFill(0.06) : null,
         borderRadius: BorderRadius.circular(16),
         border: isDisabled
-            ? Border.all(color: Colors.white.withValues(alpha: 0.1))
+            ? Border.all(color: g.border(0.1))
             : null,
         boxShadow: isDisabled
             ? null
@@ -511,7 +514,7 @@ class _GlassStartButton extends StatelessWidget {
                   Icon(Icons.play_arrow,
                       size: 28,
                       color: isDisabled
-                          ? Colors.white.withValues(alpha: 0.3)
+                          ? g.textAlpha(0.3)
                           : Colors.white),
                 const SizedBox(width: 8),
                 Text(
@@ -520,7 +523,7 @@ class _GlassStartButton extends StatelessWidget {
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                     color: isDisabled
-                        ? Colors.white.withValues(alpha: 0.3)
+                        ? g.textAlpha(0.3)
                         : Colors.white,
                   ),
                 ),

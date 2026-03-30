@@ -15,8 +15,6 @@ import 'package:travel_companion/features/journey/edit_journey_screen.dart';
 import 'package:travel_companion/features/journey/journey_tracking_screen.dart';
 import 'package:travel_companion/providers/app_providers.dart';
 
-const _kBgColor = Color(0xFF0A0E21);
-
 class JourneyDetailScreen extends ConsumerStatefulWidget {
   final EnrichedJourney enrichedJourney;
 
@@ -576,6 +574,7 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     final topPad = MediaQuery.paddingOf(context).top;
     final accentColor = type.color;
 
@@ -591,7 +590,7 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             accentColor.withValues(alpha: 0.15),
-            _kBgColor,
+            g.bg,
           ],
         ),
       ),
@@ -607,7 +606,7 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.06), width: 1),
+                    color: g.border(0.06), width: 1),
               ),
             ),
           ),
@@ -625,10 +624,10 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.1),
+                        color: g.cardFill(0.1),
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.15)),
+                            color: g.border(0.15)),
                       ),
                       child: Icon(type.icon, size: 30, color: accentColor),
                     ),
@@ -641,8 +640,8 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
                     children: [
                       Text(
                         vehicleName,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: g.text,
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.3,
@@ -656,7 +655,7 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
                         Text(
                           journey.vehicleNumber!,
                           style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
+                            color: g.textAlpha(0.6),
                             fontSize: 13,
                           ),
                         ),
@@ -666,12 +665,12 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
                         children: [
                           Icon(Icons.calendar_today_rounded,
                               size: 11,
-                              color: Colors.white.withValues(alpha: 0.6)),
+                              color: g.textAlpha(0.6)),
                           const SizedBox(width: 4),
                           Text(
                             AppDateUtils.relativeDay(journey.journeyDate),
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.7),
+                              color: g.textAlpha(0.7),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),
@@ -680,14 +679,12 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
                             const SizedBox(width: 10),
                             Icon(Icons.schedule_rounded,
                                 size: 11,
-                                color:
-                                    Colors.white.withValues(alpha: 0.6)),
+                                color: g.textAlpha(0.6)),
                             const SizedBox(width: 4),
                             Text(
                               journey.scheduledTime!,
                               style: TextStyle(
-                                color:
-                                    Colors.white.withValues(alpha: 0.7),
+                                color: g.textAlpha(0.7),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),
@@ -764,6 +761,7 @@ class _GlassRouteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: BackdropFilter(
@@ -771,10 +769,10 @@ class _GlassRouteCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.07),
+            color: g.cardFill(),
             borderRadius: BorderRadius.circular(16),
             border:
-                Border.all(color: Colors.white.withValues(alpha: 0.12)),
+                Border.all(color: g.border(0.12)),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -864,6 +862,7 @@ class _GlassStationLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -881,12 +880,12 @@ class _GlassStationLabel extends StatelessWidget {
             style: TextStyle(
                 fontSize: 15,
                 fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.9))),
+                color: g.textAlpha(0.9))),
         if (code.isNotEmpty)
           Text(code,
               style: TextStyle(
                   fontSize: 12,
-                  color: Colors.white.withValues(alpha: 0.5))),
+                  color: g.textAlpha(0.5))),
       ],
     );
   }
@@ -950,6 +949,7 @@ class _GlassInfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     final width = (MediaQuery.sizeOf(context).width - 48) / 2;
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
@@ -959,10 +959,10 @@ class _GlassInfoTile extends StatelessWidget {
           width: width,
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: g.cardFill(0.06),
             borderRadius: BorderRadius.circular(12),
             border:
-                Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                Border.all(color: g.border(0.1)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -984,7 +984,7 @@ class _GlassInfoTile extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: g.textAlpha(0.5),
                       letterSpacing: 0.3,
                     ),
                   ),
@@ -996,7 +996,7 @@ class _GlassInfoTile extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: g.textAlpha(0.9),
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -1026,15 +1026,16 @@ class _GlassBottomCta extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final g = GlassColors.of(context);
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
-            color: _kBgColor.withValues(alpha: 0.85),
+            color: g.bg.withValues(alpha: 0.85),
             border: Border(
               top: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.1), width: 1),
+                  color: g.border(0.1), width: 1),
             ),
           ),
           child: SafeArea(
@@ -1139,6 +1140,7 @@ class _GlassConfirmDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Dialog(
       backgroundColor: Colors.transparent,
       child: ClipRRect(
@@ -1148,18 +1150,18 @@ class _GlassConfirmDialog extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
-              color: const Color(0xFF0A0E21).withValues(alpha: 0.92),
+              color: g.bg.withValues(alpha: 0.92),
               borderRadius: BorderRadius.circular(20),
               border:
-                  Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                  Border.all(color: g.border(0.15)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: g.text,
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1168,7 +1170,7 @@ class _GlassConfirmDialog extends StatelessWidget {
                 Text(
                   message,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.6),
+                    color: g.textAlpha(0.6),
                     fontSize: 14,
                   ),
                   textAlign: TextAlign.center,
@@ -1180,8 +1182,7 @@ class _GlassConfirmDialog extends StatelessWidget {
                       child: TextButton(
                         onPressed: onCancel,
                         style: TextButton.styleFrom(
-                          foregroundColor:
-                              Colors.white.withValues(alpha: 0.7),
+                          foregroundColor: g.textAlpha(0.7),
                           padding:
                               const EdgeInsets.symmetric(vertical: 12),
                         ),
@@ -1249,7 +1250,7 @@ class _GlassFavoriteActionButton extends StatelessWidget {
           key: ValueKey(isFavorite),
           color: isFavorite
               ? const Color(0xFFFF5252)
-              : Colors.white.withValues(alpha: 0.7),
+              : GlassColors.of(context).textAlpha(0.7),
         ),
       ),
       tooltip: isFavorite ? 'Remove from favourites' : 'Add to favourites',
@@ -1359,8 +1360,8 @@ class _StopTimelineItem extends StatelessWidget {
                             fontWeight: isFirst || isLast
                                 ? FontWeight.w700
                                 : FontWeight.w500,
-                            color: Colors.white.withValues(
-                                alpha: isFirst || isLast ? 0.9 : 0.7),
+                            color: GlassColors.of(context).textAlpha(
+                                isFirst || isLast ? 0.9 : 0.7),
                           ),
                         ),
                         if (code.isNotEmpty)
@@ -1368,7 +1369,7 @@ class _StopTimelineItem extends StatelessWidget {
                             code,
                             style: TextStyle(
                               fontSize: 10,
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: GlassColors.of(context).textAlpha(0.4),
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -1384,7 +1385,7 @@ class _StopTimelineItem extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: GlassColors.of(context).textAlpha(0.5),
                         ),
                       ),
                     ),
@@ -1395,7 +1396,7 @@ class _StopTimelineItem extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.06),
+                          color: GlassColors.of(context).cardFill(0.06),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -1403,7 +1404,7 @@ class _StopTimelineItem extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w600,
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: GlassColors.of(context).textAlpha(0.4),
                           ),
                         ),
                       ),
