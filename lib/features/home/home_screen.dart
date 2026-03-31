@@ -8,14 +8,14 @@ import 'package:travel_companion/core/utils/date_utils.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/home/home_provider.dart';
-import 'package:travel_companion/providers/app_providers.dart';
 import 'package:travel_companion/features/journey/bus/add_bus_journey_screen.dart';
-import 'package:travel_companion/features/journey/journey_detail_screen.dart';
+import 'package:travel_companion/features/journey/journey_detail_navigation.dart';
 import 'package:travel_companion/features/journey/local_train/add_local_train_journey_screen.dart';
 import 'package:travel_companion/features/journey/metro/add_metro_journey_screen.dart';
 import 'package:travel_companion/features/journey/train/add_train_journey_screen.dart';
 import 'package:travel_companion/features/journey/quick_trip_screen.dart';
 import 'package:travel_companion/features/history/history_screen.dart';
+import 'package:travel_companion/features/history/history_journeys_screen.dart';
 import 'package:travel_companion/features/settings/settings_screen.dart';
 
 // Glass design constants for home screen
@@ -100,10 +100,8 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   data: (journeys) {
                     if (journeys.isEmpty) {
-                      return SliverFillRemaining(
-                        child: _GlassEmptyState(
-                          onAdd: () => _showAddOptions(context, ref),
-                        ),
+                      return const SliverFillRemaining(
+                        child: _GlassEmptyState(),
                       );
                     }
                     return SliverPadding(
@@ -491,8 +489,7 @@ class _GlassJourneyCard extends ConsumerWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) =>
-                JourneyDetailScreen(enrichedJourney: enrichedJourney),
+            builder: (_) => getJourneyDetailScreen(enrichedJourney),
           ),
         ),
         child: ClipRRect(
@@ -690,36 +687,18 @@ class _GlassJourneyCard extends ConsumerWidget {
                               ),
                             ),
 
-                            const SizedBox(height: 10),
-                            // Row 4: Quick actions
-                            Row(
-                              children: [
-                                const Spacer(),
-                                _GlassFavoritePill(
-                                  isFavorite: journey.isFavorite,
-                                  onToggle: () async {
-                                    final repo = ref.read(journeyRepositoryProvider);
-                                    await repo.toggleFavorite(journey.id!, !journey.isFavorite);
-                                    ref.invalidate(upcomingJourneysProvider);
-                                    ref.invalidate(historyJourneysProvider);
-                                    ref.invalidate(favoriteJourneysProvider);
-                                  },
-                                ),
-                              ],
-                            ),
                           ],
                         ),
                       ),
                     ),
 
-                    // Right chevron
-                    Padding(
-                      padding: const EdgeInsets.only(right: 10),
-                      child: Center(
-                        child: Icon(Icons.chevron_right_rounded,
-                            size: 20,
-                            color: g.iconAlpha(0.25)),
-                      ),
+                    // Right chevron — vertically centered
+                    Container(
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Icon(Icons.chevron_right_rounded,
+                          size: 20,
+                          color: g.iconAlpha(0.25)),
                     ),
                   ],
                 ),
@@ -842,59 +821,6 @@ class _GlassInfoChip extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _GlassFavoritePill extends StatelessWidget {
-  final bool isFavorite;
-  final VoidCallback onToggle;
-  const _GlassFavoritePill({required this.isFavorite, required this.onToggle});
-
-  @override
-  Widget build(BuildContext context) {
-    final g = GlassColors.of(context);
-    return GestureDetector(
-      onTap: onToggle,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: isFavorite
-              ? const Color(0xFFFF5252).withValues(alpha: 0.15)
-              : g.cardFill(0.06),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isFavorite
-                ? const Color(0xFFFF5252).withValues(alpha: 0.35)
-                : g.border(0.12),
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-              size: 14,
-              color: isFavorite
-                  ? const Color(0xFFFF5252)
-                  : g.textTertiary,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              isFavorite ? 'Favourited' : 'Favourite',
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: isFavorite
-                    ? const Color(0xFFFF5252)
-                    : g.textTertiary,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -1212,8 +1138,7 @@ class _GlassQuickTripTile extends StatelessWidget {
 // ─────────────────────────────────────────────
 
 class _GlassEmptyState extends StatelessWidget {
-  final VoidCallback onAdd;
-  const _GlassEmptyState({required this.onAdd});
+  const _GlassEmptyState();
 
   @override
   Widget build(BuildContext context) {
@@ -1260,52 +1185,6 @@ class _GlassEmptyState extends StatelessWidget {
               fontSize: 14,
               color: g.textTertiary,
               height: 1.6,
-            ),
-          ),
-          const SizedBox(height: 36),
-          GestureDetector(
-            onTap: onAdd,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  height: 52,
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [_kAccent, _kAccent.withValues(alpha: 0.8)],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _kAccent.withValues(alpha: 0.3),
-                        blurRadius: 16,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_rounded, color: Colors.white, size: 20),
-                      SizedBox(width: 8),
-                      Text(
-                        'Add Your First Journey',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ),
           ),
         ],

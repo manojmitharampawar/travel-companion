@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_companion/core/services/alarm_service.dart';
+import 'package:travel_companion/core/services/journey_reschedule_service.dart';
 import 'package:travel_companion/core/services/location_service.dart';
 import 'package:travel_companion/data/datasources/remote/train_status_api.dart';
 import 'package:travel_companion/data/repositories/journey_repository.dart';
@@ -52,6 +53,13 @@ final alarmServiceProvider = Provider<AlarmService>((ref) {
   );
   ref.onDispose(() => service.dispose());
   return service;
+});
+
+final journeyRescheduleServiceProvider =
+    Provider<JourneyRescheduleService>((ref) {
+  return JourneyRescheduleService(
+    journeyRepository: ref.read(journeyRepositoryProvider),
+  );
 });
 
 // ─────────────────────────────────────────────
