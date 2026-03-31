@@ -496,11 +496,12 @@ class _GlassStationSelection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     if (isLoading) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
+      return Padding(
+        padding: const EdgeInsets.all(40),
         child: Center(
-            child: CircularProgressIndicator(color: Colors.white70)),
+            child: CircularProgressIndicator(color: g.loadingIndicator)),
       );
     }
 

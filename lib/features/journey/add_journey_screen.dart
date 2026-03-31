@@ -10,9 +10,8 @@ import 'package:travel_companion/data/models/station.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/journey/widgets/location_search_field.dart';
 import 'package:travel_companion/features/map/map_location_picker.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/providers/app_providers.dart';
-
-const _kBgColor = Color(0xFF0A0E21);
 
 class AddJourneyScreen extends ConsumerStatefulWidget {
   final TransportType initialType;
@@ -166,8 +165,9 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Scaffold(
-      backgroundColor: _kBgColor,
+      backgroundColor: g.bg,
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
@@ -178,7 +178,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
               SliverAppBar(
                 pinned: true,
                 backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
+                foregroundColor: g.appBarForeground,
                 elevation: 0,
                 title: Text(
                   'Add ${_transportType.label} Journey',
@@ -210,8 +210,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 15,
-                              color:
-                                  Colors.white.withValues(alpha: 0.8),
+                              color: g.textAlpha(0.8),
                             ),
                           ),
                           const SizedBox(height: 12),
@@ -237,8 +236,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
                             padding:
                                 const EdgeInsets.symmetric(vertical: 16),
                             child: Divider(
-                                color: Colors.white
-                                    .withValues(alpha: 0.06)),
+                                color: g.divider),
                           ),
 
                           // Transport-specific fields
@@ -281,27 +279,24 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
     required IconData prefixIcon,
     Widget? suffixIcon,
   }) {
+    final g = GlassColors.of(context);
     return InputDecoration(
       labelText: labelText,
       hintText: hintText,
       helperText: helperText,
-      labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
-      hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
-      helperStyle:
-          TextStyle(color: Colors.white.withValues(alpha: 0.35)),
-      counterStyle:
-          TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+      labelStyle: TextStyle(color: g.textSecondary),
+      hintStyle: TextStyle(color: g.textHint),
+      helperStyle: TextStyle(color: g.textTertiary),
+      counterStyle: TextStyle(color: g.textHint),
       prefixIcon: Icon(prefixIcon, color: _accentColor),
       suffixIcon: suffixIcon,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide:
-            BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+        borderSide: BorderSide(color: g.inputBorder),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
-        borderSide:
-            BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+        borderSide: BorderSide(color: g.inputBorder),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -317,14 +312,14 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
       ),
       errorStyle: const TextStyle(color: Color(0xFFE74C3C)),
       filled: true,
-      fillColor: Colors.white.withValues(alpha: 0.06),
+      fillColor: g.inputFill,
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 
   TextStyle get _glassTextStyle =>
-      TextStyle(color: Colors.white.withValues(alpha: 0.9));
+      TextStyle(color: GlassColors.of(context).text);
 
   Widget _glassSectionLabel(String text) {
     return Padding(
@@ -375,7 +370,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: GlassColors.of(context).loadingIndicator,
                     ),
                   ),
                 )
@@ -430,7 +425,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
             ? null
             : _classController.text,
         style: _glassTextStyle,
-        dropdownColor: const Color(0xFF1A2340),
+        dropdownColor: GlassColors.of(context).dropdownBg,
         decoration: _glassInputDecoration(
           labelText: 'Class (optional)',
           prefixIcon: Icons.airline_seat_recline_normal,
@@ -588,7 +583,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
               DateFormat('dd MMM yyyy (EEEE)').format(_journeyDate),
               style: TextStyle(
                 fontSize: 15,
-                color: Colors.white.withValues(alpha: 0.9),
+                color: GlassColors.of(context).text,
               ),
             ),
             Icon(Icons.arrow_drop_down, color: _accentColor),
@@ -617,8 +612,8 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
               style: TextStyle(
                 fontSize: 15,
                 color: _journeyTime != null
-                    ? Colors.white.withValues(alpha: 0.9)
-                    : Colors.white.withValues(alpha: 0.35),
+                    ? GlassColors.of(context).text
+                    : GlassColors.of(context).textHint,
               ),
             ),
             Icon(Icons.arrow_drop_down, color: _accentColor),
@@ -823,6 +818,7 @@ class _GlassTransportTypeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
@@ -830,10 +826,9 @@ class _GlassTransportTypeSelector extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: g.cardFill(0.06),
             borderRadius: BorderRadius.circular(14),
-            border:
-                Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: g.border(0.1)),
           ),
           child: Row(
             children: TransportType.values.map((type) {
@@ -863,7 +858,7 @@ class _GlassTransportTypeSelector extends StatelessWidget {
                           size: 18,
                           color: isSelected
                               ? type.color
-                              : Colors.white.withValues(alpha: 0.35),
+                              : g.textTertiary,
                         ),
                         const SizedBox(height: 3),
                         Text(
@@ -875,8 +870,7 @@ class _GlassTransportTypeSelector extends StatelessWidget {
                                 : FontWeight.w500,
                             color: isSelected
                                 ? type.color
-                                : Colors.white
-                                    .withValues(alpha: 0.35),
+                                : g.textTertiary,
                           ),
                         ),
                       ],
@@ -945,23 +939,21 @@ class _GlassStationSearchFieldState
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextFormField(
           controller: _controller,
-          style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+          style: TextStyle(color: g.text),
           decoration: InputDecoration(
             labelText: widget.label,
-            labelStyle:
-                TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+            labelStyle: TextStyle(color: g.textSecondary),
             prefixIcon:
                 Icon(Icons.location_on, color: widget.accentColor),
             suffixIcon: widget.selectedStation != null
                 ? IconButton(
-                    icon: Icon(Icons.clear,
-                        color:
-                            Colors.white.withValues(alpha: 0.5)),
+                    icon: Icon(Icons.clear, color: g.textSecondary),
                     onPressed: () {
                       _controller.clear();
                       setState(() {
@@ -973,13 +965,11 @@ class _GlassStationSearchFieldState
                 : null,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.15)),
+              borderSide: BorderSide(color: g.inputBorder),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.15)),
+              borderSide: BorderSide(color: g.inputBorder),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
@@ -993,7 +983,7 @@ class _GlassStationSearchFieldState
             ),
             errorStyle: const TextStyle(color: Color(0xFFE74C3C)),
             filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.06),
+            fillColor: g.inputFill,
             contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16, vertical: 14),
           ),
@@ -1013,10 +1003,9 @@ class _GlassStationSearchFieldState
               child: Container(
                 constraints: const BoxConstraints(maxHeight: 200),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A2340).withValues(alpha: 0.95),
+                  color: g.dropdownBg.withValues(alpha: 0.95),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1)),
+                  border: Border.all(color: g.border(0.1)),
                 ),
                 child: ListView.builder(
                   shrinkWrap: true,
@@ -1030,16 +1019,14 @@ class _GlassStationSearchFieldState
                       title: Text(
                         station.name,
                         style: TextStyle(
-                          color:
-                              Colors.white.withValues(alpha: 0.9),
+                          color: g.text,
                           fontSize: 14,
                         ),
                       ),
                       subtitle: Text(
                         station.code,
                         style: TextStyle(
-                          color:
-                              Colors.white.withValues(alpha: 0.45),
+                          color: g.textTertiary,
                           fontSize: 12,
                         ),
                       ),
@@ -1097,15 +1084,15 @@ class _GlassSaveBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
-            color: _kBgColor.withValues(alpha: 0.85),
+            color: g.bottomBarBg,
             border: Border(
-              top: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.1), width: 1),
+              top: BorderSide(color: g.bottomBarBorder, width: 1),
             ),
           ),
           child: SafeArea(

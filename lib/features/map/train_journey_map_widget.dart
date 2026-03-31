@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:travel_companion/core/theme/app_theme.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/train_route_stop.dart';
 import 'package:travel_companion/providers/app_providers.dart';
@@ -451,6 +452,7 @@ class _GlassMapButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: BackdropFilter(
@@ -468,17 +470,19 @@ class _GlassMapButton extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isActive
                       ? const Color(0xFF3498DB).withValues(alpha: 0.2)
-                      : const Color(0xFF0A0E21).withValues(alpha: 0.7),
+                      : g.isDark
+                          ? const Color(0xFF0A0E21).withValues(alpha: 0.7)
+                          : Colors.white.withValues(alpha: 0.85),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isActive
                         ? const Color(0xFF3498DB)
                             .withValues(alpha: 0.4)
-                        : Colors.white.withValues(alpha: 0.15),
+                        : g.border(0.15),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
+                      color: g.shadow,
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -489,7 +493,7 @@ class _GlassMapButton extends StatelessWidget {
                   size: 20,
                   color: isActive
                       ? const Color(0xFF3498DB)
-                      : Colors.white.withValues(alpha: 0.8),
+                      : g.icon,
                 ),
               ),
             ),

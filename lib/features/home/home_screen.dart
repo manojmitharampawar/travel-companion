@@ -810,21 +810,22 @@ class _GlassInfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     final chipColor = highlight
         ? const Color(0xFFFFA726)
-        : Colors.white.withValues(alpha: 0.6);
+        : g.textSecondary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: highlight
             ? const Color(0xFFFFA726).withValues(alpha: 0.12)
-            : Colors.white.withValues(alpha: 0.06),
+            : g.cardFill(0.06),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: highlight
               ? const Color(0xFFFFA726).withValues(alpha: 0.25)
-              : Colors.white.withValues(alpha: 0.1),
+              : g.border(0.1),
         ),
       ),
       child: Row(
@@ -853,6 +854,7 @@ class _GlassFavoritePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return GestureDetector(
       onTap: onToggle,
       behavior: HitTestBehavior.opaque,
@@ -862,12 +864,12 @@ class _GlassFavoritePill extends StatelessWidget {
         decoration: BoxDecoration(
           color: isFavorite
               ? const Color(0xFFFF5252).withValues(alpha: 0.15)
-              : Colors.white.withValues(alpha: 0.06),
+              : g.cardFill(0.06),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isFavorite
                 ? const Color(0xFFFF5252).withValues(alpha: 0.35)
-                : Colors.white.withValues(alpha: 0.12),
+                : g.border(0.12),
           ),
         ),
         child: Row(
@@ -878,7 +880,7 @@ class _GlassFavoritePill extends StatelessWidget {
               size: 14,
               color: isFavorite
                   ? const Color(0xFFFF5252)
-                  : Colors.white.withValues(alpha: 0.5),
+                  : g.textTertiary,
             ),
             const SizedBox(width: 4),
             Text(
@@ -888,7 +890,7 @@ class _GlassFavoritePill extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: isFavorite
                     ? const Color(0xFFFF5252)
-                    : Colors.white.withValues(alpha: 0.5),
+                    : g.textTertiary,
               ),
             ),
           ],
@@ -972,25 +974,26 @@ class _GlassAddJourneySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF0A0E21).withValues(alpha: 0.92),
+            color: g.scrim,
             borderRadius:
                 const BorderRadius.vertical(top: Radius.circular(28)),
             border: Border(
               top: BorderSide(
-                color: Colors.white.withValues(alpha: 0.15),
+                color: g.border(0.15),
                 width: 1.2,
               ),
               left: BorderSide(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: g.border(0.08),
               ),
               right: BorderSide(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: g.border(0.08),
               ),
             ),
           ),
@@ -1007,7 +1010,7 @@ class _GlassAddJourneySheet extends StatelessWidget {
                       width: 40,
                       height: 4,
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
+                        color: g.border(0.2),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -1018,12 +1021,12 @@ class _GlassAddJourneySheet extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
+                        Text(
                           'Add New Journey',
                           style: TextStyle(
                             fontWeight: FontWeight.w800,
                             fontSize: 20,
-                            color: Colors.white,
+                            color: g.text,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -1031,7 +1034,7 @@ class _GlassAddJourneySheet extends StatelessWidget {
                           'Choose your mode of transport',
                           style: TextStyle(
                             fontSize: 13,
-                            color: Colors.white.withValues(alpha: 0.5),
+                            color: g.textTertiary,
                           ),
                         ),
                       ],
@@ -1214,6 +1217,7 @@ class _GlassEmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(32, 48, 32, 48),
       child: Column(
@@ -1239,12 +1243,12 @@ class _GlassEmptyState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 32),
-          const Text(
+          Text(
             'No Upcoming Journeys',
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w800,
-              color: Colors.white,
+              color: g.text,
             ),
             textAlign: TextAlign.center,
           ),
@@ -1254,7 +1258,7 @@ class _GlassEmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: g.textTertiary,
               height: 1.6,
             ),
           ),
@@ -1316,6 +1320,7 @@ class _GlassErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1339,19 +1344,19 @@ class _GlassErrorState extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
+          Text(
             'Something went wrong',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
-              color: Colors.white,
+              color: g.text,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Check your connection and try again.',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.5),
+              color: g.textTertiary,
               fontSize: 14,
             ),
           ),
@@ -1366,10 +1371,10 @@ class _GlassErrorState extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: g.cardFill(0.1),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: g.border(0.15),
                     ),
                   ),
                   child: Row(
@@ -1377,12 +1382,12 @@ class _GlassErrorState extends StatelessWidget {
                     children: [
                       Icon(Icons.refresh_rounded,
                           size: 18,
-                          color: Colors.white.withValues(alpha: 0.8)),
+                          color: g.icon),
                       const SizedBox(width: 8),
                       Text(
                         'Retry',
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.8),
+                          color: g.textAlpha(0.8),
                           fontWeight: FontWeight.w600,
                         ),
                       ),

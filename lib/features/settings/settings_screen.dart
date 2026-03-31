@@ -468,6 +468,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Widget _buildThemeModeSelector() {
     final currentMode = ref.watch(themeModeProvider);
+    final g = GlassColors.of(context);
     final modes = [
       (ThemeMode.dark, Icons.dark_mode_rounded, 'Dark'),
       (ThemeMode.light, Icons.light_mode_rounded, 'Light'),
@@ -490,12 +491,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               decoration: BoxDecoration(
                 color: isActive
                     ? _kAccent.withValues(alpha: 0.2)
-                    : Colors.white.withValues(alpha: 0.06),
+                    : g.cardFill(0.06),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: isActive
                       ? _kAccent.withValues(alpha: 0.4)
-                      : Colors.white.withValues(alpha: 0.1),
+                      : g.border(0.1),
                 ),
               ),
               child: Row(
@@ -506,7 +507,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     size: 14,
                     color: isActive
                         ? _kAccent
-                        : Colors.white.withValues(alpha: 0.5),
+                        : g.textTertiary,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -516,7 +517,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       fontWeight: FontWeight.w600,
                       color: isActive
                           ? _kAccent
-                          : Colors.white.withValues(alpha: 0.5),
+                          : g.textTertiary,
                     ),
                   ),
                 ],
@@ -533,13 +534,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required ValueChanged<bool> onChanged,
     Color activeThumbColor = _kAccent,
   }) {
+    final g = GlassColors.of(context);
     return Switch(
       value: value,
       onChanged: onChanged,
       activeThumbColor: activeThumbColor,
       activeTrackColor: activeThumbColor.withValues(alpha: 0.35),
-      inactiveThumbColor: Colors.white.withValues(alpha: 0.5),
-      inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
+      inactiveThumbColor: g.switchInactiveThumb,
+      inactiveTrackColor: g.switchInactiveTrack,
     );
   }
 
@@ -653,16 +655,16 @@ class _GlassSettingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: g.cardFill(0.06),
             borderRadius: BorderRadius.circular(14),
-            border:
-                Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: g.border(0.1)),
           ),
           child: child,
         ),
@@ -714,7 +716,7 @@ class _GlassSettingItem extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 15,
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: GlassColors.of(context).text,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -722,7 +724,7 @@ class _GlassSettingItem extends StatelessWidget {
                   subtitle,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.45),
+                    color: GlassColors.of(context).textTertiary,
                   ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,

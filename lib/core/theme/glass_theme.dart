@@ -114,4 +114,15 @@ class GlassColors {
 
   // ── Snackbar styling ────────────────────────
   Color get snackBarBg => isDark ? const Color(0xFF1A2340) : const Color(0xFF323232);
+
+  // ── Loading indicator ─────────────────────
+  Color get loadingIndicator => isDark ? Colors.white70 : const Color(0xFF4A4E5E);
+
+  // ── Hero / gradient headers (text on accent bg is always white) ──
+  static const Color onAccent = Colors.white;
+  static Color onAccentSecondary = Colors.white.withValues(alpha: 0.82);
+
+  // ── Overlay / scrim ───────────────────────
+  Color get scrim =>
+      isDark ? const Color(0xFF0A0E21).withValues(alpha: 0.92) : Colors.black.withValues(alpha: 0.45);
 }

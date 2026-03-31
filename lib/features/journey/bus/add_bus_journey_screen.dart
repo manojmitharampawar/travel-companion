@@ -8,6 +8,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:travel_companion/core/services/geocoding_service.dart';
 import 'package:travel_companion/core/services/routing_service.dart';
 import 'package:travel_companion/core/services/tile_cache_service.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/core/theme/glass_widgets.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
@@ -15,7 +16,6 @@ import 'package:travel_companion/features/journey/bus/bus_journey_notifier.dart'
 import 'package:travel_companion/features/journey/widgets/journey_form_widgets.dart';
 import 'package:travel_companion/features/map/bus_map_picker_screen.dart';
 
-const _kBgColor = Color(0xFF0A0E21);
 const _accent = Color(0xFF2E7D32);
 const _originColor = Color(0xFF1A73E8);
 const _destColor = Color(0xFFD93025);
@@ -59,8 +59,10 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
       }
     });
 
+    final g = GlassColors.of(context);
+
     return Scaffold(
-      backgroundColor: _kBgColor,
+      backgroundColor: g.bg,
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
@@ -78,7 +80,7 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
                   backgroundColor: Colors.transparent,
                   surfaceTintColor: Colors.transparent,
                   scrolledUnderElevation: 0,
-                  foregroundColor: Colors.white,
+                  foregroundColor: g.appBarForeground,
                   flexibleSpace: FlexibleSpaceBar(
                     collapseMode: CollapseMode.pin,
                     background: TransportHeroHeader(
@@ -200,8 +202,7 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
                         children: [
                           TextFormField(
                             controller: _routeCtrl,
-                            style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.9)),
+                            style: TextStyle(color: g.text),
                             decoration: glassInputDecoration(
                               labelText: 'Route Number (optional)',
                               hintText: 'e.g. 500LTD, AC47',
@@ -213,8 +214,7 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
                           fieldSpacing,
                           TextFormField(
                             controller: _operatorCtrl,
-                            style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.9)),
+                            style: TextStyle(color: g.text),
                             decoration: glassInputDecoration(
                               labelText: 'Operator / Service (optional)',
                               hintText: 'e.g. MSRTC, KSRTC, Volvo',
@@ -292,8 +292,9 @@ class _AddBusJourneyScreenState extends ConsumerState<AddBusJourneyScreen> {
 class _BusBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Container(
-      color: _kBgColor,
+      color: g.bg,
       child: Stack(
         children: [
           Positioned(
@@ -485,6 +486,7 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
     final fieldWidth = renderBox.size.width;
+    final g = GlassColors.of(context);
 
     _overlayEntry = OverlayEntry(
       builder: (ctx) => Positioned(
@@ -504,10 +506,10 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
                 child: Container(
                   constraints: const BoxConstraints(maxHeight: 280),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A2340).withValues(alpha: 0.95),
+                    color: g.dropdownBg.withValues(alpha: 0.95),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: g.inputBorder,
                     ),
                   ),
                   child: _isSearching && _results.isEmpty
@@ -521,13 +523,13 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
                                 height: 16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white.withValues(alpha: 0.5),
+                                  color: g.textSecondary,
                                 ),
                               ),
                               const SizedBox(width: 10),
                               Text('Searching...',
                                   style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.5),
+                                    color: g.textSecondary,
                                     fontSize: 13,
                                   )),
                             ],
@@ -541,7 +543,7 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
                             height: 1,
                             indent: 56,
                             endIndent: 16,
-                            color: Colors.white.withValues(alpha: 0.08),
+                            color: g.divider,
                           ),
                           itemBuilder: (_, i) {
                             final p = _results[i];
@@ -564,7 +566,7 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white.withValues(alpha: 0.9),
+                                  color: g.text,
                                 ),
                               ),
                               subtitle: p.address != null
@@ -574,14 +576,13 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color:
-                                            Colors.white.withValues(alpha: 0.4),
+                                        color: g.textTertiary,
                                       ),
                                     )
                                   : null,
                               trailing: Icon(Icons.north_west_rounded,
                                   size: 14,
-                                  color: Colors.white.withValues(alpha: 0.3)),
+                                  color: g.textHint),
                               onTap: () => _selectResult(p),
                             );
                           },
@@ -603,6 +604,7 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
     final renderBox = context.findRenderObject() as RenderBox?;
     if (renderBox == null) return;
     final fieldWidth = renderBox.size.width;
+    final g = GlassColors.of(context);
 
     _overlayEntry = OverlayEntry(
       builder: (ctx) => Positioned(
@@ -621,10 +623,10 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
                 filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1A2340).withValues(alpha: 0.95),
+                    color: g.dropdownBg.withValues(alpha: 0.95),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: g.inputBorder,
                     ),
                   ),
                   padding: const EdgeInsets.symmetric(
@@ -634,13 +636,13 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
                     children: [
                       Icon(Icons.search_off_rounded,
                           size: 28,
-                          color: Colors.white.withValues(alpha: 0.3)),
+                          color: g.textHint),
                       const SizedBox(height: 8),
                       Text(
                         'No locations found',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: g.textSecondary,
                         ),
                       ),
                       const SizedBox(height: 10),
@@ -694,6 +696,7 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
   @override
   Widget build(BuildContext context) {
     final isSet = widget.value != null;
+    final g = GlassColors.of(context);
 
     return CompositedTransformTarget(
       link: _layerLink,
@@ -704,7 +707,7 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
             controller: _controller,
             focusNode: _focusNode,
             onChanged: _onSearchChanged,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+            style: TextStyle(color: g.text),
             decoration: glassInputDecoration(
               labelText: widget.label,
               hintText: widget.hint,
@@ -717,7 +720,7 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white.withValues(alpha: 0.5),
+                          color: g.textSecondary,
                         ),
                       ),
                     )
@@ -725,7 +728,7 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
                       ? IconButton(
                           icon: Icon(Icons.clear,
                               size: 18,
-                              color: Colors.white.withValues(alpha: 0.5)),
+                              color: g.textSecondary),
                           onPressed: _clear,
                         )
                       : null,
@@ -797,7 +800,7 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
                               widget.value!.address!,
                               style: TextStyle(
                                 fontSize: 11,
-                                color: Colors.white.withValues(alpha: 0.4),
+                                color: g.textTertiary,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -810,7 +813,7 @@ class _GlassBusLocationFieldState extends State<_GlassBusLocationField> {
                       '${widget.value!.longitude.toStringAsFixed(4)}',
                       style: TextStyle(
                         fontSize: 10,
-                        color: Colors.white.withValues(alpha: 0.3),
+                        color: g.textHint,
                         fontFamily: 'monospace',
                       ),
                     ),
@@ -970,6 +973,7 @@ class _GlassBusRouteMapPreviewState extends State<_GlassBusRouteMapPreview> {
     final d = widget.destination;
     final route = widget.routeResult;
     final hasRoute = route != null && route.isNotEmpty;
+    final g = GlassColors.of(context);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
@@ -980,7 +984,7 @@ class _GlassBusRouteMapPreviewState extends State<_GlassBusRouteMapPreview> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.12),
+              color: g.border(0.12),
             ),
           ),
           clipBehavior: Clip.antiAlias,
@@ -1074,10 +1078,10 @@ class _GlassBusRouteMapPreviewState extends State<_GlassBusRouteMapPreview> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: _kBgColor.withValues(alpha: 0.7),
+                            color: g.bottomBarBg,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.15),
+                              color: g.inputBorder,
                             ),
                           ),
                           child: Row(
@@ -1193,6 +1197,7 @@ class _GlassMapInfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -1200,10 +1205,10 @@ class _GlassMapInfoChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
-            color: _kBgColor.withValues(alpha: 0.7),
+            color: g.bottomBarBg,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.15),
+              color: g.inputBorder,
             ),
           ),
           child: Row(
@@ -1246,6 +1251,7 @@ class _GlassOfflineMapCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
       child: ClipRRect(
@@ -1257,12 +1263,12 @@ class _GlassOfflineMapCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: isCached
                   ? _accent.withValues(alpha: 0.1)
-                  : Colors.white.withValues(alpha: 0.06),
+                  : g.inputFill,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: isCached
                     ? _accent.withValues(alpha: 0.25)
-                    : Colors.white.withValues(alpha: 0.12),
+                    : g.inputBorder,
               ),
             ),
             child: Row(
@@ -1273,7 +1279,7 @@ class _GlassOfflineMapCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isCached
                         ? _accent.withValues(alpha: 0.15)
-                        : Colors.white.withValues(alpha: 0.08),
+                        : g.cardFill(0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -1283,7 +1289,7 @@ class _GlassOfflineMapCard extends StatelessWidget {
                     size: 20,
                     color: isCached
                         ? _accent
-                        : Colors.white.withValues(alpha: 0.5),
+                        : g.textSecondary,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -1302,7 +1308,7 @@ class _GlassOfflineMapCard extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: isCached
                               ? _accent
-                              : Colors.white.withValues(alpha: 0.8),
+                              : g.textAlpha(0.8),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1312,7 +1318,7 @@ class _GlassOfflineMapCard extends StatelessWidget {
                           child: LinearProgressIndicator(
                             value: progress / 100,
                             minHeight: 4,
-                            backgroundColor: Colors.white.withValues(alpha: 0.1),
+                            backgroundColor: g.border(0.1),
                             valueColor:
                                 const AlwaysStoppedAnimation<Color>(_accent),
                           ),
@@ -1324,7 +1330,7 @@ class _GlassOfflineMapCard extends StatelessWidget {
                               : 'Download route tiles for journey tracking',
                           style: TextStyle(
                             fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.4),
+                            color: g.textTertiary,
                           ),
                         ),
                     ],

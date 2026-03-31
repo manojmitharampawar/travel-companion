@@ -6,11 +6,10 @@ import 'package:intl/intl.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/features/journey/widgets/location_search_field.dart';
 import 'package:travel_companion/features/map/map_location_picker.dart';
 import 'package:travel_companion/providers/app_providers.dart';
-
-const _kBgColor = Color(0xFF0A0E21);
 
 class EditJourneyScreen extends ConsumerStatefulWidget {
   final Journey journey;
@@ -117,9 +116,10 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
   Widget build(BuildContext context) {
     final type = widget.journey.transportType;
     final accentColor = type.color;
+    final g = GlassColors.of(context);
 
     return Scaffold(
-      backgroundColor: _kBgColor,
+      backgroundColor: g.bg,
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
@@ -130,7 +130,7 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
               SliverAppBar(
                 pinned: true,
                 backgroundColor: Colors.transparent,
-                foregroundColor: Colors.white,
+                foregroundColor: g.appBarForeground,
                 elevation: 0,
                 title: Text(
                   'Edit ${type.label} Journey',
@@ -308,26 +308,24 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
     int? maxLength,
     String? Function(String?)? validator,
   }) {
+    final g = GlassColors.of(context);
     return TextFormField(
       controller: controller,
       maxLength: maxLength,
       validator: validator,
-      style: TextStyle(color: Colors.white.withValues(alpha: 0.9)),
+      style: TextStyle(color: g.text),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        labelStyle: TextStyle(color: g.textSecondary),
         prefixIcon: Icon(icon, color: accentColor),
-        counterStyle:
-            TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+        counterStyle: TextStyle(color: g.textHint),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide:
-              BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+          borderSide: BorderSide(color: g.inputBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide:
-              BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+          borderSide: BorderSide(color: g.inputBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -338,7 +336,7 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
           borderSide: const BorderSide(color: Color(0xFFE74C3C)),
         ),
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.06),
+        fillColor: g.inputFill,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
@@ -511,29 +509,27 @@ class _GlassDateField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
-          labelStyle:
-              TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+          labelStyle: TextStyle(color: g.textSecondary),
           prefixIcon: Icon(icon, color: accentColor),
           suffixIcon: Icon(Icons.keyboard_arrow_down_rounded,
               color: accentColor),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide:
-                BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+            borderSide: BorderSide(color: g.inputBorder),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide:
-                BorderSide(color: Colors.white.withValues(alpha: 0.15)),
+            borderSide: BorderSide(color: g.inputBorder),
           ),
           filled: true,
-          fillColor: Colors.white.withValues(alpha: 0.06),
+          fillColor: g.inputFill,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
@@ -541,9 +537,7 @@ class _GlassDateField extends StatelessWidget {
           value,
           style: TextStyle(
             fontSize: 15,
-            color: isEmpty
-                ? Colors.white.withValues(alpha: 0.35)
-                : Colors.white.withValues(alpha: 0.9),
+            color: isEmpty ? g.textTertiary : g.text,
           ),
         ),
       ),
@@ -582,16 +576,16 @@ class _GlassRepeatSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.06),
+            color: g.inputFill,
             borderRadius: BorderRadius.circular(14),
-            border:
-                Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            border: Border.all(color: g.border(0.1)),
           ),
           child: Column(
             children: [
@@ -611,8 +605,7 @@ class _GlassRepeatSection extends StatelessWidget {
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               fontSize: 15,
-                              color:
-                                  Colors.white.withValues(alpha: 0.9),
+                              color: g.text,
                             ),
                           ),
                           Text(
@@ -621,8 +614,7 @@ class _GlassRepeatSection extends StatelessWidget {
                                 : 'Set as a recurring journey',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.white
-                                  .withValues(alpha: 0.45),
+                              color: g.textTertiary,
                             ),
                           ),
                         ],
@@ -634,21 +626,17 @@ class _GlassRepeatSection extends StatelessWidget {
                       activeThumbColor: accentColor,
                       activeTrackColor:
                           accentColor.withValues(alpha: 0.35),
-                      inactiveThumbColor:
-                          Colors.white.withValues(alpha: 0.5),
-                      inactiveTrackColor:
-                          Colors.white.withValues(alpha: 0.1),
+                      inactiveThumbColor: g.switchInactiveThumb,
+                      inactiveTrackColor: g.switchInactiveTrack,
                     ),
                   ],
                 ),
               ),
               if (isRepeating) ...[
-                Divider(
-                    color: Colors.white.withValues(alpha: 0.06),
-                    height: 0),
+                Divider(color: g.divider, height: 0),
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: _buildDaySelector(),
+                  child: _buildDaySelector(context),
                 ),
               ],
             ],
@@ -658,7 +646,8 @@ class _GlassRepeatSection extends StatelessWidget {
     );
   }
 
-  Widget _buildDaySelector() {
+  Widget _buildDaySelector(BuildContext context) {
+    final g = GlassColors.of(context);
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     return Wrap(
       spacing: 8,
@@ -674,12 +663,12 @@ class _GlassRepeatSection extends StatelessWidget {
             decoration: BoxDecoration(
               color: isSelected
                   ? accentColor.withValues(alpha: 0.2)
-                  : Colors.white.withValues(alpha: 0.04),
+                  : g.cardFill(0.04),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: isSelected
                     ? accentColor.withValues(alpha: 0.5)
-                    : Colors.white.withValues(alpha: 0.1),
+                    : g.border(0.1),
               ),
             ),
             child: Text(
@@ -690,7 +679,7 @@ class _GlassRepeatSection extends StatelessWidget {
                     isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected
                     ? accentColor
-                    : Colors.white.withValues(alpha: 0.5),
+                    : g.textSecondary,
               ),
             ),
           ),
@@ -717,15 +706,16 @@ class _GlassSaveBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return ClipRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: Container(
           decoration: BoxDecoration(
-            color: _kBgColor.withValues(alpha: 0.85),
+            color: g.bottomBarBg,
             border: Border(
               top: BorderSide(
-                  color: Colors.white.withValues(alpha: 0.1), width: 1),
+                  color: g.bottomBarBorder, width: 1),
             ),
           ),
           child: SafeArea(
@@ -756,26 +746,26 @@ class _GlassSaveBar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(14),
                     child: Center(
                       child: isLoading
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 24,
                               width: 24,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: g.loadingIndicator,
                               ),
                             )
-                          : const Row(
+                          : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.check_circle_outline,
-                                    color: Colors.white),
-                                SizedBox(width: 8),
-                                Text(
+                                    color: GlassColors.onAccent),
+                                const SizedBox(width: 8),
+                                const Text(
                                   'Save Changes',
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
-                                    color: Colors.white,
+                                    color: GlassColors.onAccent,
                                   ),
                                 ),
                               ],

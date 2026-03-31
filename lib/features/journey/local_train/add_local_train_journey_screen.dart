@@ -127,7 +127,7 @@ class AddLocalTrainJourneyScreen extends ConsumerWidget {
                             prefixIcon:
                                 Icons.airline_seat_recline_normal_outlined,
                             prefixIconColor:
-                                Colors.white.withValues(alpha: 0.5),
+                                GlassColors.of(context).textSecondary,
                             value: (state.travelClass == null ||
                                     state.travelClass!.isEmpty)
                                 ? null
@@ -190,11 +190,12 @@ class _GlassLineSelection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     if (isLoading) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
+      return Padding(
+        padding: const EdgeInsets.all(40),
         child: Center(
-            child: CircularProgressIndicator(color: Colors.white70)),
+            child: CircularProgressIndicator(color: g.loadingIndicator)),
       );
     }
 
@@ -210,7 +211,7 @@ class _GlassLineSelection extends StatelessWidget {
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w700,
-                color: Colors.white.withValues(alpha: 0.9),
+                color: g.text,
               ),
             ),
           ),
@@ -243,10 +244,10 @@ class _GlassLineSelection extends StatelessWidget {
                           children: [
                             Text(
                               line.lineName,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
-                                color: Colors.white,
+                                color: g.text,
                               ),
                             ),
                             const SizedBox(height: 3),
@@ -254,7 +255,7 @@ class _GlassLineSelection extends StatelessWidget {
                               '${line.startStation ?? ''} \u2192 ${line.endStation ?? ''}',
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.white.withValues(alpha: 0.5),
+                                color: g.textSecondary,
                               ),
                             ),
                           ],
@@ -280,7 +281,7 @@ class _GlassLineSelection extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Icon(Icons.chevron_right,
-                          color: Colors.white.withValues(alpha: 0.3)),
+                          color: g.textHint),
                     ],
                   ),
                 ),
@@ -306,6 +307,7 @@ class _GlassSelectedLineChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Row(
@@ -337,11 +339,11 @@ class _GlassSelectedLineChip extends StatelessWidget {
           TextButton.icon(
             onPressed: onChangePressed,
             icon: Icon(Icons.swap_horiz,
-                size: 16, color: Colors.white.withValues(alpha: 0.6)),
+                size: 16, color: g.textSecondary),
             label: Text('Change',
                 style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withValues(alpha: 0.6))),
+                    color: g.textSecondary)),
             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
           ),
         ],
@@ -377,11 +379,12 @@ class _GlassStationSelection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     if (isLoading) {
-      return const Padding(
-        padding: EdgeInsets.all(40),
+      return Padding(
+        padding: const EdgeInsets.all(40),
         child: Center(
-            child: CircularProgressIndicator(color: Colors.white70)),
+            child: CircularProgressIndicator(color: g.loadingIndicator)),
       );
     }
 
@@ -481,6 +484,7 @@ class _GlassScheduleResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return GlassSectionCard(
       title: 'NEXT TRAINS',
       icon: Icons.schedule,
@@ -495,13 +499,13 @@ class _GlassScheduleResults extends StatelessWidget {
               child: Row(
                 children: [
                   Icon(Icons.refresh,
-                      size: 16, color: Colors.white.withValues(alpha: 0.5)),
+                      size: 16, color: g.textSecondary),
                   const SizedBox(width: 4),
                   Text(
                     'Refresh',
                     style: TextStyle(
                       fontSize: 11,
-                      color: Colors.white.withValues(alpha: 0.5),
+                      color: g.textSecondary,
                     ),
                   ),
                 ],
@@ -511,10 +515,10 @@ class _GlassScheduleResults extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         if (isLoading)
-          const Padding(
-            padding: EdgeInsets.all(24),
+          Padding(
+            padding: const EdgeInsets.all(24),
             child: Center(
-                child: CircularProgressIndicator(color: Colors.white70)),
+                child: CircularProgressIndicator(color: g.loadingIndicator)),
           )
         else if (trains.isEmpty)
           Padding(
@@ -523,16 +527,16 @@ class _GlassScheduleResults extends StatelessWidget {
               child: Column(
                 children: [
                   Icon(Icons.train_outlined,
-                      size: 40, color: Colors.white.withValues(alpha: 0.3)),
+                      size: 40, color: g.textHint),
                   const SizedBox(height: 8),
                   Text('No more trains today',
                       style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.5))),
+                          color: g.textSecondary)),
                   const SizedBox(height: 4),
                   Text('Try swapping direction or check tomorrow',
                       style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.3))),
+                          color: g.textHint)),
                 ],
               ),
             ),
