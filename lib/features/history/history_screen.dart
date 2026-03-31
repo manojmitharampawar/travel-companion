@@ -1,11 +1,10 @@
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/features/history/history_journeys_screen.dart';
 import 'package:travel_companion/features/history/favorite_journeys_screen.dart';
 import 'package:travel_companion/features/history/widgets/history_shared_widgets.dart';
-
-const _kAccent = Color(0xFF0D47A1);
 
 /// Main History screen with tabbed interface.
 ///
@@ -21,10 +20,9 @@ class HistoryScreen extends StatelessWidget {
     final g = GlassColors.of(context);
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
+      child: CupertinoPageScaffold(
         backgroundColor: g.bg,
-        extendBodyBehindAppBar: true,
-        body: Stack(
+        child: Stack(
           children: [
             // Background orbs
             const HistoryBackgroundOrbs(),
@@ -64,15 +62,11 @@ class HistoryScreen extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                _kAccent.withValues(alpha: 0.5),
+                g.accent.withValues(alpha: 0.5),
                 g.bg.withValues(alpha: 0.9),
               ],
             ),
-            border: Border(
-              bottom: BorderSide(
-                color: g.border(0.1),
-              ),
-            ),
+            border: Border(bottom: BorderSide(color: g.border(0.1))),
           ),
           child: Column(
             children: [
@@ -83,8 +77,10 @@ class HistoryScreen extends StatelessWidget {
                 child: Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back_rounded,
-                          color: g.appBarForeground),
+                      icon: Icon(
+                        Icons.arrow_back_rounded,
+                        color: g.appBarForeground,
+                      ),
                       onPressed: () => Navigator.pop(context),
                     ),
                     Expanded(

@@ -12,10 +12,7 @@ class MetroStationApi {
       // Using a generic transit API endpoint
       final response = await _dio.get(
         'https://api.transitapp.com/v3/public/stations',
-        queryParameters: <String, dynamic>{
-          'query': query,
-          if (city != null) 'city': city,
-        },
+        queryParameters: <String, dynamic>{'query': query, 'city': ?city},
         options: Options(
           connectTimeout: const Duration(seconds: 5),
           receiveTimeout: const Duration(seconds: 5),
@@ -32,13 +29,11 @@ class MetroStationApi {
                   id: 0,
                   code: (station['id'] as String?) ?? '',
                   name: (station['name'] as String?) ?? '',
-                  latitude: double.tryParse(
-                        station['latitude']?.toString() ?? '',
-                      ) ??
+                  latitude:
+                      double.tryParse(station['latitude']?.toString() ?? '') ??
                       0.0,
-                  longitude: double.tryParse(
-                        station['longitude']?.toString() ?? '',
-                      ) ??
+                  longitude:
+                      double.tryParse(station['longitude']?.toString() ?? '') ??
                       0.0,
                   zone: station['line'] as String?,
                   stationType: 'metro',
@@ -59,9 +54,7 @@ class MetroStationApi {
     try {
       final response = await _dio.get(
         'https://api.transitapp.com/v3/public/lines',
-        queryParameters: <String, dynamic>{
-          if (city != null) 'city': city,
-        },
+        queryParameters: <String, dynamic>{'city': ?city},
         options: Options(
           connectTimeout: const Duration(seconds: 5),
           receiveTimeout: const Duration(seconds: 5),
@@ -94,7 +87,7 @@ class MetroStationApi {
         queryParameters: <String, dynamic>{
           'query': query,
           'type': 'local_train',
-          if (city != null) 'city': city,
+          'city': ?city,
         },
         options: Options(
           connectTimeout: const Duration(seconds: 5),
@@ -112,13 +105,11 @@ class MetroStationApi {
                   id: 0,
                   code: (station['id'] as String?) ?? '',
                   name: (station['name'] as String?) ?? '',
-                  latitude: double.tryParse(
-                        station['latitude']?.toString() ?? '',
-                      ) ??
+                  latitude:
+                      double.tryParse(station['latitude']?.toString() ?? '') ??
                       0.0,
-                  longitude: double.tryParse(
-                        station['longitude']?.toString() ?? '',
-                      ) ??
+                  longitude:
+                      double.tryParse(station['longitude']?.toString() ?? '') ??
                       0.0,
                   zone: station['line'] as String?,
                   stationType: 'local_train',

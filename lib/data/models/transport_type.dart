@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 enum TransportType {
   train,
@@ -24,13 +24,13 @@ extension TransportTypeExtension on TransportType {
   IconData get icon {
     switch (this) {
       case TransportType.train:
-        return Icons.train;
+        return CupertinoIcons.train_style_one;
       case TransportType.bus:
-        return Icons.directions_bus;
+        return CupertinoIcons.bus;
       case TransportType.metro:
-        return Icons.subway;
+        return CupertinoIcons.tram_fill;
       case TransportType.localTrain:
-        return Icons.tram;
+        return CupertinoIcons.train_style_two;
     }
   }
 

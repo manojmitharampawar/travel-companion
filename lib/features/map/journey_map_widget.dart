@@ -55,7 +55,9 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
         _isFollowingUser) {
       _mapController.move(
         LatLng(
-            widget.currentPosition!.latitude, widget.currentPosition!.longitude),
+          widget.currentPosition!.latitude,
+          widget.currentPosition!.longitude,
+        ),
         _isFollowingUser ? 15.0 : _mapController.camera.zoom,
       );
     }
@@ -66,7 +68,9 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
       setState(() => _isFollowingUser = true);
       _mapController.move(
         LatLng(
-            widget.currentPosition!.latitude, widget.currentPosition!.longitude),
+          widget.currentPosition!.latitude,
+          widget.currentPosition!.longitude,
+        ),
         15.0,
       );
     }
@@ -78,10 +82,9 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
     if (boundsPoints.length < 2) return;
 
     final bounds = LatLngBounds.fromPoints(boundsPoints);
-    _mapController.fitCamera(CameraFit.bounds(
-      bounds: bounds,
-      padding: const EdgeInsets.all(40),
-    ));
+    _mapController.fitCamera(
+      CameraFit.bounds(bounds: bounds, padding: const EdgeInsets.all(40)),
+    );
   }
 
   List<LatLng> _allBoundsPoints() {
@@ -90,11 +93,16 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
       points.add(LatLng(widget.origin!.latitude, widget.origin!.longitude));
     }
     if (widget.currentPosition != null) {
-      points.add(LatLng(
-          widget.currentPosition!.latitude, widget.currentPosition!.longitude));
+      points.add(
+        LatLng(
+          widget.currentPosition!.latitude,
+          widget.currentPosition!.longitude,
+        ),
+      );
     }
-    points
-        .add(LatLng(widget.destination.latitude, widget.destination.longitude));
+    points.add(
+      LatLng(widget.destination.latitude, widget.destination.longitude),
+    );
     for (final p in widget.roadRoutePoints) {
       points.add(p);
     }
@@ -103,15 +111,19 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final destLatLng =
-        LatLng(widget.destination.latitude, widget.destination.longitude);
+    final destLatLng = LatLng(
+      widget.destination.latitude,
+      widget.destination.longitude,
+    );
     final markers = <Marker>[];
     final boundsPoints = <LatLng>[];
 
     // Origin marker
     if (widget.origin != null) {
-      final originLatLng =
-          LatLng(widget.origin!.latitude, widget.origin!.longitude);
+      final originLatLng = LatLng(
+        widget.origin!.latitude,
+        widget.origin!.longitude,
+      );
       markers.add(
         Marker(
           point: originLatLng,
@@ -139,7 +151,9 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
     // Current position marker
     if (widget.currentPosition != null) {
       final curLatLng = LatLng(
-          widget.currentPosition!.latitude, widget.currentPosition!.longitude);
+        widget.currentPosition!.latitude,
+        widget.currentPosition!.longitude,
+      );
       markers.add(
         Marker(
           point: curLatLng,
@@ -158,8 +172,11 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
         width: 36,
         height: 36,
         alignment: Alignment.topCenter,
-        child: const Icon(Icons.location_on_rounded,
-            size: 36, color: Color(0xFFE74C3C)),
+        child: const Icon(
+          Icons.location_on_rounded,
+          size: 36,
+          color: Color(0xFFE74C3C),
+        ),
       ),
     );
     boundsPoints.add(destLatLng);
@@ -172,12 +189,17 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
     } else {
       polylinePoints = [];
       if (widget.origin != null) {
-        polylinePoints
-            .add(LatLng(widget.origin!.latitude, widget.origin!.longitude));
+        polylinePoints.add(
+          LatLng(widget.origin!.latitude, widget.origin!.longitude),
+        );
       }
       if (widget.currentPosition != null) {
-        polylinePoints.add(LatLng(widget.currentPosition!.latitude,
-            widget.currentPosition!.longitude));
+        polylinePoints.add(
+          LatLng(
+            widget.currentPosition!.latitude,
+            widget.currentPosition!.longitude,
+          ),
+        );
       }
       polylinePoints.add(destLatLng);
     }
@@ -195,7 +217,8 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
             initialCenter: center,
             initialZoom: zoom,
             interactionOptions: const InteractionOptions(
-              flags: InteractiveFlag.pinchZoom |
+              flags:
+                  InteractiveFlag.pinchZoom |
                   InteractiveFlag.drag |
                   InteractiveFlag.doubleTapZoom,
             ),
@@ -211,8 +234,7 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
               urlTemplate:
                   'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png',
               userAgentPackageName: 'com.travel_companion.app',
-              fallbackUrl:
-                  'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              fallbackUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             ),
 
             // Route polyline
@@ -230,10 +252,8 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
                     Polyline(
                       points: polylinePoints,
                       strokeWidth: 3.5,
-                      color: widget.transportType.color
-                          .withValues(alpha: 0.7),
-                      pattern:
-                          StrokePattern.dashed(segments: [10, 6]),
+                      color: widget.transportType.color.withValues(alpha: 0.7),
+                      pattern: StrokePattern.dashed(segments: [10, 6]),
                     ),
                 ],
               ),
@@ -242,8 +262,7 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
 
             RichAttributionWidget(
               attributions: [
-                TextSourceAttribution(
-                    '© OpenStreetMap contributors'),
+                TextSourceAttribution('© OpenStreetMap contributors'),
                 TextSourceAttribution('© CARTO'),
               ],
             ),
@@ -297,7 +316,9 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
   LatLng _resolveCenter(LatLng destLatLng) {
     if (widget.currentPosition != null) {
       return LatLng(
-          widget.currentPosition!.latitude, widget.currentPosition!.longitude);
+        widget.currentPosition!.latitude,
+        widget.currentPosition!.longitude,
+      );
     }
     if (widget.origin != null) {
       return LatLng(
@@ -362,42 +383,35 @@ class _GlassMapButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Material(
-          color: Colors.transparent,
-          child: Tooltip(
-            message: tooltip ?? '',
-            child: InkWell(
-              onTap: onTap,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: isActive
+                  ? const Color(0xFF3498DB).withValues(alpha: 0.2)
+                  : g.isDark
+                  ? const Color(0xFF0A0E21).withValues(alpha: 0.7)
+                  : Colors.white.withValues(alpha: 0.85),
               borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? const Color(0xFF3498DB).withValues(alpha: 0.2)
-                      : g.isDark ? const Color(0xFF0A0E21).withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isActive
-                        ? const Color(0xFF3498DB).withValues(alpha: 0.4)
-                        : g.border(0.15),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  icon,
-                  size: 20,
-                  color: isActive
-                      ? const Color(0xFF3498DB)
-                      : g.textAlpha(0.8),
-                ),
+              border: Border.all(
+                color: isActive
+                    ? const Color(0xFF3498DB).withValues(alpha: 0.4)
+                    : g.border(0.15),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: isActive ? const Color(0xFF3498DB) : g.textAlpha(0.8),
             ),
           ),
         ),
@@ -412,8 +426,7 @@ class _GlassMapButton extends StatelessWidget {
 
 class _PulsingPositionMarker extends StatefulWidget {
   @override
-  State<_PulsingPositionMarker> createState() =>
-      _PulsingPositionMarkerState();
+  State<_PulsingPositionMarker> createState() => _PulsingPositionMarkerState();
 }
 
 class _PulsingPositionMarkerState extends State<_PulsingPositionMarker>
@@ -428,9 +441,10 @@ class _PulsingPositionMarkerState extends State<_PulsingPositionMarker>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
-    _anim = Tween<double>(begin: 0.5, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
+    _anim = Tween<double>(
+      begin: 0.5,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -451,8 +465,7 @@ class _PulsingPositionMarkerState extends State<_PulsingPositionMarker>
             height: 44 * _anim.value,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.blue
-                  .withValues(alpha: 0.15 * _anim.value),
+              color: Colors.blue.withValues(alpha: 0.15 * _anim.value),
             ),
           ),
           Container(
@@ -464,8 +477,7 @@ class _PulsingPositionMarkerState extends State<_PulsingPositionMarker>
               border: Border.all(color: Colors.white, width: 2.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.blue.shade700
-                      .withValues(alpha: 0.5),
+                  color: Colors.blue.shade700.withValues(alpha: 0.5),
                   blurRadius: 6,
                 ),
               ],

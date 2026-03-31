@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -9,6 +10,8 @@ import 'package:travel_companion/core/constants/app_constants.dart';
 import 'package:travel_companion/core/services/alarm_service.dart';
 import 'package:travel_companion/core/services/location_service.dart';
 import 'package:travel_companion/core/services/routing_service.dart';
+import 'package:travel_companion/core/ui/adaptive_feedback.dart';
+import 'package:travel_companion/core/ui/adaptive_navigation.dart';
 import 'package:travel_companion/core/utils/date_utils.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/location_point.dart';
@@ -117,9 +120,10 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
 
     if (_destinationPoint == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Destination location data not available')),
+        AdaptiveFeedback.showToast(
+          context,
+          'Destination location data not available',
+          isError: true,
         );
       }
       return;
@@ -180,8 +184,10 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
         _destinationPoint != null) {
       final routeResult = await RoutingService.fetchRoute(
         origin: LatLng(_originPoint!.latitude, _originPoint!.longitude),
-        destination:
-            LatLng(_destinationPoint!.latitude, _destinationPoint!.longitude),
+        destination: LatLng(
+          _destinationPoint!.latitude,
+          _destinationPoint!.longitude,
+        ),
         profile: 'driving',
       );
       if (mounted && routeResult.isNotEmpty) {
@@ -220,10 +226,15 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
   void _scrollStripToIndex(int index) {
     if (!_stripScrollCtrl.hasClients) return;
     const itemWidth = 80.0;
-    final offset = (index * itemWidth - 80)
-        .clamp(0.0, _stripScrollCtrl.position.maxScrollExtent);
-    _stripScrollCtrl.animateTo(offset,
-        duration: const Duration(milliseconds: 400), curve: Curves.easeOut);
+    final offset = (index * itemWidth - 80).clamp(
+      0.0,
+      _stripScrollCtrl.position.maxScrollExtent,
+    );
+    _stripScrollCtrl.animateTo(
+      offset,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOut,
+    );
   }
 
   Color _distanceColor() {
@@ -247,10 +258,9 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
 
     final g = GlassColors.of(context);
 
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: g.bg,
-      extendBodyBehindAppBar: true,
-      body: Stack(
+      child: Stack(
         children: [
           // Background orbs
           _TrackingBackground(
@@ -319,8 +329,7 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
                       if (_destinationPoint != null) _buildMapSection(),
 
                       // Horizontal route strip (trains with coord data)
-                      if (_isRailType &&
-                          _routeStopsWithCoords.length > 1) ...[
+                      if (_isRailType && _routeStopsWithCoords.length > 1) ...[
                         const SizedBox(height: 12),
                         _GlassHorizontalRouteStrip(
                           stops: _routeStopsWithCoords,
@@ -331,7 +340,9 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
                       ] else if (_routeStops.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         _GlassRouteTimeline(
-                            routeStops: _routeStops, type: _type),
+                          routeStops: _routeStops,
+                          type: _type,
+                        ),
                       ] else if (_originPoint != null &&
                           _destinationPoint != null) ...[
                         const SizedBox(height: 12),
@@ -347,15 +358,18 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
               ),
             ],
           ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _GlassStickyActionBar(
+              state: _trackingState,
+              type: _type,
+              onDismiss: _dismissAlarm,
+              onStop: _stopTracking,
+            ),
+          ),
         ],
-      ),
-
-      // ── Sticky Action Bar ───────────────────────
-      bottomNavigationBar: _GlassStickyActionBar(
-        state: _trackingState,
-        type: _type,
-        onDismiss: _dismissAlarm,
-        onStop: _stopTracking,
       ),
     );
   }
@@ -372,16 +386,12 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
             color: _trackingState == TrackingState.approaching
                 ? const Color(0xFFE74C3C).withValues(alpha: 0.15)
                 : _type.color.withValues(alpha: 0.1),
-            border: Border(
-              bottom: BorderSide(
-                  color: g.border(0.08), width: 1),
-            ),
+            border: Border(bottom: BorderSide(color: g.border(0.08), width: 1)),
           ),
           child: Row(
             children: [
               IconButton(
-                icon: Icon(Icons.arrow_back_rounded,
-                    color: g.appBarForeground),
+                icon: Icon(Icons.arrow_back_rounded, color: g.appBarForeground),
                 onPressed: () => Navigator.pop(context),
               ),
               Expanded(
@@ -400,10 +410,7 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
                     if (_destinationPoint != null)
                       Text(
                         _destinationPoint!.name,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: g.textAlpha(0.6),
-                        ),
+                        style: TextStyle(fontSize: 12, color: g.textAlpha(0.6)),
                       ),
                   ],
                 ),
@@ -424,8 +431,9 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
                               color: const Color(0xFF27AE60),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFF27AE60)
-                                      .withValues(alpha: 0.5),
+                                  color: const Color(
+                                    0xFF27AE60,
+                                  ).withValues(alpha: 0.5),
                                   blurRadius: 8,
                                 ),
                               ],
@@ -450,8 +458,8 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
 
   void _openFullscreenMap({required bool useTrainMap}) {
     Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => FullscreenMapScreen(
+      adaptivePageRoute(
+        FullscreenMapScreen(
           origin: _originPoint,
           destination: _destinationPoint!,
           currentPosition: _currentPosition,
@@ -477,8 +485,7 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
           decoration: BoxDecoration(
             color: GlassColors.of(context).cardFill(0.06),
             borderRadius: BorderRadius.circular(16),
-            border:
-                Border.all(color: GlassColors.of(context).border(0.1)),
+            border: Border.all(color: GlassColors.of(context).border(0.1)),
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(
@@ -488,7 +495,9 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
                 onTap: () => setState(() => _mapExpanded = !_mapExpanded),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -497,8 +506,11 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
                           color: _type.color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(Icons.map_rounded,
-                            size: 16, color: _type.color),
+                        child: Icon(
+                          Icons.map_rounded,
+                          size: 16,
+                          color: _type.color,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Text(
@@ -513,14 +525,19 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFF1565C0)
-                                .withValues(alpha: 0.15),
+                            color: const Color(
+                              0xFF1565C0,
+                            ).withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(4),
                             border: Border.all(
-                                color: const Color(0xFF1565C0)
-                                    .withValues(alpha: 0.3)),
+                              color: const Color(
+                                0xFF1565C0,
+                              ).withValues(alpha: 0.3),
+                            ),
                           ),
                           child: const Text(
                             'Railway',
@@ -553,8 +570,8 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
                           currentPosition: _currentPosition,
                           routeStops: _routeStopsWithCoords,
                           nextStopIndex: _nextStopIndex,
-                          onFullscreen: () => _openFullscreenMap(
-                              useTrainMap: true),
+                          onFullscreen: () =>
+                              _openFullscreenMap(useTrainMap: true),
                         )
                       : JourneyMapWidget(
                           origin: _originPoint,
@@ -563,8 +580,8 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
                           routeStops: _routeStops,
                           transportType: _type,
                           roadRoutePoints: _roadRoutePoints,
-                          onFullscreen: () => _openFullscreenMap(
-                              useTrainMap: false),
+                          onFullscreen: () =>
+                              _openFullscreenMap(useTrainMap: false),
                         ),
                 ),
             ],
@@ -579,12 +596,11 @@ class _JourneyTrackingScreenState extends ConsumerState<JourneyTrackingScreen>
   }
 
   Future<void> _stopTracking() async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showCupertinoDialog<bool>(
       context: context,
       builder: (context) => _GlassConfirmDialog(
         title: 'Stop Tracking?',
-        message:
-            'You will no longer receive arrival alerts for this journey.',
+        message: 'You will no longer receive arrival alerts for this journey.',
         confirmLabel: 'Stop',
         confirmColor: const Color(0xFFE74C3C),
         onConfirm: () => Navigator.pop(context, true),
@@ -614,8 +630,7 @@ class _TrackingBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final alertColor =
-        isApproaching ? const Color(0xFFE74C3C) : accentColor;
+    final alertColor = isApproaching ? const Color(0xFFE74C3C) : accentColor;
     return Stack(
       children: [
         Positioned(
@@ -687,25 +702,25 @@ class _GlassTrackingStateBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final (color, icon, text) = switch (state) {
       TrackingState.idle => (
-          Colors.grey.shade600,
-          Icons.gps_off_rounded,
-          'Initializing...'
-        ),
+        Colors.grey.shade600,
+        Icons.gps_off_rounded,
+        'Initializing...',
+      ),
       TrackingState.tracking => (
-          const Color(0xFF27AE60),
-          Icons.gps_fixed_rounded,
-          'Tracking your journey'
-        ),
+        const Color(0xFF27AE60),
+        Icons.gps_fixed_rounded,
+        'Tracking your journey',
+      ),
       TrackingState.approaching => (
-          const Color(0xFFE74C3C),
-          Icons.warning_rounded,
-          'APPROACHING DESTINATION!'
-        ),
+        const Color(0xFFE74C3C),
+        Icons.warning_rounded,
+        'APPROACHING DESTINATION!',
+      ),
       TrackingState.arrived => (
-          const Color(0xFF3498DB),
-          Icons.check_circle_rounded,
-          'You have arrived!'
-        ),
+        const Color(0xFF3498DB),
+        Icons.check_circle_rounded,
+        'You have arrived!',
+      ),
     };
 
     return ClipRect(
@@ -718,8 +733,7 @@ class _GlassTrackingStateBanner extends StatelessWidget {
           decoration: BoxDecoration(
             color: color.withValues(alpha: 0.15),
             border: Border(
-              bottom:
-                  BorderSide(color: color.withValues(alpha: 0.3), width: 1),
+              bottom: BorderSide(color: color.withValues(alpha: 0.3), width: 1),
             ),
           ),
           child: Row(
@@ -727,8 +741,7 @@ class _GlassTrackingStateBanner extends StatelessWidget {
             children: [
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 200),
-                child:
-                    Icon(icon, color: color, size: 17, key: ValueKey(state)),
+                child: Icon(icon, color: color, size: 17, key: ValueKey(state)),
               ),
               const SizedBox(width: 8),
               Text(
@@ -778,8 +791,7 @@ class _GlassMetricCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: g.cardFill(),
             borderRadius: BorderRadius.circular(16),
-            border:
-                Border.all(color: g.border(0.12)),
+            border: Border.all(color: g.border(0.12)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -816,10 +828,7 @@ class _GlassMetricCard extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(
                       subLabel!,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: g.textAlpha(0.3),
-                      ),
+                      style: TextStyle(fontSize: 10, color: g.textAlpha(0.3)),
                     ),
                   ],
                 ],
@@ -844,7 +853,8 @@ class _GlassNextStopCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const orangeAccent = Color(0xFFF39C12);
+    final g = GlassColors.of(context);
+    final orangeAccent = g.statusWarning;
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
@@ -854,8 +864,7 @@ class _GlassNextStopCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: orangeAccent.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
-            border:
-                Border.all(color: orangeAccent.withValues(alpha: 0.25)),
+            border: Border.all(color: orangeAccent.withValues(alpha: 0.25)),
           ),
           child: Row(
             children: [
@@ -865,21 +874,22 @@ class _GlassNextStopCard extends StatelessWidget {
                   color: orangeAccent.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.train_rounded,
-                    size: 20, color: orangeAccent),
+                child: Icon(Icons.train_rounded, size: 20, color: orangeAccent),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Next Stop',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: GlassColors.of(context).textAlpha(0.5),
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.4,
-                        )),
+                    Text(
+                      'Next Stop',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: GlassColors.of(context).textAlpha(0.5),
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
                     Text(
                       stop.stationName,
                       style: TextStyle(
@@ -902,18 +912,17 @@ class _GlassNextStopCard extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('Arr.',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: GlassColors.of(context).textAlpha(0.4),
-                        )),
-                    const Text(
-                      '',
-                      style: TextStyle(fontSize: 0),
+                    Text(
+                      'Arr.',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: GlassColors.of(context).textAlpha(0.4),
+                      ),
                     ),
+                    const Text('', style: TextStyle(fontSize: 0)),
                     Text(
                       stop.timeDisplay,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: orangeAccent,
@@ -941,7 +950,8 @@ class _GlassDestinationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const dangerColor = Color(0xFFE74C3C);
+    final g = GlassColors.of(context);
+    final dangerColor = g.statusDanger;
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: BackdropFilter(
@@ -951,8 +961,7 @@ class _GlassDestinationCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: dangerColor.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(14),
-            border:
-                Border.all(color: dangerColor.withValues(alpha: 0.25)),
+            border: Border.all(color: dangerColor.withValues(alpha: 0.25)),
           ),
           child: Row(
             children: [
@@ -962,21 +971,22 @@ class _GlassDestinationCard extends StatelessWidget {
                   color: dangerColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.place_rounded,
-                    size: 20, color: dangerColor),
+                child: Icon(Icons.place_rounded, size: 20, color: dangerColor),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Destination',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: GlassColors.of(context).textAlpha(0.5),
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.4,
-                        )),
+                    Text(
+                      'Destination',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: GlassColors.of(context).textAlpha(0.5),
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
                     Text(
                       point.name,
                       style: TextStyle(
@@ -1025,8 +1035,7 @@ class _GlassHorizontalRouteStrip extends StatelessWidget {
           decoration: BoxDecoration(
             color: g.cardFill(0.06),
             borderRadius: BorderRadius.circular(16),
-            border:
-                Border.all(color: g.border(0.1)),
+            border: Border.all(color: g.border(0.1)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1039,8 +1048,11 @@ class _GlassHorizontalRouteStrip extends StatelessWidget {
                       color: type.color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(Icons.route_rounded,
-                        size: 14, color: type.color),
+                    child: Icon(
+                      Icons.route_rounded,
+                      size: 14,
+                      color: type.color,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -1055,10 +1067,7 @@ class _GlassHorizontalRouteStrip extends StatelessWidget {
                   if (nextStopIndex > 0)
                     Text(
                       '$nextStopIndex passed',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: g.textAlpha(0.4),
-                      ),
+                      style: TextStyle(fontSize: 11, color: g.textAlpha(0.4)),
                     ),
                 ],
               ),
@@ -1113,26 +1122,27 @@ class _GlassStripNode extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const orangeAccent = Color(0xFFF39C12);
+    final g = GlassColors.of(context);
+    final orangeAccent = g.statusWarning;
     final dotColor = isNext
         ? orangeAccent
         : isPassed
-            ? Colors.white.withValues(alpha: 0.25)
-            : isFirst
-                ? const Color(0xFF27AE60)
-                : isLast
-                    ? const Color(0xFFE74C3C)
-                    : accentColor.withValues(alpha: 0.6);
+        ? Colors.white.withValues(alpha: 0.25)
+        : isFirst
+        ? g.statusSuccess
+        : isLast
+        ? g.statusDanger
+        : accentColor.withValues(alpha: 0.6);
 
     final dotSize = isNext || isFirst || isLast ? 12.0 : 8.0;
 
     final labelColor = isNext
         ? orangeAccent
         : isPassed
-            ? Colors.white.withValues(alpha: 0.3)
-            : isFirst || isLast
-                ? Colors.white.withValues(alpha: 0.9)
-                : Colors.white.withValues(alpha: 0.5);
+        ? Colors.white.withValues(alpha: 0.3)
+        : isFirst || isLast
+        ? Colors.white.withValues(alpha: 0.9)
+        : Colors.white.withValues(alpha: 0.5);
 
     return SizedBox(
       width: 76,
@@ -1162,14 +1172,15 @@ class _GlassStripNode extends StatelessWidget {
                   border: (isNext || isFirst || isLast)
                       ? Border.all(
                           color: Colors.white.withValues(alpha: 0.4),
-                          width: 1.5)
+                          width: 1.5,
+                        )
                       : null,
                   boxShadow: isNext
                       ? [
                           BoxShadow(
                             color: orangeAccent.withValues(alpha: 0.5),
                             blurRadius: 8,
-                          )
+                          ),
                         ]
                       : null,
                 ),
@@ -1223,8 +1234,7 @@ class _GlassRouteTimeline extends StatelessWidget {
   final List<TrainRoute> routeStops;
   final TransportType type;
 
-  const _GlassRouteTimeline(
-      {required this.routeStops, required this.type});
+  const _GlassRouteTimeline({required this.routeStops, required this.type});
 
   @override
   Widget build(BuildContext context) {
@@ -1238,8 +1248,7 @@ class _GlassRouteTimeline extends StatelessWidget {
           decoration: BoxDecoration(
             color: g.cardFill(0.06),
             borderRadius: BorderRadius.circular(16),
-            border:
-                Border.all(color: g.border(0.1)),
+            border: Border.all(color: g.border(0.1)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1252,8 +1261,11 @@ class _GlassRouteTimeline extends StatelessWidget {
                       color: type.color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(Icons.route_rounded,
-                        size: 14, color: type.color),
+                    child: Icon(
+                      Icons.route_rounded,
+                      size: 14,
+                      color: type.color,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Text(
@@ -1293,17 +1305,15 @@ class _GlassRouteTimeline extends StatelessWidget {
                                   color: isFirst
                                       ? const Color(0xFF27AE60)
                                       : isLast
-                                          ? const Color(0xFFE74C3C)
-                                          : Colors.white
-                                              .withValues(alpha: 0.25),
+                                      ? const Color(0xFFE74C3C)
+                                      : Colors.white.withValues(alpha: 0.25),
                                 ),
                               ),
                               if (!isLast)
                                 Expanded(
                                   child: Container(
                                     width: 2,
-                                    color: type.color
-                                        .withValues(alpha: 0.18),
+                                    color: type.color.withValues(alpha: 0.18),
                                   ),
                                 ),
                             ],
@@ -1312,36 +1322,32 @@ class _GlassRouteTimeline extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.only(bottom: 10),
                             child: Row(
                               children: [
                                 Expanded(
                                   child: Text(
                                     stop.stationCode,
                                     style: TextStyle(
-                                      fontSize:
-                                          isTerminal ? 14 : 13,
+                                      fontSize: isTerminal ? 14 : 13,
                                       fontWeight: isTerminal
                                           ? FontWeight.w700
                                           : FontWeight.w400,
                                       color: isTerminal
-                                          ? Colors.white.withValues(
-                                              alpha: 0.9)
-                                          : Colors.white.withValues(
-                                              alpha: 0.5),
+                                          ? Colors.white.withValues(alpha: 0.9)
+                                          : Colors.white.withValues(alpha: 0.5),
                                     ),
                                   ),
                                 ),
                                 if (stop.departureTime != null ||
                                     stop.arrivalTime != null)
                                   Text(
-                                    stop.departureTime ??
-                                        stop.arrivalTime!,
+                                    stop.departureTime ?? stop.arrivalTime!,
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.white
-                                          .withValues(alpha: 0.5),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.5,
+                                      ),
                                     ),
                                   ),
                               ],
@@ -1388,8 +1394,7 @@ class _GlassSimpleRouteCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: g.cardFill(0.06),
             borderRadius: BorderRadius.circular(14),
-            border:
-                Border.all(color: g.border(0.1)),
+            border: Border.all(color: g.border(0.1)),
           ),
           child: Row(
             children: [
@@ -1403,8 +1408,7 @@ class _GlassSimpleRouteCard extends StatelessWidget {
                       color: const Color(0xFF27AE60),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF27AE60)
-                              .withValues(alpha: 0.4),
+                          color: const Color(0xFF27AE60).withValues(alpha: 0.4),
                           blurRadius: 4,
                         ),
                       ],
@@ -1423,8 +1427,7 @@ class _GlassSimpleRouteCard extends StatelessWidget {
                       color: const Color(0xFFE74C3C),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFE74C3C)
-                              .withValues(alpha: 0.4),
+                          color: const Color(0xFFE74C3C).withValues(alpha: 0.4),
                           blurRadius: 4,
                         ),
                       ],
@@ -1437,19 +1440,23 @@ class _GlassSimpleRouteCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(origin.displayName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: g.textAlpha(0.9),
-                        )),
+                    Text(
+                      origin.displayName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: g.textAlpha(0.9),
+                      ),
+                    ),
                     const SizedBox(height: 18),
-                    Text(destination.displayName,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: g.textAlpha(0.9),
-                        )),
+                    Text(
+                      destination.displayName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: g.textAlpha(0.9),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1495,10 +1502,7 @@ class _GlassStickyActionBar extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: g.bg.withValues(alpha: 0.85),
-            border: Border(
-              top: BorderSide(
-                  color: g.border(0.1), width: 1),
-            ),
+            border: Border(top: BorderSide(color: g.border(0.1), width: 1)),
           ),
           child: SafeArea(
             child: Padding(
@@ -1512,43 +1516,39 @@ class _GlassStickyActionBar extends StatelessWidget {
                       height: 52,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFFE74C3C),
-                            Color(0xFFC0392B),
-                          ],
+                          colors: [Color(0xFFE74C3C), Color(0xFFC0392B)],
                         ),
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFFE74C3C)
-                                .withValues(alpha: 0.4),
+                            color: const Color(
+                              0xFFE74C3C,
+                            ).withValues(alpha: 0.4),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
                         ],
                       ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: onDismiss,
-                          borderRadius: BorderRadius.circular(14),
-                          child: const Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.alarm_off_rounded,
-                                    color: Colors.white),
-                                SizedBox(width: 8),
-                                Text(
-                                  "I'm Awake! Dismiss Alarm",
-                                  style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
+                      child: GestureDetector(
+                        onTap: onDismiss,
+                        child: const Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                CupertinoIcons.bell_slash_fill,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                "I'm Awake! Dismiss Alarm",
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -1561,31 +1561,27 @@ class _GlassStickyActionBar extends StatelessWidget {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(14),
                       border: Border.all(
-                          color: type.color.withValues(alpha: 0.5),
-                          width: 1.5),
+                        color: type.color.withValues(alpha: 0.5),
+                        width: 1.5,
+                      ),
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        onTap: onStop,
-                        borderRadius: BorderRadius.circular(14),
-                        child: Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.stop_circle_outlined,
-                                  color: type.color),
-                              const SizedBox(width: 8),
-                              Text(
-                                'Stop Tracking',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: type.color,
-                                ),
+                    child: GestureDetector(
+                      onTap: onStop,
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(CupertinoIcons.stop_circle, color: type.color),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Stop Tracking',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: type.color,
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -1624,86 +1620,29 @@ class _GlassConfirmDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final g = GlassColors.of(context);
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: g.bg.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(20),
-              border:
-                  Border.all(color: g.border(0.15)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: g.text,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  message,
-                  style: TextStyle(
-                    color: g.textAlpha(0.6),
-                    fontSize: 14,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextButton(
-                        onPressed: onCancel,
-                        style: TextButton.styleFrom(
-                          foregroundColor: g.textAlpha(0.7),
-                          padding:
-                              const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                        child: const Text('Keep Tracking'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: confirmColor,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  confirmColor.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                            ),
-                          ],
-                        ),
-                        child: TextButton(
-                          onPressed: onConfirm,
-                          style: TextButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 12),
-                          ),
-                          child: Text(confirmLabel),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+    return CupertinoAlertDialog(
+      title: Text(
+        title,
+        style: TextStyle(color: g.text, fontWeight: FontWeight.w700),
+      ),
+      content: Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Text(message, style: TextStyle(color: g.textAlpha(0.8))),
+      ),
+      actions: [
+        CupertinoDialogAction(
+          onPressed: onCancel,
+          child: Text(
+            'Keep Tracking',
+            style: TextStyle(color: g.textAlpha(0.7)),
           ),
         ),
-      ),
+        CupertinoDialogAction(
+          isDestructiveAction: true,
+          onPressed: onConfirm,
+          child: Text(confirmLabel, style: TextStyle(color: confirmColor)),
+        ),
+      ],
     );
   }
 }

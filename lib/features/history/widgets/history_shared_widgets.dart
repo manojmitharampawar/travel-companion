@@ -60,10 +60,7 @@ class GlassPlaceholder extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 40),
                 child: Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: g.textAlpha(0.45),
-                  ),
+                  style: TextStyle(fontSize: 13, color: g.textAlpha(0.45)),
                   textAlign: TextAlign.center,
                 ),
               ),
@@ -80,15 +77,13 @@ class GlassPlaceholder extends StatelessWidget {
 class GlassStatusChip extends StatelessWidget {
   final bool isCompleted;
 
-  const GlassStatusChip({
-    required this.isCompleted,
-    super.key,
-  });
+  const GlassStatusChip({required this.isCompleted, super.key});
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isCompleted ? const Color(0xFF27AE60) : const Color(0xFFE74C3C);
+    final color = isCompleted
+        ? const Color(0xFF27AE60)
+        : const Color(0xFFE74C3C);
     final text = isCompleted ? 'Completed' : 'Cancelled';
 
     return Container(
@@ -113,8 +108,6 @@ class GlassStatusChip extends StatelessWidget {
 /// Background orbs for glass-morphism effect.
 /// SOLID-S: Single Responsibility - renders decorative gradient circles
 class HistoryBackgroundOrbs extends StatelessWidget {
-  static const _kAccent = Color(0xFF0D47A1);
-
   const HistoryBackgroundOrbs({super.key});
 
   @override
@@ -126,7 +119,7 @@ class HistoryBackgroundOrbs extends StatelessWidget {
           Positioned(
             top: -50,
             left: -60,
-            child: _GlowOrb(color: _kAccent, size: 200),
+            child: _GlowOrb(color: GlassColors.of(context).accent, size: 200),
           ),
           Positioned(
             bottom: 100,
@@ -150,10 +143,7 @@ class _GlowOrb extends StatelessWidget {
   final Color color;
   final double size;
 
-  const _GlowOrb({
-    required this.color,
-    required this.size,
-  });
+  const _GlowOrb({required this.color, required this.size});
 
   @override
   Widget build(BuildContext context) {

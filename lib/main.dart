@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_companion/app.dart';
 import 'package:travel_companion/core/services/notification_service.dart';

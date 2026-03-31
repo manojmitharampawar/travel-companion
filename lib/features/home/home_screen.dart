@@ -1,6 +1,8 @@
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_companion/core/ui/adaptive_navigation.dart';
 import 'package:travel_companion/core/theme/app_logo.dart';
 import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/core/theme/glass_widgets.dart';
@@ -19,8 +21,7 @@ import 'package:travel_companion/features/history/history_journeys_screen.dart';
 import 'package:travel_companion/features/settings/settings_screen.dart';
 
 // Glass design constants for home screen
-const _kAccent = Color(0xFF0D47A1);
-const _kSecondaryAccent = Color(0xFFFF9800);
+// Colors managed from GlassColors theme
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -30,10 +31,9 @@ class HomeScreen extends ConsumerWidget {
     final journeysAsync = ref.watch(upcomingJourneysProvider);
 
     final g = GlassColors.of(context);
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: g.bg,
-      extendBodyBehindAppBar: true,
-      body: Stack(
+      child: Stack(
         children: [
           // Gradient mesh background with orbs
           const _HomeBackground(),
@@ -44,50 +44,75 @@ class HomeScreen extends ConsumerWidget {
               ref.invalidate(upcomingJourneysProvider);
               ref.invalidate(historyJourneysProvider);
             },
-            color: _kSecondaryAccent,
+            color: g.secondaryAccent,
             backgroundColor: g.dropdownBg,
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                // Glass App Bar
-                SliverAppBar(
-                  pinned: true,
-                  floating: false,
-                  expandedHeight: 150,
-                  collapsedHeight: kToolbarHeight,
-                  backgroundColor: Colors.transparent,
-                  surfaceTintColor: Colors.transparent,
-                  scrolledUnderElevation: 0,
-                  foregroundColor: Colors.white,
-                  flexibleSpace: FlexibleSpaceBar(
-                    collapseMode: CollapseMode.pin,
-                    titlePadding: EdgeInsets.zero,
-                    background: _GlassAppBarContent(journeysAsync: journeysAsync),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: 150,
+                    child: Stack(
+                      children: [
+                        _GlassAppBarContent(journeysAsync: journeysAsync),
+                        SafeArea(
+                          bottom: false,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(
+                                  sigmaX: 12,
+                                  sigmaY: 12,
+                                ),
+                                child: Container(
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: g.cardFill(0.12),
+                                    border: Border.all(color: g.border(0.15)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Spacer(),
+                                      _GlassIconButton(
+                                        icon: Icons.history_rounded,
+                                        onTap: () => Navigator.push(
+                                          context,
+                                          adaptivePageRoute(
+                                            const HistoryScreen(),
+                                          ),
+                                        ),
+                                      ),
+                                      _GlassIconButton(
+                                        icon: Icons.settings_rounded,
+                                        onTap: () => Navigator.push(
+                                          context,
+                                          adaptivePageRoute(
+                                            const SettingsScreen(),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  actions: [
-                    _GlassIconButton(
-                      icon: Icons.history_rounded,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const HistoryScreen()),
-                      ),
-                    ),
-                    _GlassIconButton(
-                      icon: Icons.settings_rounded,
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
                 ),
 
                 // Content
                 journeysAsync.when(
-                  loading: () => const SliverFillRemaining(
+                  loading: () => SliverFillRemaining(
                     child: Center(
-                      child: CircularProgressIndicator(color: _kSecondaryAccent),
+                      child: CircularProgressIndicator(
+                        color: g.secondaryAccent,
+                      ),
                     ),
                   ),
                   error: (e, _) => SliverToBoxAdapter(
@@ -120,22 +145,19 @@ class HomeScreen extends ConsumerWidget {
               ],
             ),
           ),
+          Positioned(
+            right: 16,
+            bottom: MediaQuery.paddingOf(context).bottom + 20,
+            child: _GlassFab(onTap: () => _showAddOptions(context, ref)),
+          ),
         ],
-      ),
-
-      // Glass FAB
-      floatingActionButton: _GlassFab(
-        onTap: () => _showAddOptions(context, ref),
       ),
     );
   }
 
   void _showAddOptions(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
+    showCupertinoModalPopup<void>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black54,
       builder: (context) => _GlassAddJourneySheet(
         onSelected: (type) {
           Navigator.pop(context);
@@ -149,7 +171,11 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  void _addJourney(BuildContext context, WidgetRef ref, TransportType type) async {
+  void _addJourney(
+    BuildContext context,
+    WidgetRef ref,
+    TransportType type,
+  ) async {
     final Widget screen = switch (type) {
       TransportType.train => const AddTrainJourneyScreen(),
       TransportType.bus => const AddBusJourneyScreen(),
@@ -158,7 +184,7 @@ class HomeScreen extends ConsumerWidget {
     };
     final result = await Navigator.push<bool>(
       context,
-      MaterialPageRoute(builder: (_) => screen),
+      adaptivePageRoute(screen),
     );
     if (result == true) {
       ref.invalidate(upcomingJourneysProvider);
@@ -167,7 +193,7 @@ class HomeScreen extends ConsumerWidget {
   }
 
   void _startQuickTrip(BuildContext context, WidgetRef ref) async {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => const QuickTripScreen()));
+    await Navigator.push(context, adaptivePageRoute(const QuickTripScreen()));
     ref.invalidate(upcomingJourneysProvider);
     ref.invalidate(historyJourneysProvider);
   }
@@ -190,7 +216,7 @@ class _HomeBackground extends StatelessWidget {
           Positioned(
             top: -80,
             right: -60,
-            child: _GlowOrb(color: _kAccent, size: 250),
+            child: _GlowOrb(color: g.accent, size: 250),
           ),
           Positioned(
             bottom: 120,
@@ -205,7 +231,7 @@ class _HomeBackground extends StatelessWidget {
           Positioned(
             bottom: -40,
             right: 60,
-            child: _GlowOrb(color: _kSecondaryAccent, size: 120),
+            child: _GlowOrb(color: g.secondaryAccent, size: 120),
           ),
         ],
       ),
@@ -264,9 +290,7 @@ class _GlassIconButton extends StatelessWidget {
               decoration: BoxDecoration(
                 color: g.cardFill(0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: g.border(0.15),
-                ),
+                border: Border.all(color: g.border(0.15)),
               ),
               child: Icon(icon, size: 20, color: g.iconAlpha(0.85)),
             ),
@@ -297,18 +321,16 @@ class _GlassAppBarContent extends StatelessWidget {
     final g = GlassColors.of(context);
     final topPad = MediaQuery.paddingOf(context).top;
     final journeys = journeysAsync.valueOrNull ?? [];
-    final activeCount =
-        journeys.where((j) => j.journey.status == JourneyStatus.active).length;
+    final activeCount = journeys
+        .where((j) => j.journey.status == JourneyStatus.active)
+        .length;
 
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            _kAccent.withValues(alpha: 0.6),
-            g.bg,
-          ],
+          colors: [g.accent.withValues(alpha: 0.6), g.bg],
         ),
       ),
       child: Stack(
@@ -341,8 +363,8 @@ class _GlassAppBarContent extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    g.orbAlpha(_kSecondaryAccent, 0.1),
-                    g.orbAlpha(_kSecondaryAccent, 0.0),
+                    g.orbAlpha(g.secondaryAccent, 0.1),
+                    g.orbAlpha(g.secondaryAccent, 0.0),
                   ],
                 ),
               ),
@@ -387,10 +409,11 @@ class _GlassAppBarContent extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (journeys.isNotEmpty) _JourneySummaryBadge(
-                  total: journeys.length,
-                  activeCount: activeCount,
-                ),
+                if (journeys.isNotEmpty)
+                  _JourneySummaryBadge(
+                    total: journeys.length,
+                    activeCount: activeCount,
+                  ),
               ],
             ),
           ),
@@ -422,8 +445,7 @@ class _JourneySummaryBadge extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.route_rounded,
-                  size: 14, color: g.iconAlpha(0.8)),
+              Icon(Icons.route_rounded, size: 14, color: g.iconAlpha(0.8)),
               const SizedBox(width: 5),
               Text(
                 '$total',
@@ -488,9 +510,7 @@ class _GlassJourneyCard extends ConsumerWidget {
       child: GestureDetector(
         onTap: () => Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (_) => getJourneyDetailScreen(enrichedJourney),
-          ),
+          adaptivePageRoute(getJourneyDetailScreen(enrichedJourney)),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(18),
@@ -512,7 +532,9 @@ class _GlassJourneyCard extends ConsumerWidget {
                 boxShadow: isActive
                     ? [
                         BoxShadow(
-                          color: const Color(0xFF27AE60).withValues(alpha: 0.12),
+                          color: const Color(
+                            0xFF27AE60,
+                          ).withValues(alpha: 0.12),
                           blurRadius: 12,
                         ),
                       ]
@@ -584,8 +606,9 @@ class _GlassJourneyCard extends ConsumerWidget {
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF27AE60)
-                                            .withValues(alpha: 0.4),
+                                        color: const Color(
+                                          0xFF27AE60,
+                                        ).withValues(alpha: 0.4),
                                         blurRadius: 4,
                                       ),
                                     ],
@@ -604,11 +627,14 @@ class _GlassJourneyCard extends ConsumerWidget {
                                   ),
                                 ),
                                 Padding(
-                                  padding:
-                                      const EdgeInsets.symmetric(horizontal: 6),
-                                  child: Icon(Icons.arrow_forward_rounded,
-                                      size: 13,
-                                      color: g.iconAlpha(0.3)),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                  ),
+                                  child: Icon(
+                                    Icons.arrow_forward_rounded,
+                                    size: 13,
+                                    color: g.iconAlpha(0.3),
+                                  ),
                                 ),
                                 Expanded(
                                   child: Text(
@@ -631,8 +657,9 @@ class _GlassJourneyCard extends ConsumerWidget {
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFFE74C3C)
-                                            .withValues(alpha: 0.4),
+                                        color: const Color(
+                                          0xFFE74C3C,
+                                        ).withValues(alpha: 0.4),
                                         blurRadius: 4,
                                       ),
                                     ],
@@ -651,7 +678,8 @@ class _GlassJourneyCard extends ConsumerWidget {
                                   _GlassInfoChip(
                                     icon: Icons.calendar_today_rounded,
                                     label: AppDateUtils.relativeDay(
-                                        journey.journeyDate),
+                                      journey.journeyDate,
+                                    ),
                                     highlight: isToday,
                                   ),
                                   if (journey.scheduledTime != null) ...[
@@ -664,8 +692,8 @@ class _GlassJourneyCard extends ConsumerWidget {
                                   if (journey.travelClass != null) ...[
                                     const SizedBox(width: 6),
                                     _GlassInfoChip(
-                                      icon:
-                                          Icons.airline_seat_recline_normal_rounded,
+                                      icon: Icons
+                                          .airline_seat_recline_normal_rounded,
                                       label: journey.travelClass!,
                                     ),
                                   ],
@@ -686,7 +714,6 @@ class _GlassJourneyCard extends ConsumerWidget {
                                 ],
                               ),
                             ),
-
                           ],
                         ),
                       ),
@@ -696,9 +723,11 @@ class _GlassJourneyCard extends ConsumerWidget {
                     Container(
                       alignment: Alignment.center,
                       padding: const EdgeInsets.only(right: 8),
-                      child: Icon(Icons.chevron_right_rounded,
-                          size: 20,
-                          color: g.iconAlpha(0.25)),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        size: 20,
+                        color: g.iconAlpha(0.25),
+                      ),
                     ),
                   ],
                 ),
@@ -790,9 +819,7 @@ class _GlassInfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final g = GlassColors.of(context);
-    final chipColor = highlight
-        ? const Color(0xFFFFA726)
-        : g.textSecondary;
+    final chipColor = highlight ? const Color(0xFFFFA726) : g.textSecondary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -836,6 +863,7 @@ class _GlassFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
@@ -847,8 +875,8 @@ class _GlassFab extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  _kSecondaryAccent,
-                  _kSecondaryAccent.withValues(alpha: 0.8),
+                  g.secondaryAccent,
+                  g.secondaryAccent.withValues(alpha: 0.8),
                 ],
               ),
               borderRadius: BorderRadius.circular(18),
@@ -858,7 +886,7 @@ class _GlassFab extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: _kSecondaryAccent.withValues(alpha: 0.4),
+                  color: g.secondaryAccent.withValues(alpha: 0.4),
                   blurRadius: 20,
                   offset: const Offset(0, 6),
                 ),
@@ -908,19 +936,11 @@ class _GlassAddJourneySheet extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: g.scrim,
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             border: Border(
-              top: BorderSide(
-                color: g.border(0.15),
-                width: 1.2,
-              ),
-              left: BorderSide(
-                color: g.border(0.08),
-              ),
-              right: BorderSide(
-                color: g.border(0.08),
-              ),
+              top: BorderSide(color: g.border(0.15), width: 1.2),
+              left: BorderSide(color: g.border(0.08)),
+              right: BorderSide(color: g.border(0.08)),
             ),
           ),
           child: SafeArea(
@@ -958,10 +978,7 @@ class _GlassAddJourneySheet extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           'Choose your mode of transport',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: g.textTertiary,
-                          ),
+                          style: TextStyle(fontSize: 13, color: g.textTertiary),
                         ),
                       ],
                     ),
@@ -1017,9 +1034,7 @@ class _GlassTransportTile extends StatelessWidget {
             decoration: BoxDecoration(
               color: type.color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: type.color.withValues(alpha: 0.25),
-              ),
+              border: Border.all(color: type.color.withValues(alpha: 0.25)),
             ),
             child: Row(
               children: [
@@ -1077,9 +1092,7 @@ class _GlassQuickTripTile extends StatelessWidget {
                 ],
               ),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Colors.white.withValues(alpha: 0.2),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFF27AE60).withValues(alpha: 0.2),
@@ -1096,8 +1109,11 @@ class _GlassQuickTripTile extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.18),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.flash_on_rounded,
-                      size: 20, color: Colors.white),
+                  child: const Icon(
+                    Icons.flash_on_rounded,
+                    size: 20,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1122,8 +1138,11 @@ class _GlassQuickTripTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                Icon(Icons.arrow_forward_rounded,
-                    color: Colors.white.withValues(alpha: 0.7), size: 18),
+                Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white.withValues(alpha: 0.7),
+                  size: 18,
+                ),
               ],
             ),
           ),
@@ -1156,14 +1175,15 @@ class _GlassEmptyState extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: _kAccent.withValues(alpha: 0.12),
+                  color: g.accent.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _kAccent.withValues(alpha: 0.2),
-                  ),
+                  border: Border.all(color: g.accent.withValues(alpha: 0.2)),
                 ),
-                child: Icon(Icons.train_rounded,
-                    size: 56, color: _kAccent.withValues(alpha: 0.8)),
+                child: Icon(
+                  Icons.train_rounded,
+                  size: 56,
+                  color: g.accent.withValues(alpha: 0.8),
+                ),
               ),
             ),
           ),
@@ -1181,11 +1201,7 @@ class _GlassEmptyState extends StatelessWidget {
           Text(
             'Add your first journey to start receiving\nGPS arrival alerts for trains, buses,\nmetro, and more.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 14,
-              color: g.textTertiary,
-              height: 1.6,
-            ),
+            style: TextStyle(fontSize: 14, color: g.textTertiary, height: 1.6),
           ),
         ],
       ),
@@ -1217,8 +1233,11 @@ class _GlassErrorState extends StatelessWidget {
                     color: const Color(0xFFE74C3C).withValues(alpha: 0.2),
                   ),
                 ),
-                child: const Icon(Icons.error_outline_rounded,
-                    size: 48, color: Color(0xFFE74C3C)),
+                child: const Icon(
+                  Icons.error_outline_rounded,
+                  size: 48,
+                  color: Color(0xFFE74C3C),
+                ),
               ),
             ),
           ),
@@ -1234,10 +1253,7 @@ class _GlassErrorState extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'Check your connection and try again.',
-            style: TextStyle(
-              color: g.textTertiary,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: g.textTertiary, fontSize: 14),
           ),
           const SizedBox(height: 24),
           GestureDetector(
@@ -1247,21 +1263,19 @@ class _GlassErrorState extends StatelessWidget {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: g.cardFill(0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: g.border(0.15),
-                    ),
+                    border: Border.all(color: g.border(0.15)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.refresh_rounded,
-                          size: 18,
-                          color: g.icon),
+                      Icon(Icons.refresh_rounded, size: 18, color: g.icon),
                       const SizedBox(width: 8),
                       Text(
                         'Retry',

@@ -1,7 +1,11 @@
+import 'dart:ui';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:travel_companion/core/ui/adaptive_feedback.dart';
 import 'package:travel_companion/core/theme/glass_widgets.dart';
 import 'package:travel_companion/data/models/train_route_stop.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
@@ -10,13 +14,12 @@ import 'package:travel_companion/features/journey/widgets/journey_form_widgets.d
 import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/features/journey/widgets/train_stop_selector.dart';
 
-const _kAccent = Color(0xFF1565C0);
-
 class AddTrainJourneyScreen extends ConsumerStatefulWidget {
   const AddTrainJourneyScreen({super.key});
 
   @override
-  ConsumerState<AddTrainJourneyScreen> createState() => _AddTrainJourneyScreenState();
+  ConsumerState<AddTrainJourneyScreen> createState() =>
+      _AddTrainJourneyScreenState();
 }
 
 class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
@@ -27,7 +30,6 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
   final _berthCtrl = TextEditingController();
 
   static const _type = TransportType.train;
-  static const _accent = _kAccent;
 
   @override
   void dispose() {
@@ -40,6 +42,8 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
+    final accent = g.trainAccent;
     final state = ref.watch(trainJourneyNotifierProvider);
     final notifier = ref.read(trainJourneyNotifierProvider.notifier);
     final hasRouteStops = state.trainRouteStops.isNotEmpty;
@@ -51,21 +55,15 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
       if (next.savedSuccessfully) {
         Navigator.pop(context, true);
       }
-      if (next.errorMessage != null && prev?.errorMessage != next.errorMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(next.errorMessage!),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-        ));
+      if (next.errorMessage != null &&
+          prev?.errorMessage != next.errorMessage) {
+        AdaptiveFeedback.showToast(context, next.errorMessage!, isError: true);
       }
     });
 
-    final g = GlassColors.of(context);
-
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: g.bg,
-      extendBodyBehindAppBar: true,
-      body: Stack(
+      child: Stack(
         children: [
           // Glass background orbs
           _TrainBackground(),
@@ -74,26 +72,86 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
             key: _formKey,
             child: CustomScrollView(
               slivers: [
-                // Glass App Bar
-                Builder(builder: (ctx) {
-                  final topPad = MediaQuery.paddingOf(ctx).top;
-                  return SliverAppBar(
-                    pinned: true,
-                    expandedHeight: topPad + kToolbarHeight + 80,
-                    backgroundColor: Colors.transparent,
-                    surfaceTintColor: Colors.transparent,
-                    scrolledUnderElevation: 0,
-                    foregroundColor: Colors.white,
-                    flexibleSpace: FlexibleSpaceBar(
-                      collapseMode: CollapseMode.pin,
-                      background: TransportHeroHeader(
-                        type: _type,
-                        title: 'Add Train Journey',
-                        subtitle: 'Enter your train details and book smart alerts',
+                Builder(
+                  builder: (ctx) {
+                    final topPad = MediaQuery.paddingOf(ctx).top;
+                    final height = topPad + kToolbarHeight + 80;
+                    return SliverToBoxAdapter(
+                      child: SizedBox(
+                        height: height,
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: TransportHeroHeader(
+                                type: _type,
+                                title: 'Add Train Journey',
+                                subtitle:
+                                    'Enter your train details and book smart alerts',
+                              ),
+                            ),
+                            SafeArea(
+                              bottom: false,
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  12,
+                                  8,
+                                  12,
+                                  0,
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: BackdropFilter(
+                                    filter: ImageFilter.blur(
+                                      sigmaX: 12,
+                                      sigmaY: 12,
+                                    ),
+                                    child: Container(
+                                      height: 44,
+                                      decoration: BoxDecoration(
+                                        color: g.cardFill(0.12),
+                                        border: Border.all(
+                                          color: g.border(0.15),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          CupertinoButton(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 12,
+                                            ),
+                                            minimumSize: const Size(32, 32),
+                                            onPressed: () =>
+                                                Navigator.maybePop(context),
+                                            child: Icon(
+                                              CupertinoIcons.back,
+                                              color: g.appBarForeground,
+                                              size: 20,
+                                            ),
+                                          ),
+                                          const Expanded(
+                                            child: Text(
+                                              'Add Train Journey',
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 17,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 44),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  },
+                ),
 
                 SliverPadding(
                   padding: const EdgeInsets.only(top: 16),
@@ -103,7 +161,7 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                       FormSectionCard(
                         title: 'TRAIN DETAILS',
                         icon: Icons.train,
-                        accentColor: _accent,
+                        accentColor: accent,
                         children: [
                           TextFormField(
                             controller: _pnrCtrl,
@@ -127,7 +185,8 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                               labelText: 'Train Number *',
                               hintText: 'e.g. 12301',
                               prefixIcon: Icons.pin_outlined,
-                              helperText: 'Name and route auto-fill from number',
+                              helperText:
+                                  'Name and route auto-fill from number',
                               suffixIcon: state.isAutoFilling
                                   ? Padding(
                                       padding: const EdgeInsets.all(14),
@@ -136,7 +195,9 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                                         height: 18,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          color: Colors.white.withValues(alpha: 0.5),
+                                          color: Colors.white.withValues(
+                                            alpha: 0.5,
+                                          ),
                                         ),
                                       ),
                                     )
@@ -146,8 +207,12 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                             maxLength: 5,
                             onChanged: notifier.setTrainNumber,
                             validator: (v) {
-                              if (v == null || v.isEmpty) return 'Train number is required';
-                              if (v.length < 4) return 'Enter a valid 4-5 digit number';
+                              if (v == null || v.isEmpty) {
+                                return 'Train number is required';
+                              }
+                              if (v.length < 4) {
+                                return 'Enter a valid 4-5 digit number';
+                              }
                               return null;
                             },
                           ),
@@ -169,7 +234,7 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                             _GlassRouteLoadedBanner(
                               stopCount: state.trainRouteStops.length,
                               trainName: state.trainName,
-                              accentColor: _accent,
+                              accentColor: accent,
                             ),
                           ],
                         ],
@@ -179,17 +244,19 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                       FormSectionCard(
                         title: 'JOURNEY ROUTE',
                         icon: Icons.alt_route,
-                        accentColor: _accent,
+                        accentColor: accent,
                         children: [
                           if (hasRouteStops)
                             TrainStopSelector(
                               label: 'Boarding Station *',
                               leadingIcon: Icons.trip_origin,
                               stops: state.trainRouteStops,
-                              selected: _findStop(state.trainRouteStops,
-                                  state.boardingStation?.code),
+                              selected: _findStop(
+                                state.trainRouteStops,
+                                state.boardingStation?.code,
+                              ),
                               onChanged: notifier.selectBoardingStop,
-                              accentColor: _accent,
+                              accentColor: accent,
                               validator: (_) => state.boardingStation == null
                                   ? 'Select boarding station'
                                   : null,
@@ -202,7 +269,7 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                               selected: state.boardingStation,
                               searchFn: notifier.searchStations,
                               onChanged: notifier.setBoardingStation,
-                              accentColor: _accent,
+                              accentColor: accent,
                               validator: (s) =>
                                   s == null ? 'Select boarding station' : null,
                             ),
@@ -237,10 +304,12 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                               label: 'Destination Station *',
                               leadingIcon: Icons.place,
                               stops: state.destinationStops,
-                              selected: _findStop(state.trainRouteStops,
-                                  state.destinationStation?.code),
+                              selected: _findStop(
+                                state.trainRouteStops,
+                                state.destinationStation?.code,
+                              ),
                               onChanged: notifier.selectDestinationStop,
-                              accentColor: _accent,
+                              accentColor: accent,
                               disabledHint: 'Select boarding station first',
                               validator: (_) => state.destinationStation == null
                                   ? 'Select destination station'
@@ -254,9 +323,10 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                               selected: state.destinationStation,
                               searchFn: notifier.searchStations,
                               onChanged: notifier.setDestinationStation,
-                              accentColor: _accent,
-                              validator: (s) =>
-                                  s == null ? 'Select destination station' : null,
+                              accentColor: accent,
+                              validator: (s) => s == null
+                                  ? 'Select destination station'
+                                  : null,
                             ),
                         ],
                       ),
@@ -270,19 +340,19 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                           stops: state.trainRouteStops,
                           boardingCode: state.boardingStation!.code,
                           destinationCode: state.destinationStation!.code,
-                          accentColor: _accent,
+                          accentColor: accent,
                         ),
 
                       // Journey Info
                       FormSectionCard(
                         title: 'JOURNEY INFO',
                         icon: Icons.info_outline,
-                        accentColor: _accent,
+                        accentColor: accent,
                         children: [
                           JourneyDateField(
                             value: state.journeyDate,
                             onChanged: notifier.setJourneyDate,
-                            accentColor: _accent,
+                            accentColor: accent,
                           ),
                           fieldSpacing,
 
@@ -290,7 +360,8 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                             initialValue: state.travelClass,
                             decoration: glassInputDecoration(
                               labelText: 'Travel Class (optional)',
-                              prefixIcon: Icons.airline_seat_recline_normal_outlined,
+                              prefixIcon:
+                                  Icons.airline_seat_recline_normal_outlined,
                             ),
                             dropdownColor: g.dropdownBg,
                             style: TextStyle(
@@ -300,14 +371,38 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                             iconEnabledColor: g.textAlpha(0.5),
                             borderRadius: BorderRadius.circular(14),
                             items: const [
-                              DropdownMenuItem(value: 'SL', child: Text('Sleeper — SL')),
-                              DropdownMenuItem(value: '3A', child: Text('AC 3 Tier — 3A')),
-                              DropdownMenuItem(value: '2A', child: Text('AC 2 Tier — 2A')),
-                              DropdownMenuItem(value: '1A', child: Text('First AC — 1A')),
-                              DropdownMenuItem(value: '3E', child: Text('AC Economy — 3E')),
-                              DropdownMenuItem(value: 'CC', child: Text('Chair Car — CC')),
-                              DropdownMenuItem(value: 'EC', child: Text('Exec Chair — EC')),
-                              DropdownMenuItem(value: '2S', child: Text('Second Sitting — 2S')),
+                              DropdownMenuItem(
+                                value: 'SL',
+                                child: Text('Sleeper — SL'),
+                              ),
+                              DropdownMenuItem(
+                                value: '3A',
+                                child: Text('AC 3 Tier — 3A'),
+                              ),
+                              DropdownMenuItem(
+                                value: '2A',
+                                child: Text('AC 2 Tier — 2A'),
+                              ),
+                              DropdownMenuItem(
+                                value: '1A',
+                                child: Text('First AC — 1A'),
+                              ),
+                              DropdownMenuItem(
+                                value: '3E',
+                                child: Text('AC Economy — 3E'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'CC',
+                                child: Text('Chair Car — CC'),
+                              ),
+                              DropdownMenuItem(
+                                value: 'EC',
+                                child: Text('Exec Chair — EC'),
+                              ),
+                              DropdownMenuItem(
+                                value: '2S',
+                                child: Text('Second Sitting — 2S'),
+                              ),
                             ],
                             onChanged: notifier.setTravelClass,
                           ),
@@ -329,9 +424,11 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
                       // Save
                       SaveJourneyButton(
                         isSaving: state.isSaving,
-                        accentColor: _accent,
+                        accentColor: accent,
                         onPressed: () {
-                          if (_formKey.currentState!.validate()) notifier.save();
+                          if (_formKey.currentState!.validate()) {
+                            notifier.save();
+                          }
                         },
                       ),
                     ]),
@@ -362,14 +459,15 @@ class _AddTrainJourneyScreenState extends ConsumerState<AddTrainJourneyScreen> {
 class _TrainBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Container(
-      color: GlassColors.of(context).bg,
+      color: g.bg,
       child: Stack(
         children: [
           Positioned(
             top: -60,
             right: -50,
-            child: _GlowOrb(color: _kAccent, size: 220),
+            child: _GlowOrb(color: g.trainAccent, size: 220),
           ),
           Positioned(
             bottom: 150,
@@ -521,33 +619,39 @@ class _GlassTrainRoutePreview extends StatelessWidget {
                   urlTemplate:
                       'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png',
                   userAgentPackageName: 'com.travel_companion.app',
-                  fallbackUrl:
-                      'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  fallbackUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 ),
-                PolylineLayer(polylines: [
-                  Polyline(
-                    points: points,
-                    strokeWidth: 4,
-                    color: accentColor,
-                  ),
-                ]),
-                MarkerLayer(markers: [
-                  for (int i = 0; i < routeStops.length; i++)
-                    if (routeStops[i].latitude != 0)
-                      Marker(
-                        point: LatLng(
-                            routeStops[i].latitude, routeStops[i].longitude),
-                        width: 28,
-                        height: 28,
-                        alignment: Alignment.center,
-                        child: _StationDot(
-                          isEndpoint: routeStops[i].stationCode == boardingCode ||
-                              routeStops[i].stationCode == destinationCode,
-                          isOrigin: routeStops[i].stationCode == boardingCode,
-                          accentColor: accentColor,
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: points,
+                      strokeWidth: 4,
+                      color: accentColor,
+                    ),
+                  ],
+                ),
+                MarkerLayer(
+                  markers: [
+                    for (int i = 0; i < routeStops.length; i++)
+                      if (routeStops[i].latitude != 0)
+                        Marker(
+                          point: LatLng(
+                            routeStops[i].latitude,
+                            routeStops[i].longitude,
+                          ),
+                          width: 28,
+                          height: 28,
+                          alignment: Alignment.center,
+                          child: _StationDot(
+                            isEndpoint:
+                                routeStops[i].stationCode == boardingCode ||
+                                routeStops[i].stationCode == destinationCode,
+                            isOrigin: routeStops[i].stationCode == boardingCode,
+                            accentColor: accentColor,
+                          ),
                         ),
-                      ),
-                ]),
+                  ],
+                ),
               ],
             ),
           ),
@@ -583,10 +687,7 @@ class _GlassTrainRoutePreview extends StatelessWidget {
             ),
             Text(
               '${routeStops.length} stops',
-              style: TextStyle(
-                fontSize: 11,
-                color: g.textAlpha(0.4),
-              ),
+              style: TextStyle(fontSize: 11, color: g.textAlpha(0.4)),
             ),
             const SizedBox(width: 6),
             Expanded(
@@ -624,10 +725,8 @@ class _GlassTrainRoutePreview extends StatelessWidget {
 
   List<TrainRouteStop> _getRouteStops() {
     if (stops.isEmpty) return [];
-    final boardingIdx =
-        stops.indexWhere((s) => s.stationCode == boardingCode);
-    final destIdx =
-        stops.indexWhere((s) => s.stationCode == destinationCode);
+    final boardingIdx = stops.indexWhere((s) => s.stationCode == boardingCode);
+    final destIdx = stops.indexWhere((s) => s.stationCode == destinationCode);
     if (boardingIdx < 0 || destIdx < 0 || boardingIdx >= destIdx) return [];
     return stops.sublist(boardingIdx, destIdx + 1);
   }
@@ -647,7 +746,9 @@ class _StationDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isEndpoint) {
-      final color = isOrigin ? const Color(0xFF27AE60) : const Color(0xFFE74C3C);
+      final color = isOrigin
+          ? const Color(0xFF27AE60)
+          : const Color(0xFFE74C3C);
       return Container(
         width: 22,
         height: 22,

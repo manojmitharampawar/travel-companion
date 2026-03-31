@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:flutter/material.dart' show TimeOfDay;
 
 /// A single station on a local train line, with its position and coordinates.
 class LocalTrainStation {

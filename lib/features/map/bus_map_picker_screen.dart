@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:ui' as ui;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:travel_companion/core/ui/adaptive_feedback.dart';
 import 'package:travel_companion/core/services/geocoding_service.dart';
 import 'package:travel_companion/core/services/tile_cache_service.dart';
 import 'package:travel_companion/data/models/location_point.dart';
@@ -149,8 +151,10 @@ class _BusMapPickerScreenState extends State<BusMapPickerScreen>
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Location permission denied')),
+          AdaptiveFeedback.showToast(
+            context,
+            'Location permission denied',
+            isError: true,
           );
         }
         return;
@@ -171,8 +175,10 @@ class _BusMapPickerScreenState extends State<BusMapPickerScreen>
       _reverseGeocode(latLng);
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Could not get current location')),
+        AdaptiveFeedback.showToast(
+          context,
+          'Could not get current location',
+          isError: true,
         );
       }
     } finally {
@@ -241,8 +247,8 @@ class _BusMapPickerScreenState extends State<BusMapPickerScreen>
     final theme = Theme.of(context);
     final bottomPad = MediaQuery.paddingOf(context).bottom;
 
-    return Scaffold(
-      body: Stack(
+    return CupertinoPageScaffold(
+      child: Stack(
         children: [
           // ── Map ──────────────────────────────────
           FlutterMap(

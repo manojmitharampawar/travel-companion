@@ -1,7 +1,9 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_companion/core/ui/adaptive_feedback.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/metro_station.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
@@ -16,10 +18,7 @@ import 'package:travel_companion/providers/app_providers.dart';
 class MetroJourneyDetailScreen extends ConsumerStatefulWidget {
   final EnrichedJourney enrichedJourney;
 
-  const MetroJourneyDetailScreen({
-    super.key,
-    required this.enrichedJourney,
-  });
+  const MetroJourneyDetailScreen({super.key, required this.enrichedJourney});
 
   @override
   ConsumerState<MetroJourneyDetailScreen> createState() =>
@@ -33,13 +32,39 @@ class _MetroJourneyDetailScreenState
   bool _stopsExpanded = true;
   bool _isEditingOrigin = false;
   bool _isEditingDestination = false;
+  bool _isFavorite = false;
   List<MetroStation> _availableStations = [];
   List<MetroStation> _filteredStations = [];
 
   @override
   void initState() {
     super.initState();
+    _isFavorite = widget.enrichedJourney.journey.isFavorite;
     _loadRouteStops();
+  }
+
+  @override
+  void didUpdateWidget(covariant MetroJourneyDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enrichedJourney.journey.isFavorite !=
+        widget.enrichedJourney.journey.isFavorite) {
+      _isFavorite = widget.enrichedJourney.journey.isFavorite;
+    }
+  }
+
+  Future<void> _toggleFavorite(Journey journey) async {
+    final id = journey.id;
+    if (id == null) return;
+
+    final next = !_isFavorite;
+    final repo = ref.read(journeyRepositoryProvider);
+    await repo.toggleFavorite(id, next);
+
+    if (!mounted) return;
+    setState(() => _isFavorite = next);
+    ref.invalidate(upcomingJourneysProvider);
+    ref.invalidate(historyJourneysProvider);
+    ref.invalidate(favoriteJourneysProvider);
   }
 
   Future<void> _loadRouteStops() async {
@@ -54,8 +79,9 @@ class _MetroJourneyDetailScreenState
 
     try {
       final metroRepo = ref.read(metroRepositoryProvider);
-      final boardingStation =
-          await metroRepo.getStationByCode(journey.boardingStationCode!);
+      final boardingStation = await metroRepo.getStationByCode(
+        journey.boardingStationCode!,
+      );
       if (boardingStation != null) {
         final stops = await metroRepo.getStationRoute(
           lineId: boardingStation.lineId,
@@ -78,11 +104,13 @@ class _MetroJourneyDetailScreenState
 
       // Get boarding station to find the line
       if (journey.boardingStationCode != null) {
-        final boardingStation =
-            await metroRepo.getStationByCode(journey.boardingStationCode!);
+        final boardingStation = await metroRepo.getStationByCode(
+          journey.boardingStationCode!,
+        );
         if (boardingStation != null) {
-          final stations =
-              await metroRepo.getStationsByLine(boardingStation.lineId);
+          final stations = await metroRepo.getStationsByLine(
+            boardingStation.lineId,
+          );
           if (mounted) {
             setState(() {
               _availableStations = stations;
@@ -105,9 +133,11 @@ class _MetroJourneyDetailScreenState
     final lower = query.toLowerCase();
     setState(() {
       _filteredStations = _availableStations
-          .where((s) =>
-              s.name.toLowerCase().contains(lower) ||
-              s.code.toLowerCase().contains(lower))
+          .where(
+            (s) =>
+                s.name.toLowerCase().contains(lower) ||
+                s.code.toLowerCase().contains(lower),
+          )
           .toList();
     });
   }
@@ -124,9 +154,7 @@ class _MetroJourneyDetailScreenState
     ref.invalidate(upcomingJourneysProvider);
     if (mounted) {
       setState(() => _isEditingOrigin = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Origin station updated')),
-      );
+      AdaptiveFeedback.showToast(context, 'Origin station updated');
       _loadRouteStops();
     }
   }
@@ -143,9 +171,7 @@ class _MetroJourneyDetailScreenState
     ref.invalidate(upcomingJourneysProvider);
     if (mounted) {
       setState(() => _isEditingDestination = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Destination station updated')),
-      );
+      AdaptiveFeedback.showToast(context, 'Destination station updated');
       _loadRouteStops();
     }
   }
@@ -158,84 +184,103 @@ class _MetroJourneyDetailScreenState
     final accentColor = type.color;
     final g = GlassColors.of(context);
 
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: g.bg,
-      extendBodyBehindAppBar: true,
-      body: Stack(
+      child: Stack(
         children: [
           _DetailBackground(accentColor: accentColor),
           CustomScrollView(
             slivers: [
-              Builder(builder: (ctx) {
-                final topPad = MediaQuery.paddingOf(ctx).top;
-                return SliverAppBar(
-                  pinned: true,
-                  expandedHeight: topPad + kToolbarHeight + 100,
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: g.appBarForeground,
-                  elevation: 0,
-                  actions: [
-                    GlassFavoriteActionButton(
-                      isFavorite: journey.isFavorite,
-                      onToggle: () async {
-                        final repo = ref.read(journeyRepositoryProvider);
-                        await repo.toggleFavorite(
-                            journey.id!, !journey.isFavorite);
-                        ref.invalidate(upcomingJourneysProvider);
-                        ref.invalidate(historyJourneysProvider);
-                        ref.invalidate(favoriteJourneysProvider);
-                        if (mounted) setState(() {});
-                      },
-                    ),
-                    if (journey.isUpcoming)
-                      PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert_rounded),
-                        color: g.dropdownBg,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        onSelected: (value) async {
-                          if (value == 'delete') {
-                            await _deleteJourney(context, ref, journey);
-                          } else if (value == 'cancel') {
-                            await _cancelJourney(context, ref, journey);
-                          }
-                        },
-                        itemBuilder: (_) => [
-                          PopupMenuItem(
-                            value: 'cancel',
-                            child: Row(children: [
-                              Icon(Icons.cancel_outlined,
-                                  size: 18, color: g.iconAlpha(0.7)),
-                              const SizedBox(width: 8),
-                              Text('Cancel Journey',
-                                  style:
-                                      TextStyle(color: g.textAlpha(0.9))),
-                            ]),
+              Builder(
+                builder: (ctx) {
+                  final topPad = MediaQuery.paddingOf(ctx).top;
+                  final headerHeight = topPad + kToolbarHeight + 100;
+                  return SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: headerHeight,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: _MetroHeroBanner(
+                              journey: journey,
+                              enrichedJourney: enrichedJourney,
+                              type: type,
+                            ),
                           ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Row(children: [
-                              const Icon(Icons.delete_outline_rounded,
-                                  size: 18, color: Color(0xFFE74C3C)),
-                              const SizedBox(width: 8),
-                              const Text('Delete',
-                                  style:
-                                      TextStyle(color: Color(0xFFE74C3C))),
-                            ]),
+                          SafeArea(
+                            bottom: false,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 12,
+                                    sigmaY: 12,
+                                  ),
+                                  child: Container(
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: g.cardFill(0.12),
+                                      border: Border.all(color: g.border(0.15)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        CupertinoButton(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                          ),
+                                          minimumSize: const Size(32, 32),
+                                          onPressed: () =>
+                                              Navigator.maybePop(context),
+                                          child: Icon(
+                                            CupertinoIcons.back,
+                                            color: g.appBarForeground,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const Expanded(
+                                          child: Text(
+                                            'Metro Journey',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 17,
+                                            ),
+                                          ),
+                                        ),
+                                        GlassFavoriteActionButton(
+                                          isFavorite: _isFavorite,
+                                          onToggle: () =>
+                                              _toggleFavorite(journey),
+                                        ),
+                                        if (journey.isUpcoming)
+                                          IconButton(
+                                            icon: const Icon(
+                                              CupertinoIcons.ellipsis_circle,
+                                            ),
+                                            tooltip: 'Journey actions',
+                                            onPressed: () =>
+                                                _showJourneyActions(
+                                                  context,
+                                                  ref,
+                                                  journey,
+                                                ),
+                                          ),
+                                        const SizedBox(width: 4),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                  ],
-                  flexibleSpace: FlexibleSpaceBar(
-                    collapseMode: CollapseMode.pin,
-                    background: _MetroHeroBanner(
-                      journey: journey,
-                      enrichedJourney: enrichedJourney,
-                      type: type,
                     ),
-                  ),
-                );
-              }),
+                  );
+                },
+              ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                 sliver: SliverList(
@@ -254,20 +299,27 @@ class _MetroJourneyDetailScreenState
               ),
             ],
           ),
+          if (journey.isUpcoming || journey.isActive)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: GlassBottomCta(
+                journey: journey,
+                enrichedJourney: enrichedJourney,
+                type: type,
+              ),
+            ),
         ],
       ),
-      bottomNavigationBar: (journey.isUpcoming || journey.isActive)
-          ? GlassBottomCta(
-              journey: journey,
-              enrichedJourney: enrichedJourney,
-              type: type,
-            )
-          : null,
     );
   }
 
-  Widget _buildEditableRouteCard(BuildContext context, WidgetRef ref,
-      EnrichedJourney enrichedJourney) {
+  Widget _buildEditableRouteCard(
+    BuildContext context,
+    WidgetRef ref,
+    EnrichedJourney enrichedJourney,
+  ) {
     final journey = enrichedJourney.journey;
     final g = GlassColors.of(context);
     final type = TransportType.metro;
@@ -393,20 +445,12 @@ class _MetroJourneyDetailScreenState
               if (code.isNotEmpty)
                 Text(
                   code,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: g.textAlpha(0.6),
-                  ),
+                  style: TextStyle(fontSize: 11, color: g.textAlpha(0.6)),
                 ),
             ],
           ),
           const Spacer(),
-          if (isEditable)
-            Icon(
-              Icons.edit_rounded,
-              size: 18,
-              color: color,
-            ),
+          if (isEditable) Icon(Icons.edit_rounded, size: 18, color: color),
         ],
       ),
     );
@@ -548,8 +592,10 @@ class _MetroJourneyDetailScreenState
               InkWell(
                 onTap: () => setState(() => _stopsExpanded = !_stopsExpanded),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -558,8 +604,11 @@ class _MetroJourneyDetailScreenState
                           color: type.color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(Icons.route_rounded,
-                            size: 16, color: type.color),
+                        child: Icon(
+                          Icons.route_rounded,
+                          size: 16,
+                          color: type.color,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Text(
@@ -574,12 +623,15 @@ class _MetroJourneyDetailScreenState
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2),
+                          horizontal: 7,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: type.color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                              color: type.color.withValues(alpha: 0.3)),
+                            color: type.color.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Text(
                           '${_metroStops.length} stops',
@@ -630,10 +682,65 @@ class _MetroJourneyDetailScreenState
     );
   }
 
+  Future<void> _showJourneyActions(
+    BuildContext context,
+    WidgetRef ref,
+    Journey journey,
+  ) async {
+    final action = await showCupertinoModalPopup<String>(
+      context: context,
+      builder: (sheetContext) {
+        final g = GlassColors.of(sheetContext);
+        return CupertinoActionSheet(
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(sheetContext, 'cancel'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    CupertinoIcons.xmark_circle,
+                    size: 18,
+                    color: g.iconAlpha(0.7),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Cancel Journey',
+                    style: TextStyle(color: g.textAlpha(0.9)),
+                  ),
+                ],
+              ),
+            ),
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.pop(sheetContext, 'delete'),
+              child: const Text('Delete'),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(sheetContext),
+            child: const Text('Dismiss'),
+          ),
+        );
+      },
+    );
+
+    if (!mounted) return;
+
+    if (action == 'delete') {
+      await _deleteJourney(this.context, ref, journey);
+    } else if (action == 'cancel') {
+      await _cancelJourney(this.context, ref, journey);
+    }
+  }
+
   Future<void> _deleteJourney(
-      BuildContext context, WidgetRef ref, Journey journey) async {
+    BuildContext context,
+    WidgetRef ref,
+    Journey journey,
+  ) async {
     try {
-      final confirm = await showDialog<bool>(
+      final confirm = await showCupertinoDialog<bool>(
         context: context,
         builder: (context) => GlassConfirmDialog(
           title: 'Delete Journey?',
@@ -650,15 +757,16 @@ class _MetroJourneyDetailScreenState
       if (context.mounted) Navigator.pop(context);
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        AdaptiveFeedback.showToast(context, 'Error: $e', isError: true);
       }
     }
   }
 
   Future<void> _cancelJourney(
-      BuildContext context, WidgetRef ref, Journey journey) async {
+    BuildContext context,
+    WidgetRef ref,
+    Journey journey,
+  ) async {
     await ref
         .read(journeyRepositoryProvider)
         .updateJourneyStatus(journey.id!, JourneyStatus.cancelled);
@@ -733,7 +841,8 @@ class _MetroHeroBanner extends StatelessWidget {
     final topPad = MediaQuery.paddingOf(context).top;
     final accentColor = type.color;
 
-    final vehicleName = journey.vehicleName ??
+    final vehicleName =
+        journey.vehicleName ??
         (journey.vehicleNumber != null
             ? '${type.label} ${journey.vehicleNumber}'
             : type.label);
@@ -743,10 +852,7 @@ class _MetroHeroBanner extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            accentColor.withValues(alpha: 0.15),
-            g.bg,
-          ],
+          colors: [accentColor.withValues(alpha: 0.15), g.bg],
         ),
       ),
       child: Stack(
@@ -764,8 +870,12 @@ class _MetroHeroBanner extends StatelessWidget {
             ),
           ),
           Padding(
-            padding:
-                EdgeInsets.fromLTRB(20, topPad + kToolbarHeight + 6, 20, 20),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              topPad + kToolbarHeight + 6,
+              20,
+              20,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -780,8 +890,7 @@ class _MetroHeroBanner extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: g.border(0.15)),
                       ),
-                      child:
-                          Icon(type.icon, size: 30, color: accentColor),
+                      child: Icon(type.icon, size: 30, color: accentColor),
                     ),
                   ),
                 ),
@@ -815,8 +924,11 @@ class _MetroHeroBanner extends StatelessWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.calendar_today_rounded,
-                              size: 11, color: g.textAlpha(0.6)),
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 11,
+                            color: g.textAlpha(0.6),
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             AppDateUtils.relativeDay(journey.journeyDate),
@@ -828,8 +940,11 @@ class _MetroHeroBanner extends StatelessWidget {
                           ),
                           if (journey.scheduledTime != null) ...[
                             const SizedBox(width: 10),
-                            Icon(Icons.schedule_rounded,
-                                size: 11, color: g.textAlpha(0.6)),
+                            Icon(
+                              Icons.schedule_rounded,
+                              size: 11,
+                              color: g.textAlpha(0.6),
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               journey.scheduledTime!,

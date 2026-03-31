@@ -70,16 +70,16 @@ final journeyRescheduleServiceProvider =
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
   static const _key = 'themeMode';
 
-  ThemeModeNotifier() : super(ThemeMode.dark) {
+  ThemeModeNotifier() : super(ThemeMode.system) {
     _load();
   }
 
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
-    final value = prefs.getString(_key) ?? 'dark';
+    final value = prefs.getString(_key) ?? 'system';
     state = ThemeMode.values.firstWhere(
       (m) => m.name == value,
-      orElse: () => ThemeMode.dark,
+      orElse: () => ThemeMode.system,
     );
   }
 

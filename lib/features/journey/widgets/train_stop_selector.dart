@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/models/train_route_stop.dart';
@@ -113,11 +114,8 @@ class TrainStopSelector extends StatelessWidget {
   }
 
   void _openSheet(BuildContext context) {
-    showModalBottomSheet<TrainRouteStop>(
+    showCupertinoModalPopup<TrainRouteStop>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black54,
       builder: (_) => _GlassTrainStopSheet(
         label: label,
         stops: stops,

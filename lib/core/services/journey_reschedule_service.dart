@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/repositories/journey_repository.dart';
 

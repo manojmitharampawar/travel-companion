@@ -1,8 +1,11 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:travel_companion/core/ui/adaptive_feedback.dart';
+import 'package:travel_companion/core/ui/adaptive_navigation.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
@@ -14,10 +17,7 @@ import 'package:travel_companion/providers/app_providers.dart';
 class QuickTripScreen extends ConsumerStatefulWidget {
   final TransportType initialType;
 
-  const QuickTripScreen({
-    super.key,
-    this.initialType = TransportType.metro,
-  });
+  const QuickTripScreen({super.key, this.initialType = TransportType.metro});
 
   @override
   ConsumerState<QuickTripScreen> createState() => _QuickTripScreenState();
@@ -41,8 +41,9 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
     setState(() => _isGettingLocation = true);
     try {
       final position = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       setState(() {
         _origin = LocationPoint(
@@ -60,13 +61,10 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
 
   Future<void> _startTrip() async {
     if (_destination == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please select a destination'),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+      AdaptiveFeedback.showToast(
+        context,
+        'Please select a destination',
+        isError: true,
       );
       return;
     }
@@ -76,8 +74,9 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
     try {
       if (_origin == null) {
         final position = await Geolocator.getCurrentPosition(
-          locationSettings:
-              const LocationSettings(accuracy: LocationAccuracy.high),
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+          ),
         );
         _origin = LocationPoint(
           name: 'Current Location',
@@ -102,28 +101,23 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
         createdAt: DateTime.now(),
       );
 
-      final id =
-          await ref.read(journeyRepositoryProvider).insertJourney(journey);
+      final id = await ref
+          .read(journeyRepositoryProvider)
+          .insertJourney(journey);
       final savedJourney = journey.copyWith(id: id);
 
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(
-            builder: (_) =>
-                JourneyTrackingScreen(journey: savedJourney),
-          ),
+          adaptivePageRoute(JourneyTrackingScreen(journey: savedJourney)),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to start trip: $e'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-          ),
+        AdaptiveFeedback.showToast(
+          context,
+          'Failed to start trip: $e',
+          isError: true,
         );
       }
     } finally {
@@ -136,10 +130,9 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
     final accentColor = _transportType.color;
     final g = GlassColors.of(context);
 
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: g.bg,
-      extendBodyBehindAppBar: true,
-      body: Stack(
+      child: Stack(
         children: [
           _QuickTripBackground(accentColor: accentColor),
           SafeArea(
@@ -152,8 +145,7 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
                   Row(
                     children: [
                       IconButton(
-                        icon: Icon(Icons.arrow_back_rounded,
-                            color: g.text),
+                        icon: Icon(Icons.arrow_back_rounded, color: g.text),
                         onPressed: () => Navigator.pop(context),
                       ),
                       const SizedBox(width: 8),
@@ -177,8 +169,7 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
                       TransportType.bus,
                       TransportType.localTrain,
                     ],
-                    onChanged: (type) =>
-                        setState(() => _transportType = type),
+                    onChanged: (type) => setState(() => _transportType = type),
                   ),
                   const SizedBox(height: 24),
 
@@ -193,12 +184,9 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
                   LocationSearchField(
                     label: 'Where are you going? *',
                     initialValue: _destination,
-                    onSelected: (loc) =>
-                        setState(() => _destination = loc),
-                    stationRepository:
-                        ref.read(stationRepositoryProvider),
-                    locationRepository:
-                        ref.read(locationRepositoryProvider),
+                    onSelected: (loc) => setState(() => _destination = loc),
+                    stationRepository: ref.read(stationRepositoryProvider),
+                    locationRepository: ref.read(locationRepositoryProvider),
                     onUseCurrentLocation: null,
                   ),
 
@@ -300,8 +288,7 @@ class _GlassTransportSelector extends StatelessWidget {
           decoration: BoxDecoration(
             color: g.cardFill(0.06),
             borderRadius: BorderRadius.circular(14),
-            border:
-                Border.all(color: g.border(0.1)),
+            border: Border.all(color: g.border(0.1)),
           ),
           child: Row(
             children: types.map((type) {
@@ -318,8 +305,7 @@ class _GlassTransportSelector extends StatelessWidget {
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(10),
                       border: isSelected
-                          ? Border.all(
-                              color: type.color.withValues(alpha: 0.4))
+                          ? Border.all(color: type.color.withValues(alpha: 0.4))
                           : null,
                     ),
                     child: Column(
@@ -328,9 +314,7 @@ class _GlassTransportSelector extends StatelessWidget {
                         Icon(
                           type.icon,
                           size: 20,
-                          color: isSelected
-                              ? type.color
-                              : g.textAlpha(0.4),
+                          color: isSelected ? type.color : g.textAlpha(0.4),
                         ),
                         const SizedBox(height: 4),
                         Text(
@@ -340,9 +324,7 @@ class _GlassTransportSelector extends StatelessWidget {
                             fontWeight: isSelected
                                 ? FontWeight.w700
                                 : FontWeight.w500,
-                            color: isSelected
-                                ? type.color
-                                : g.textAlpha(0.4),
+                            color: isSelected ? type.color : g.textAlpha(0.4),
                           ),
                         ),
                       ],
@@ -383,20 +365,21 @@ class _GlassOriginCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: g.cardFill(0.06),
             borderRadius: BorderRadius.circular(14),
-            border:
-                Border.all(color: g.border(0.1)),
+            border: Border.all(color: g.border(0.1)),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color:
-                      const Color(0xFF27AE60).withValues(alpha: 0.15),
+                  color: const Color(0xFF27AE60).withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.my_location,
-                    color: Color(0xFF27AE60), size: 20),
+                child: const Icon(
+                  Icons.my_location,
+                  color: Color(0xFF27AE60),
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -414,10 +397,7 @@ class _GlassOriginCard extends StatelessWidget {
                     if (isGettingLocation)
                       Text(
                         'Detecting location...',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: g.textAlpha(0.6),
-                        ),
+                        style: TextStyle(fontSize: 14, color: g.textAlpha(0.6)),
                       )
                     else
                       Text(
@@ -474,16 +454,11 @@ class _GlassStartButton extends StatelessWidget {
         gradient: isDisabled
             ? null
             : LinearGradient(
-                colors: [
-                  accentColor,
-                  accentColor.withValues(alpha: 0.8),
-                ],
+                colors: [accentColor, accentColor.withValues(alpha: 0.8)],
               ),
         color: isDisabled ? g.cardFill(0.06) : null,
         borderRadius: BorderRadius.circular(16),
-        border: isDisabled
-            ? Border.all(color: g.border(0.1))
-            : null,
+        border: isDisabled ? Border.all(color: g.border(0.1)) : null,
         boxShadow: isDisabled
             ? null
             : [
@@ -494,41 +469,37 @@ class _GlassStartButton extends StatelessWidget {
                 ),
               ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: isStarting || isDisabled ? null : onTap,
-          borderRadius: BorderRadius.circular(16),
-          child: Center(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (isStarting)
-                  const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white),
-                  )
-                else
-                  Icon(Icons.play_arrow,
-                      size: 28,
-                      color: isDisabled
-                          ? g.textAlpha(0.3)
-                          : Colors.white),
-                const SizedBox(width: 8),
-                Text(
-                  isStarting ? 'Starting...' : 'Start Tracking',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: isDisabled
-                        ? g.textAlpha(0.3)
-                        : Colors.white,
+      child: GestureDetector(
+        onTap: isStarting || isDisabled ? null : onTap,
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (isStarting)
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
                   ),
+                )
+              else
+                Icon(
+                  Icons.play_arrow,
+                  size: 28,
+                  color: isDisabled ? g.textAlpha(0.3) : Colors.white,
                 ),
-              ],
-            ),
+              const SizedBox(width: 8),
+              Text(
+                isStarting ? 'Starting...' : 'Start Tracking',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: isDisabled ? g.textAlpha(0.3) : Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
       ),

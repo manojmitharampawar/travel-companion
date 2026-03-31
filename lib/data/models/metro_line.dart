@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:flutter/material.dart';
+import 'dart:ui';
 
 /// Metro line definition with city, name, code, and color.
 class MetroLine extends Equatable {

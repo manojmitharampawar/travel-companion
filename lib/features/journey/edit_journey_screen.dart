@@ -1,8 +1,11 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:travel_companion/core/ui/adaptive_feedback.dart';
+import 'package:travel_companion/core/ui/adaptive_navigation.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
@@ -40,10 +43,10 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
   void initState() {
     super.initState();
     final j = widget.journey;
-    _vehicleNumberController =
-        TextEditingController(text: j.vehicleNumber ?? '');
-    _vehicleNameController =
-        TextEditingController(text: j.vehicleName ?? '');
+    _vehicleNumberController = TextEditingController(
+      text: j.vehicleNumber ?? '',
+    );
+    _vehicleNameController = TextEditingController(text: j.vehicleName ?? '');
     _pnrController = TextEditingController(text: j.pnr ?? '');
     _classController = TextEditingController(text: j.travelClass ?? '');
     _berthController = TextEditingController(text: j.berth ?? '');
@@ -94,8 +97,8 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
   Future<void> _pickOnMap({required bool isOrigin}) async {
     final result = await Navigator.push<LocationPoint>(
       context,
-      MaterialPageRoute(
-        builder: (_) => MapLocationPicker(
+      adaptivePageRoute(
+        MapLocationPicker(
           title: isOrigin ? 'Pick Origin' : 'Pick Destination',
           initialLocation: isOrigin ? _originLocation : _destinationLocation,
         ),
@@ -118,31 +121,58 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
     final accentColor = type.color;
     final g = GlassColors.of(context);
 
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: g.bg,
-      extendBodyBehindAppBar: true,
-      body: Stack(
+      child: Stack(
         children: [
           _EditBackground(accentColor: accentColor),
           CustomScrollView(
             slivers: [
-              // Glass AppBar
-              SliverAppBar(
-                pinned: true,
-                backgroundColor: Colors.transparent,
-                foregroundColor: g.appBarForeground,
-                elevation: 0,
-                title: Text(
-                  'Edit ${type.label} Journey',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                  ),
-                ),
-                flexibleSpace: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                    child: Container(color: Colors.transparent),
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: g.cardFill(0.12),
+                            border: Border.all(color: g.border(0.15)),
+                          ),
+                          child: Row(
+                            children: [
+                              CupertinoButton(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                minimumSize: const Size(32, 32),
+                                onPressed: () => Navigator.maybePop(context),
+                                child: Icon(
+                                  CupertinoIcons.back,
+                                  color: g.appBarForeground,
+                                  size: 20,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  'Edit ${type.label} Journey',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 17,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 44),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -197,25 +227,27 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
                               initialValue: _originLocation,
                               onSelected: (loc) =>
                                   setState(() => _originLocation = loc),
-                              stationRepository:
-                                  ref.read(stationRepositoryProvider),
-                              locationRepository:
-                                  ref.read(locationRepositoryProvider),
-                              onPickOnMap: () =>
-                                  _pickOnMap(isOrigin: true),
+                              stationRepository: ref.read(
+                                stationRepositoryProvider,
+                              ),
+                              locationRepository: ref.read(
+                                locationRepositoryProvider,
+                              ),
+                              onPickOnMap: () => _pickOnMap(isOrigin: true),
                             ),
                             const SizedBox(height: 16),
                             LocationSearchField(
                               label: 'Destination',
                               initialValue: _destinationLocation,
-                              onSelected: (loc) => setState(
-                                  () => _destinationLocation = loc),
-                              stationRepository:
-                                  ref.read(stationRepositoryProvider),
-                              locationRepository:
-                                  ref.read(locationRepositoryProvider),
-                              onPickOnMap: () =>
-                                  _pickOnMap(isOrigin: false),
+                              onSelected: (loc) =>
+                                  setState(() => _destinationLocation = loc),
+                              stationRepository: ref.read(
+                                stationRepositoryProvider,
+                              ),
+                              locationRepository: ref.read(
+                                locationRepositoryProvider,
+                              ),
+                              onPickOnMap: () => _pickOnMap(isOrigin: false),
                             ),
                           ],
                           const SizedBox(height: 16),
@@ -223,8 +255,9 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
                           // Date
                           _GlassDateField(
                             label: 'Journey Date',
-                            value: DateFormat('dd MMM yyyy (EEEE)')
-                                .format(_journeyDate),
+                            value: DateFormat(
+                              'dd MMM yyyy (EEEE)',
+                            ).format(_journeyDate),
                             icon: Icons.calendar_today,
                             accentColor: accentColor,
                             onTap: _selectDate,
@@ -270,8 +303,7 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
                               _isRepeating = val;
                               if (!val) _repeatDays = 0;
                             }),
-                            onDayToggled: (i, selected) =>
-                                setState(() {
+                            onDayToggled: (i, selected) => setState(() {
                               if (selected) {
                                 _repeatDays |= (1 << i);
                               } else {
@@ -288,14 +320,17 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
               ),
             ],
           ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _GlassSaveBar(
+              accentColor: accentColor,
+              isLoading: _isLoading,
+              onSave: _saveChanges,
+            ),
+          ),
         ],
-      ),
-
-      // Glass save button
-      bottomNavigationBar: _GlassSaveBar(
-        accentColor: accentColor,
-        isLoading: _isLoading,
-        onSave: _saveChanges,
       ),
     );
   }
@@ -337,8 +372,10 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
         ),
         filled: true,
         fillColor: g.inputFill,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }
@@ -389,8 +426,7 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
         travelClass: _classController.text.isEmpty
             ? null
             : _classController.text,
-        berth:
-            _berthController.text.isEmpty ? null : _berthController.text,
+        berth: _berthController.text.isEmpty ? null : _berthController.text,
         originLatitude: _originLocation?.latitude,
         originLongitude: _originLocation?.longitude,
         originName: _originLocation?.name,
@@ -406,28 +442,12 @@ class _EditJourneyScreenState extends ConsumerState<EditJourneyScreen> {
       await ref.read(journeyRepositoryProvider).updateJourney(updated);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Journey updated!'),
-            backgroundColor: const Color(0xFF27AE60),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+        AdaptiveFeedback.showToast(context, 'Journey updated!');
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: const Color(0xFFE74C3C),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+        AdaptiveFeedback.showToast(context, 'Error: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -518,8 +538,10 @@ class _GlassDateField extends StatelessWidget {
           labelText: label,
           labelStyle: TextStyle(color: g.textSecondary),
           prefixIcon: Icon(icon, color: accentColor),
-          suffixIcon: Icon(Icons.keyboard_arrow_down_rounded,
-              color: accentColor),
+          suffixIcon: Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: accentColor,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(color: g.inputBorder),
@@ -530,8 +552,10 @@ class _GlassDateField extends StatelessWidget {
           ),
           filled: true,
           fillColor: g.inputFill,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
         ),
         child: Text(
           value,
@@ -591,7 +615,9 @@ class _GlassRepeatSection extends StatelessWidget {
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 child: Row(
                   children: [
                     Icon(Icons.repeat_rounded, color: accentColor, size: 20),
@@ -624,8 +650,7 @@ class _GlassRepeatSection extends StatelessWidget {
                       value: isRepeating,
                       onChanged: onRepeatingChanged,
                       activeThumbColor: accentColor,
-                      activeTrackColor:
-                          accentColor.withValues(alpha: 0.35),
+                      activeTrackColor: accentColor.withValues(alpha: 0.35),
                       inactiveThumbColor: g.switchInactiveThumb,
                       inactiveTrackColor: g.switchInactiveTrack,
                     ),
@@ -658,8 +683,7 @@ class _GlassRepeatSection extends StatelessWidget {
           onTap: () => onDayToggled(i, !isSelected),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: isSelected
                   ? accentColor.withValues(alpha: 0.2)
@@ -675,11 +699,8 @@ class _GlassRepeatSection extends StatelessWidget {
               days[i],
               style: TextStyle(
                 fontSize: 12,
-                fontWeight:
-                    isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected
-                    ? accentColor
-                    : g.textSecondary,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? accentColor : g.textSecondary,
               ),
             ),
           ),
@@ -713,10 +734,7 @@ class _GlassSaveBar extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: g.bottomBarBg,
-            border: Border(
-              top: BorderSide(
-                  color: g.bottomBarBorder, width: 1),
-            ),
+            border: Border(top: BorderSide(color: g.bottomBarBorder, width: 1)),
           ),
           child: SafeArea(
             child: Padding(
@@ -725,10 +743,7 @@ class _GlassSaveBar extends StatelessWidget {
                 height: 50,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      accentColor,
-                      accentColor.withValues(alpha: 0.8),
-                    ],
+                    colors: [accentColor, accentColor.withValues(alpha: 0.8)],
                   ),
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
@@ -739,38 +754,35 @@ class _GlassSaveBar extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: isLoading ? null : onSave,
-                    borderRadius: BorderRadius.circular(14),
-                    child: Center(
-                      child: isLoading
-                          ? SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: g.loadingIndicator,
-                              ),
-                            )
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.check_circle_outline,
-                                    color: GlassColors.onAccent),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Save Changes',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: GlassColors.onAccent,
-                                  ),
-                                ),
-                              ],
+                child: GestureDetector(
+                  onTap: isLoading ? null : onSave,
+                  child: Center(
+                    child: isLoading
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CupertinoActivityIndicator(
+                              color: g.loadingIndicator,
                             ),
-                    ),
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                CupertinoIcons.checkmark_circle,
+                                color: GlassColors.onAccent,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Save Changes',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: GlassColors.onAccent,
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
                 ),
               ),

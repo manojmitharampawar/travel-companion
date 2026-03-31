@@ -1,6 +1,8 @@
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_companion/core/ui/adaptive_feedback.dart';
 import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/core/theme/glass_widgets.dart';
 import 'package:travel_companion/data/models/metro_line.dart';
@@ -12,11 +14,11 @@ import 'package:travel_companion/features/journey/metro/metro_journey_notifier.d
 class AddMetroJourneyScreen extends ConsumerWidget {
   const AddMetroJourneyScreen({super.key});
 
-  static const _accent = Color(0xFF006BB6);
-  static const _accentLight = Color(0xFF4FC3F7);
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final g = GlassColors.of(context);
+    final accent = g.metroAccent;
+    final accentLight = g.metroAccentLight;
     final state = ref.watch(metroJourneyNotifierProvider);
     final notifier = ref.read(metroJourneyNotifierProvider.notifier);
 
@@ -24,42 +26,89 @@ class AddMetroJourneyScreen extends ConsumerWidget {
       if (next.savedSuccessfully) Navigator.pop(context, true);
       if (next.errorMessage != null &&
           prev?.errorMessage != next.errorMessage) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(next.errorMessage!),
-          backgroundColor: Colors.red.shade700,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ));
+        AdaptiveFeedback.showToast(context, next.errorMessage!, isError: true);
       }
     });
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
+    return CupertinoPageScaffold(
       backgroundColor: GlassColors.of(context).bg,
-      body: GlassMeshBackground(
-        primaryColor: _accent,
+      child: GlassMeshBackground(
+        primaryColor: accent,
         child: CustomScrollView(
           slivers: [
-            // ── Glass App Bar ──
-            SliverAppBar(
-              pinned: true,
-              expandedHeight: MediaQuery.paddingOf(context).top +
-                  kToolbarHeight +
-                  80,
-              backgroundColor: Colors.transparent,
-              foregroundColor: GlassColors.of(context).appBarForeground,
-              elevation: 0,
-              scrolledUnderElevation: 0,
-              flexibleSpace: FlexibleSpaceBar(
-                collapseMode: CollapseMode.pin,
-                background: GlassAppBarHero(
-                  primaryColor: _accent,
-                  secondaryColor: _accentLight,
-                  icon: TransportType.metro.icon,
-                  title: 'Metro Schedule',
-                  subtitle: 'Find next metro & start tracking',
-                ),
+            SliverToBoxAdapter(
+              child: Builder(
+                builder: (ctx) {
+                  final g = GlassColors.of(ctx);
+                  final topPad = MediaQuery.paddingOf(ctx).top;
+                  final height = topPad + kToolbarHeight + 80;
+                  return SizedBox(
+                    height: height,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: GlassAppBarHero(
+                            primaryColor: accent,
+                            secondaryColor: accentLight,
+                            icon: TransportType.metro.icon,
+                            title: 'Metro Schedule',
+                            subtitle: 'Find next metro & start tracking',
+                          ),
+                        ),
+                        SafeArea(
+                          bottom: false,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(
+                                  sigmaX: 12,
+                                  sigmaY: 12,
+                                ),
+                                child: Container(
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    color: g.cardFill(0.12),
+                                    border: Border.all(color: g.border(0.15)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      CupertinoButton(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                        ),
+                                        minimumSize: const Size(32, 32),
+                                        onPressed: () =>
+                                            Navigator.maybePop(context),
+                                        child: Icon(
+                                          CupertinoIcons.back,
+                                          color: g.appBarForeground,
+                                          size: 20,
+                                        ),
+                                      ),
+                                      const Expanded(
+                                        child: Text(
+                                          'Metro Schedule',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 17,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 44),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ),
 
@@ -68,7 +117,7 @@ class AddMetroJourneyScreen extends ConsumerWidget {
               child: GlassStepIndicator(
                 currentStep: state.currentStep,
                 labels: const ['City', 'Line', 'Stations', 'Schedule'],
-                accent: _accent,
+                accent: accent,
               ),
             ),
 
@@ -83,7 +132,7 @@ class AddMetroJourneyScreen extends ConsumerWidget {
                       cities: state.availableCities,
                       isLoading: state.isLoadingCities,
                       onSelect: notifier.setCity,
-                      accent: _accent,
+                      accent: accent,
                     ),
 
                   // STEP 1+: City chip
@@ -91,7 +140,7 @@ class AddMetroJourneyScreen extends ConsumerWidget {
                     _GlassSelectedChip(
                       icon: Icons.location_city,
                       label: state.city,
-                      color: _accent,
+                      color: accent,
                       onChangePressed: notifier.goBackToCitySelection,
                     ),
 
@@ -120,7 +169,7 @@ class AddMetroJourneyScreen extends ConsumerWidget {
                       onSourceChanged: notifier.setSourceStation,
                       onDestChanged: notifier.setDestStation,
                       onSwap: notifier.swapStations,
-                      accent: _accent,
+                      accent: accent,
                     ),
 
                   // STEP 3: Schedule + save
@@ -131,13 +180,13 @@ class AddMetroJourneyScreen extends ConsumerWidget {
                       selectedTrain: state.selectedTrain,
                       onTrainSelected: notifier.selectTrain,
                       onRefresh: notifier.fetchUpcomingTrains,
-                      accent: _accent,
+                      accent: accent,
                     ),
                     if (state.selectedTrain != null)
                       GlassButton(
                         label: 'Start Journey & Track',
                         icon: Icons.play_arrow_rounded,
-                        accentColor: _accent,
+                        accentColor: accent,
                         isLoading: state.isSaving,
                         onPressed: () => notifier.save(),
                       ),
@@ -187,7 +236,8 @@ class _GlassCitySelection extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(40),
         child: Center(
-            child: CircularProgressIndicator(color: g.textAlpha(0.7))),
+          child: CircularProgressIndicator(color: g.textAlpha(0.7)),
+        ),
       );
     }
 
@@ -219,13 +269,13 @@ class _GlassCitySelection extends StatelessWidget {
                     filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: g.cardFill(0.08),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: g.border(0.15),
-                        ),
+                        border: Border.all(color: g.border(0.15)),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -284,18 +334,22 @@ class _GlassSelectedChip extends StatelessWidget {
         children: [
           Icon(icon, size: 18, color: color),
           const SizedBox(width: 8),
-          Text(label,
-              style: TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.w700, color: color)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
           const Spacer(),
           TextButton.icon(
             onPressed: onChangePressed,
-            icon: Icon(Icons.swap_horiz,
-                size: 16, color: g.textAlpha(0.6)),
-            label: Text('Change',
-                style: TextStyle(
-                    fontSize: 12,
-                    color: g.textAlpha(0.6))),
+            icon: Icon(Icons.swap_horiz, size: 16, color: g.textAlpha(0.6)),
+            label: Text(
+              'Change',
+              style: TextStyle(fontSize: 12, color: g.textAlpha(0.6)),
+            ),
             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
           ),
         ],
@@ -326,7 +380,8 @@ class _GlassMetroLineSelection extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(40),
         child: Center(
-            child: CircularProgressIndicator(color: g.textAlpha(0.7))),
+          child: CircularProgressIndicator(color: g.textAlpha(0.7)),
+        ),
       );
     }
 
@@ -334,9 +389,10 @@ class _GlassMetroLineSelection extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(24),
         child: Center(
-          child: Text('No metro lines available',
-              style:
-                  TextStyle(color: g.textAlpha(0.5))),
+          child: Text(
+            'No metro lines available',
+            style: TextStyle(color: g.textAlpha(0.5)),
+          ),
         ),
       );
     }
@@ -357,61 +413,71 @@ class _GlassMetroLineSelection extends StatelessWidget {
               ),
             ),
           ),
-          ...lines.map((line) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: GlassCard(
-                  margin: EdgeInsets.zero,
-                  padding: const EdgeInsets.all(16),
-                  onTap: () => onSelect(line),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 5,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: line.color,
-                          borderRadius: BorderRadius.circular(3),
-                          boxShadow: [
-                            BoxShadow(
-                              color: line.color.withValues(alpha: 0.5),
-                              blurRadius: 8,
+          ...lines.map(
+            (line) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: GlassCard(
+                margin: EdgeInsets.zero,
+                padding: const EdgeInsets.all(16),
+                onTap: () => onSelect(line),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: line.color,
+                        borderRadius: BorderRadius.circular(3),
+                        boxShadow: [
+                          BoxShadow(
+                            color: line.color.withValues(alpha: 0.5),
+                            blurRadius: 8,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            line.lineName,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: g.text,
+                            ),
+                          ),
+                          if (line.lineCode != null) ...[
+                            const SizedBox(height: 3),
+                            Text(
+                              line.lineCode!,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: g.textAlpha(0.5),
+                              ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(line.lineName,
-                                style: TextStyle(
-                                    fontSize: 15,
-                                    fontWeight: FontWeight.w700,
-                                    color: g.text)),
-                            if (line.lineCode != null) ...[
-                              const SizedBox(height: 3),
-                              Text(line.lineCode!,
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: g.textAlpha(0.5))),
-                            ],
-                          ],
-                        ),
+                    ),
+                    CircleAvatar(
+                      radius: 16,
+                      backgroundColor: line.color.withValues(alpha: 0.2),
+                      child: Icon(
+                        Icons.directions_subway,
+                        size: 16,
+                        color: line.color,
                       ),
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: line.color.withValues(alpha: 0.2),
-                        child: Icon(Icons.directions_subway,
-                            size: 16, color: line.color),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(Icons.chevron_right,
-                          color: g.textAlpha(0.3)),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.chevron_right, color: g.textAlpha(0.3)),
+                  ],
                 ),
-              )),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -442,25 +508,29 @@ class _GlassSelectedLineChip extends StatelessWidget {
               borderRadius: BorderRadius.circular(3),
               boxShadow: [
                 BoxShadow(
-                    color: line.color.withValues(alpha: 0.5), blurRadius: 6),
+                  color: line.color.withValues(alpha: 0.5),
+                  blurRadius: 6,
+                ),
               ],
             ),
           ),
           const SizedBox(width: 10),
-          Text(line.lineName,
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: line.color)),
+          Text(
+            line.lineName,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: line.color,
+            ),
+          ),
           const Spacer(),
           TextButton.icon(
             onPressed: onChangePressed,
-            icon: Icon(Icons.swap_horiz,
-                size: 16, color: g.textAlpha(0.6)),
-            label: Text('Change',
-                style: TextStyle(
-                    fontSize: 12,
-                    color: g.textAlpha(0.6))),
+            icon: Icon(Icons.swap_horiz, size: 16, color: g.textAlpha(0.6)),
+            label: Text(
+              'Change',
+              style: TextStyle(fontSize: 12, color: g.textAlpha(0.6)),
+            ),
             style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
           ),
         ],
@@ -501,7 +571,8 @@ class _GlassStationSelection extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(40),
         child: Center(
-            child: CircularProgressIndicator(color: g.loadingIndicator)),
+          child: CircularProgressIndicator(color: g.loadingIndicator),
+        ),
       );
     }
 
@@ -523,10 +594,12 @@ class _GlassStationSelection extends StatelessWidget {
           prefixIconColor: Colors.greenAccent,
           value: sourceStation?.id,
           items: srcFiltered
-              .map((s) => DropdownMenuItem<int>(
-                    value: s.id,
-                    child: Text(s.name, overflow: TextOverflow.ellipsis),
-                  ))
+              .map(
+                (s) => DropdownMenuItem<int>(
+                  value: s.id,
+                  child: Text(s.name, overflow: TextOverflow.ellipsis),
+                ),
+              )
               .toList(),
           onChanged: (id) {
             if (id == null) return onSourceChanged(null);
@@ -546,8 +619,7 @@ class _GlassStationSelection extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
-                    border:
-                        Border.all(color: accent.withValues(alpha: 0.3)),
+                    border: Border.all(color: accent.withValues(alpha: 0.3)),
                   ),
                   child: Icon(Icons.swap_vert, size: 20, color: accent),
                 ),
@@ -562,10 +634,12 @@ class _GlassStationSelection extends StatelessWidget {
           prefixIconColor: Colors.redAccent.shade100,
           value: destStation?.id,
           items: dstFiltered
-              .map((s) => DropdownMenuItem<int>(
-                    value: s.id,
-                    child: Text(s.name, overflow: TextOverflow.ellipsis),
-                  ))
+              .map(
+                (s) => DropdownMenuItem<int>(
+                  value: s.id,
+                  child: Text(s.name, overflow: TextOverflow.ellipsis),
+                ),
+              )
               .toList(),
           onChanged: (id) {
             if (id == null) return onDestChanged(null);
@@ -613,13 +687,12 @@ class _GlassScheduleResults extends StatelessWidget {
               onTap: onRefresh,
               child: Row(
                 children: [
-                  Icon(Icons.refresh,
-                      size: 16, color: g.textAlpha(0.5)),
+                  Icon(Icons.refresh, size: 16, color: g.textAlpha(0.5)),
                   const SizedBox(width: 4),
-                  Text('Refresh',
-                      style: TextStyle(
-                          fontSize: 11,
-                          color: g.textAlpha(0.5))),
+                  Text(
+                    'Refresh',
+                    style: TextStyle(fontSize: 11, color: g.textAlpha(0.5)),
+                  ),
                 ],
               ),
             ),
@@ -630,7 +703,8 @@ class _GlassScheduleResults extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(24),
             child: Center(
-                child: CircularProgressIndicator(color: g.textAlpha(0.7))),
+              child: CircularProgressIndicator(color: g.textAlpha(0.7)),
+            ),
           )
         else if (trains.isEmpty)
           Padding(
@@ -638,33 +712,38 @@ class _GlassScheduleResults extends StatelessWidget {
             child: Center(
               child: Column(
                 children: [
-                  Icon(Icons.directions_subway_outlined,
-                      size: 40, color: g.textAlpha(0.3)),
+                  Icon(
+                    Icons.directions_subway_outlined,
+                    size: 40,
+                    color: g.textAlpha(0.3),
+                  ),
                   const SizedBox(height: 8),
-                  Text('No more metros today',
-                      style: TextStyle(
-                          color: g.textAlpha(0.5))),
+                  Text(
+                    'No more metros today',
+                    style: TextStyle(color: g.textAlpha(0.5)),
+                  ),
                   const SizedBox(height: 4),
-                  Text('Try swapping direction or check tomorrow',
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: g.textAlpha(0.3))),
+                  Text(
+                    'Try swapping direction or check tomorrow',
+                    style: TextStyle(fontSize: 12, color: g.textAlpha(0.3)),
+                  ),
                 ],
               ),
             ),
           )
         else
-          ...trains.map((t) => GlassTrainCard(
-                formattedDeparture: t.formattedDeparture,
-                formattedArrival: t.formattedArrival,
-                travelDuration: t.travelDuration,
-                stopsCount: t.stopsCount,
-                lineColor: t.lineColor,
-                isSelected:
-                    selectedTrain?.schedule.id == t.schedule.id,
-                onTap: () => onTrainSelected(t),
-                accent: accent,
-              )),
+          ...trains.map(
+            (t) => GlassTrainCard(
+              formattedDeparture: t.formattedDeparture,
+              formattedArrival: t.formattedArrival,
+              travelDuration: t.travelDuration,
+              stopsCount: t.stopsCount,
+              lineColor: t.lineColor,
+              isSelected: selectedTrain?.schedule.id == t.schedule.id,
+              onTap: () => onTrainSelected(t),
+              accent: accent,
+            ),
+          ),
       ],
     );
   }

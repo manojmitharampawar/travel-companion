@@ -1,13 +1,13 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:travel_companion/core/ui/adaptive_feedback.dart';
 import 'package:travel_companion/core/services/location_service.dart';
 import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/providers/app_providers.dart';
-
-const _kAccent = Color(0xFF3498DB);
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -51,33 +51,60 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget build(BuildContext context) {
     final g = GlassColors.of(context);
 
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: g.bg,
-      extendBodyBehindAppBar: true,
-      body: Stack(
+      child: Stack(
         children: [
           // Background orbs
           const _SettingsBackground(),
 
           CustomScrollView(
             slivers: [
-              // Glass AppBar
-              SliverAppBar(
-                pinned: true,
-                backgroundColor: Colors.transparent,
-                foregroundColor: g.appBarForeground,
-                elevation: 0,
-                title: const Text(
-                  'Settings',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                  ),
-                ),
-                flexibleSpace: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                    child: Container(color: Colors.transparent),
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: g.cardFill(0.12),
+                            border: Border.all(color: g.border(0.15)),
+                          ),
+                          child: Row(
+                            children: [
+                              CupertinoButton(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                minimumSize: const Size(32, 32),
+                                onPressed: () => Navigator.maybePop(context),
+                                child: Icon(
+                                  CupertinoIcons.back,
+                                  color: g.appBarForeground,
+                                  size: 20,
+                                ),
+                              ),
+                              const Expanded(
+                                child: Text(
+                                  'Settings',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 17,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 44),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -105,23 +132,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               },
                             ),
                           ),
-                          Divider(
-                            color: g.divider,
-                            height: 0,
-                          ),
+                          Divider(color: g.divider, height: 0),
                           _GlassSettingItem(
                             icon: Icons.notifications,
                             iconColor: const Color(0xFF9B59B6),
                             title: 'Hours before reminder',
-                            subtitle:
-                                'Get notified 3 hours before departure',
+                            subtitle: 'Get notified 3 hours before departure',
                             trailing: _glassSwitch(
                               value: _hoursBeforeReminder,
                               onChanged: (value) {
-                                setState(
-                                    () => _hoursBeforeReminder = value);
-                                _saveSetting(
-                                    'hoursBeforeReminder', value);
+                                setState(() => _hoursBeforeReminder = value);
+                                _saveSetting('hoursBeforeReminder', value);
                               },
                             ),
                           ),
@@ -143,22 +164,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             trailing: _glassSwitch(
                               value: _autoStartTracking,
                               onChanged: (value) {
-                                setState(
-                                    () => _autoStartTracking = value);
-                                _saveSetting(
-                                    'autoStartTracking', value);
+                                setState(() => _autoStartTracking = value);
+                                _saveSetting('autoStartTracking', value);
                               },
                             ),
                           ),
-                          Divider(
-                            color: g.divider,
-                            height: 0,
-                          ),
+                          Divider(color: g.divider, height: 0),
                           Padding(
                             padding: const EdgeInsets.all(16),
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   mainAxisAlignment:
@@ -172,30 +187,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                           Row(
                                             children: [
                                               Container(
-                                                padding:
-                                                    const EdgeInsets
-                                                        .all(8),
-                                                decoration:
-                                                    BoxDecoration(
-                                                  color: _kAccent
-                                                      .withValues(
-                                                          alpha: 0.15),
+                                                padding: const EdgeInsets.all(
+                                                  8,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: g.statusInfo
+                                                      .withValues(alpha: 0.15),
                                                   borderRadius:
-                                                      BorderRadius
-                                                          .circular(8),
+                                                      BorderRadius.circular(8),
                                                 ),
                                                 child: Icon(
                                                   Icons.location_on,
                                                   size: 18,
-                                                  color: _kAccent,
+                                                  color: g.statusInfo,
                                                 ),
                                               ),
                                               const SizedBox(width: 12),
                                               Text(
                                                 'Alarm distance',
                                                 style: TextStyle(
-                                                  fontWeight:
-                                                      FontWeight.w600,
+                                                  fontWeight: FontWeight.w600,
                                                   fontSize: 15,
                                                   color: g.textAlpha(0.9),
                                                 ),
@@ -204,9 +215,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                           ),
                                           const SizedBox(height: 4),
                                           Padding(
-                                            padding:
-                                                const EdgeInsets.only(
-                                                    left: 44),
+                                            padding: const EdgeInsets.only(
+                                              left: 44,
+                                            ),
                                             child: Text(
                                               'Sound alarm when $_alarmDistance km from destination',
                                               style: TextStyle(
@@ -220,53 +231,61 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     ),
                                     const SizedBox(width: 12),
                                     Container(
-                                      padding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 12,
-                                              vertical: 6),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
                                       decoration: BoxDecoration(
-                                        color: _kAccent.withValues(
-                                            alpha: 0.12),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
+                                        color: g.statusInfo.withValues(
+                                          alpha: 0.12,
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
-                                          color: _kAccent.withValues(
-                                              alpha: 0.25),
+                                          color: g.statusInfo.withValues(
+                                            alpha: 0.25,
+                                          ),
                                         ),
                                       ),
                                       child: DropdownButton<String>(
                                         value: _alarmDistance,
-                                        underline:
-                                            const SizedBox.shrink(),
+                                        underline: const SizedBox.shrink(),
                                         dropdownColor: g.dropdownBg,
                                         style: TextStyle(
                                           color: g.textAlpha(0.9),
                                           fontSize: 14,
                                         ),
-                                        iconEnabledColor: _kAccent,
+                                        iconEnabledColor: g.statusInfo,
                                         items: const [
                                           DropdownMenuItem(
-                                              value: '5',
-                                              child: Text('5 km')),
+                                            value: '5',
+                                            child: Text('5 km'),
+                                          ),
                                           DropdownMenuItem(
-                                              value: '10',
-                                              child: Text('10 km')),
+                                            value: '10',
+                                            child: Text('10 km'),
+                                          ),
                                           DropdownMenuItem(
-                                              value: '15',
-                                              child: Text('15 km')),
+                                            value: '15',
+                                            child: Text('15 km'),
+                                          ),
                                           DropdownMenuItem(
-                                              value: '20',
-                                              child: Text('20 km')),
+                                            value: '20',
+                                            child: Text('20 km'),
+                                          ),
                                           DropdownMenuItem(
-                                              value: '30',
-                                              child: Text('30 km')),
+                                            value: '30',
+                                            child: Text('30 km'),
+                                          ),
                                         ],
                                         onChanged: (value) {
                                           if (value != null) {
-                                            setState(() =>
-                                                _alarmDistance = value);
+                                            setState(
+                                              () => _alarmDistance = value,
+                                            );
                                             _saveSetting(
-                                                'alarmDistance', value);
+                                              'alarmDistance',
+                                              value,
+                                            );
                                           }
                                         },
                                       ),
@@ -289,7 +308,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             icon: Icons.palette_outlined,
                             iconColor: const Color(0xFF9B59B6),
                             title: 'App Theme',
-                            subtitle: 'Choose between dark, light, or system default',
+                            subtitle:
+                                'Choose between dark, light, or system default',
                             trailing: _buildThemeModeSelector(),
                           ),
                         ],
@@ -311,15 +331,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               value: ref.watch(railwayOverlayProvider),
                               activeThumbColor: const Color(0xFF1565C0),
                               onChanged: (_) => ref
-                                  .read(
-                                      railwayOverlayProvider.notifier)
+                                  .read(railwayOverlayProvider.notifier)
                                   .toggle(),
                             ),
                           ),
-                          Divider(
-                            color: g.divider,
-                            height: 0,
-                          ),
+                          Divider(color: g.divider, height: 0),
                           Padding(
                             padding: const EdgeInsets.all(16),
                             child: Row(
@@ -327,15 +343,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF1565C0)
-                                        .withValues(alpha: 0.12),
-                                    borderRadius:
-                                        BorderRadius.circular(10),
+                                    color: const Color(
+                                      0xFF1565C0,
+                                    ).withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: const Icon(
-                                      Icons.info_outline,
-                                      size: 20,
-                                      color: Color(0xFF1565C0)),
+                                    Icons.info_outline,
+                                    size: 20,
+                                    color: Color(0xFF1565C0),
+                                  ),
                                 ),
                                 const SizedBox(width: 12),
                                 Expanded(
@@ -362,11 +379,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         icon: Icons.location_on_outlined,
                         iconColor: const Color(0xFFE74C3C),
                         title: 'Location Permission',
-                        subtitle:
-                            'Required for journey tracking and alerts',
+                        subtitle: 'Required for journey tracking and alerts',
                         trailing: _GlassSmallButton(
                           label: 'Check',
-                          color: _kAccent,
+                          color: g.statusInfo,
                           onTap: _checkLocationPermission,
                         ),
                       ),
@@ -385,15 +401,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: _kAccent.withValues(
-                                        alpha: 0.15),
-                                    borderRadius:
-                                        BorderRadius.circular(12),
+                                    color: g.statusInfo.withValues(alpha: 0.15),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.train,
                                     size: 24,
-                                    color: _kAccent,
+                                    color: g.statusInfo,
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -427,26 +441,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ClipRRect(
                               borderRadius: BorderRadius.circular(10),
                               child: BackdropFilter(
-                                filter: ImageFilter.blur(
-                                    sigmaX: 8, sigmaY: 8),
+                                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                                 child: Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: _kAccent.withValues(
-                                        alpha: 0.08),
-                                    borderRadius:
-                                        BorderRadius.circular(10),
+                                    color: g.statusInfo.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(10),
                                     border: Border.all(
-                                      color: _kAccent.withValues(
-                                          alpha: 0.2),
+                                      color: g.statusInfo.withValues(
+                                        alpha: 0.2,
+                                      ),
                                     ),
                                   ),
                                   child: Text(
                                     'Never miss your stop again — Sleep worry-free on Indian trains with GPS-based arrival alerts.',
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: _kAccent.withValues(
-                                          alpha: 0.9),
+                                      color: g.statusInfo.withValues(
+                                        alpha: 0.9,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -483,19 +496,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         return Padding(
           padding: const EdgeInsets.only(left: 4),
           child: GestureDetector(
-            onTap: () =>
-                ref.read(themeModeProvider.notifier).setMode(mode),
+            onTap: () => ref.read(themeModeProvider.notifier).setMode(mode),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: isActive
-                    ? _kAccent.withValues(alpha: 0.2)
+                    ? g.statusInfo.withValues(alpha: 0.2)
                     : g.cardFill(0.06),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: isActive
-                      ? _kAccent.withValues(alpha: 0.4)
+                      ? g.statusInfo.withValues(alpha: 0.4)
                       : g.border(0.1),
                 ),
               ),
@@ -505,9 +517,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   Icon(
                     icon,
                     size: 14,
-                    color: isActive
-                        ? _kAccent
-                        : g.textTertiary,
+                    color: isActive ? g.statusInfo : g.textTertiary,
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -515,9 +525,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: isActive
-                          ? _kAccent
-                          : g.textTertiary,
+                      color: isActive ? g.statusInfo : g.textTertiary,
                     ),
                   ),
                 ],
@@ -532,14 +540,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Widget _glassSwitch({
     required bool value,
     required ValueChanged<bool> onChanged,
-    Color activeThumbColor = _kAccent,
+    Color? activeThumbColor,
   }) {
     final g = GlassColors.of(context);
+    final thumbColor = activeThumbColor ?? g.statusInfo;
     return Switch(
       value: value,
       onChanged: onChanged,
-      activeThumbColor: activeThumbColor,
-      activeTrackColor: activeThumbColor.withValues(alpha: 0.35),
+      activeThumbColor: thumbColor,
+      activeTrackColor: thumbColor.withValues(alpha: 0.35),
       inactiveThumbColor: g.switchInactiveThumb,
       inactiveTrackColor: g.switchInactiveTrack,
     );
@@ -549,21 +558,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final service = LocationService();
     final hasPermission = await service.checkAndRequestPermission();
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            hasPermission
-                ? 'Location permission granted'
-                : 'Location permission denied. Please enable it in Settings.',
-            style: const TextStyle(color: Colors.white),
-          ),
-          backgroundColor: hasPermission
-              ? const Color(0xFF27AE60)
-              : const Color(0xFFE74C3C),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+      AdaptiveFeedback.showToast(
+        context,
+        hasPermission
+            ? 'Location permission granted'
+            : 'Location permission denied. Please enable it in Settings.',
+        isError: !hasPermission,
       );
     }
     service.dispose();
@@ -579,6 +579,7 @@ class _SettingsBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Stack(
       children: [
         Positioned(
@@ -591,8 +592,8 @@ class _SettingsBackground extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  _kAccent.withValues(alpha: 0.12),
-                  _kAccent.withValues(alpha: 0.0),
+                  g.statusInfo.withValues(alpha: 0.12),
+                  g.statusInfo.withValues(alpha: 0.0),
                 ],
               ),
             ),
@@ -630,6 +631,7 @@ class _GlassSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final g = GlassColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(0, 24, 0, 12),
       child: Text(
@@ -637,7 +639,7 @@ class _GlassSectionHeader extends StatelessWidget {
         style: TextStyle(
           fontWeight: FontWeight.w700,
           fontSize: 14,
-          color: _kAccent.withValues(alpha: 0.9),
+          color: g.statusInfo.withValues(alpha: 0.9),
           letterSpacing: 0.5,
         ),
       ),
@@ -732,10 +734,7 @@ class _GlassSettingItem extends StatelessWidget {
               ],
             ),
           ),
-          if (trailing != null) ...[
-            const SizedBox(width: 12),
-            trailing!,
-          ],
+          if (trailing != null) ...[const SizedBox(width: 12), trailing!],
         ],
       ),
     );
@@ -759,26 +758,21 @@ class _GlassSmallButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: color.withValues(alpha: 0.3)),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: color,
           ),
         ),
       ),

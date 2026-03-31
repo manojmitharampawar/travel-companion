@@ -1,6 +1,8 @@
 import 'dart:ui';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_companion/core/ui/adaptive_feedback.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_companion/core/services/journey_reschedule_service.dart';
 import 'package:travel_companion/core/theme/glass_theme.dart';
@@ -97,13 +99,13 @@ class FavoriteJourneysScreen extends ConsumerWidget {
   }
 
   /// Handles reschedule button tap: opens dialog and clones journey on confirmation.
-  /// Flow: Dialog → User selects date/time → Clone journey → Insert DB → Invalidate providers → Snackbar
+  /// Flow: Dialog -> User selects date/time -> Clone journey -> Insert DB -> Invalidate providers -> Toast
   Future<void> _handleReschedule(
     BuildContext context,
     WidgetRef ref,
     EnrichedJourney enriched,
   ) async {
-    final result = await showDialog<(DateTime, TimeOfDay)>(
+    final result = await showCupertinoDialog<(DateTime, TimeOfDay)>(
       context: context,
       builder: (context) => JourneyRescheduleDialog(
         initialDate: DateTime.now().add(const Duration(days: 1)),
@@ -134,22 +136,17 @@ class FavoriteJourneysScreen extends ConsumerWidget {
       ref.invalidate(favoriteJourneysProvider);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Journey rescheduled to ${DateFormat('dd MMM yyyy').format(selectedDate)} at ${selectedTime.format(context)}',
-            ),
-            backgroundColor: const Color(0xFF27AE60),
-          ),
+        AdaptiveFeedback.showToast(
+          context,
+          'Journey rescheduled to ${DateFormat('dd MMM yyyy').format(selectedDate)} at ${selectedTime.format(context)}',
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: Could not reschedule journey'),
-            backgroundColor: const Color(0xFFE74C3C),
-          ),
+        AdaptiveFeedback.showToast(
+          context,
+          'Error: Could not reschedule journey',
+          isError: true,
         );
       }
     }

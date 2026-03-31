@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
@@ -60,22 +61,49 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
     final center = _selectedPoint ?? _defaultCenter;
     final zoom = _selectedPoint != null ? 14.0 : _defaultZoom;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        actions: [
-          if (_selectedPoint != null)
-            TextButton(
-              onPressed: _confirmSelection,
-              child: const Text(
-                'Confirm',
-                style: TextStyle(fontWeight: FontWeight.bold),
+    return CupertinoPageScaffold(
+      child: Stack(
+        children: [
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.arrow_back_rounded),
+                    ),
+                    Expanded(
+                      child: Text(
+                        widget.title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (_selectedPoint != null)
+                      TextButton(
+                        onPressed: _confirmSelection,
+                        child: const Text(
+                          'Confirm',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      )
+                    else
+                      const SizedBox(width: 68),
+                  ],
+                ),
               ),
             ),
-        ],
-      ),
-      body: Stack(
-        children: [
+          ),
           FlutterMap(
             options: MapOptions(
               initialCenter: center,

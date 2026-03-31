@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' as material;
+import 'package:flutter/material.dart' show Colors;
 
 class AppTheme {
   AppTheme._();
@@ -23,184 +25,151 @@ class AppTheme {
   static const Color textSecondary = Color(0xFF757575);
   static const Color textHint = Color(0xFFBDBDBD);
 
-  static ThemeData get lightTheme {
-    return ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primaryColor,
-        secondary: secondaryColor,
-        brightness: Brightness.light,
-      ),
-      scaffoldBackgroundColor: const Color(0xFFF2F4F8),
-      appBarTheme: const AppBarTheme(
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-        scrolledUnderElevation: 1,
-      ),
-      cardTheme: CardThemeData(
-        elevation: 1,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        color: cardBackground,
-        surfaceTintColor: Colors.transparent,
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: primaryColor,
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-          elevation: 2,
-          shadowColor: primaryColor.withValues(alpha: 0.4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          side: const BorderSide(width: 2, color: primaryColor),
-        ),
-      ),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: secondaryColor,
-        foregroundColor: Colors.white,
-        elevation: 4,
-        highlightElevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1.5),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: primaryColor, width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: dangerColor, width: 1.5),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-        filled: true,
-        fillColor: Colors.white,
-        hintStyle: const TextStyle(color: textHint, fontSize: 14),
-        labelStyle: const TextStyle(color: textPrimary, fontSize: 14),
-      ),
-      textTheme: const TextTheme(
-        displayLarge: TextStyle(
-          fontSize: 32,
+  static Brightness resolveBrightness({
+    required material.ThemeMode themeMode,
+    required Brightness platformBrightness,
+  }) {
+    switch (themeMode) {
+      case material.ThemeMode.light:
+        return Brightness.light;
+      case material.ThemeMode.dark:
+        return Brightness.dark;
+      case material.ThemeMode.system:
+        return platformBrightness;
+    }
+  }
+
+  static CupertinoThemeData cupertinoTheme(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    final textColor = isDark ? CupertinoColors.white : textPrimary;
+
+    return CupertinoThemeData(
+      brightness: brightness,
+      primaryColor: primaryColor,
+      scaffoldBackgroundColor: isDark ? const Color(0xFF0A0E21) : const Color(0xFFF2F4F8),
+      barBackgroundColor: isDark
+          ? const Color(0xFF0A0E21).withValues(alpha: 0.85)
+          : Colors.white.withValues(alpha: 0.85),
+      textTheme: CupertinoTextThemeData(
+        primaryColor: primaryColor,
+        textStyle: TextStyle(color: textColor),
+        navTitleTextStyle: TextStyle(
+          color: textColor,
+          fontSize: 17,
           fontWeight: FontWeight.w700,
-          color: textPrimary,
-          letterSpacing: -0.5,
-        ),
-        displayMedium: TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-          letterSpacing: -0.3,
-        ),
-        headlineSmall: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-        ),
-        titleLarge: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-          color: textPrimary,
-        ),
-        titleMedium: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w500,
-          color: textPrimary,
-        ),
-        bodyLarge: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          color: textPrimary,
-          height: 1.5,
-        ),
-        bodyMedium: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: textSecondary,
-          height: 1.43,
-        ),
-        bodySmall: TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w400,
-          color: textSecondary,
-          height: 1.33,
-        ),
-      ),
-      chipTheme: ChipThemeData(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
         ),
       ),
     );
   }
 
-  static ThemeData get darkTheme {
-    return ThemeData(
+  static material.ThemeData materialCompatibilityTheme(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+
+    return material.ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
+      brightness: brightness,
+      colorScheme: material.ColorScheme.fromSeed(
         seedColor: primaryColor,
         secondary: secondaryColor,
-        brightness: Brightness.dark,
+        brightness: brightness,
       ),
-      scaffoldBackgroundColor: const Color(0xFF0A0E21),
-      appBarTheme: AppBarTheme(
+      scaffoldBackgroundColor: isDark ? const Color(0xFF0A0E21) : const Color(0xFFF2F4F8),
+      appBarTheme: material.AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.grey[900],
+        backgroundColor: isDark ? const Color(0xFF121212) : primaryColor,
         foregroundColor: Colors.white,
         scrolledUnderElevation: 1,
       ),
-      cardTheme: CardThemeData(
-        elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        color: Colors.grey[850],
+      cardTheme: material.CardThemeData(
+        elevation: isDark ? 2 : 1,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        color: isDark ? const Color(0xFF1E1E1E) : cardBackground,
         surfaceTintColor: Colors.transparent,
       ),
-      inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(
+      inputDecorationTheme: material.InputDecorationTheme(
+        border: material.OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[700]!, width: 1.5),
+          borderSide: material.BorderSide(
+            color: isDark ? const Color(0xFF616161) : const Color(0xFFE0E0E0),
+            width: 1.5,
+          ),
+        ),
+        enabledBorder: material.OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: material.BorderSide(
+            color: isDark ? const Color(0xFF616161) : const Color(0xFFE0E0E0),
+            width: 1.5,
+          ),
+        ),
+        focusedBorder: material.OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const material.BorderSide(color: primaryColor, width: 2),
+        ),
+        errorBorder: material.OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const material.BorderSide(color: dangerColor, width: 1.5),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         filled: true,
-        fillColor: Colors.grey[800],
+        fillColor: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+        hintStyle: const TextStyle(color: textHint, fontSize: 14),
+        labelStyle: TextStyle(
+          color: isDark ? Colors.white.withValues(alpha: 0.9) : textPrimary,
+          fontSize: 14,
+        ),
+      ),
+      textTheme: material.TextTheme(
+        displayLarge: TextStyle(
+          fontSize: 32,
+          fontWeight: FontWeight.w700,
+          color: isDark ? Colors.white : textPrimary,
+          letterSpacing: -0.5,
+        ),
+        displayMedium: TextStyle(
+          fontSize: 28,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : textPrimary,
+          letterSpacing: -0.3,
+        ),
+        headlineSmall: TextStyle(
+          fontSize: 22,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : textPrimary,
+        ),
+        titleLarge: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white : textPrimary,
+        ),
+        titleMedium: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: isDark ? Colors.white : textPrimary,
+        ),
+        bodyLarge: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+          color: isDark ? Colors.white.withValues(alpha: 0.92) : textPrimary,
+          height: 1.5,
+        ),
+        bodyMedium: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+          color: isDark ? Colors.white.withValues(alpha: 0.75) : textSecondary,
+          height: 1.43,
+        ),
+        bodySmall: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+          color: isDark ? Colors.white.withValues(alpha: 0.66) : textSecondary,
+          height: 1.33,
+        ),
       ),
     );
   }
+
+  static material.ThemeData get lightTheme => materialCompatibilityTheme(Brightness.light);
+
+  static material.ThemeData get darkTheme => materialCompatibilityTheme(Brightness.dark);
 }

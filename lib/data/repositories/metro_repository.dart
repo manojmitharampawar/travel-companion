@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:travel_companion/data/database/app_database.dart';
 import 'package:travel_companion/data/models/metro_line.dart';
 import 'package:travel_companion/data/models/metro_schedule.dart';

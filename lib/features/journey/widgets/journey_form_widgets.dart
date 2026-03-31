@@ -34,10 +34,7 @@ class TransportHeroHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            type.color.withValues(alpha: 0.6),
-            g.bg,
-          ],
+          colors: [type.color.withValues(alpha: 0.6), g.bg],
         ),
       ),
       child: Stack(
@@ -117,10 +114,7 @@ class TransportHeroHeader extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          color: g.textAlpha(0.7),
-                          fontSize: 13,
-                        ),
+                        style: TextStyle(color: g.textAlpha(0.7), fontSize: 13),
                       ),
                     ],
                   ),
@@ -234,8 +228,9 @@ class JourneyDateField extends StatelessWidget {
           lastDate: DateTime.now().add(const Duration(days: 365)),
           builder: (ctx, child) => Theme(
             data: Theme.of(ctx).copyWith(
-              colorScheme:
-                  Theme.of(ctx).colorScheme.copyWith(primary: accentColor),
+              colorScheme: Theme.of(
+                ctx,
+              ).colorScheme.copyWith(primary: accentColor),
             ),
             child: child!,
           ),
@@ -248,24 +243,25 @@ class JourneyDateField extends StatelessWidget {
           labelText: 'Journey Date',
           prefixIcon: Icons.calendar_today_outlined,
         ),
-        child: Builder(builder: (context) {
-          final g = GlassColors.of(context);
-          return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              DateFormat('EEE, dd MMM yyyy').format(value),
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
-                color: g.textAlpha(0.9),
-              ),
-            ),
-            Icon(Icons.expand_more,
-                size: 22, color: g.textAlpha(0.4)),
-          ],
-        );
-        }),
+        child: Builder(
+          builder: (context) {
+            final g = GlassColors.of(context);
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  DateFormat('EEE, dd MMM yyyy').format(value),
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: g.textAlpha(0.9),
+                  ),
+                ),
+                Icon(Icons.expand_more, size: 22, color: g.textAlpha(0.4)),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -296,8 +292,9 @@ class JourneyTimeField extends StatelessWidget {
           initialTime: value ?? TimeOfDay.now(),
           builder: (ctx, child) => Theme(
             data: Theme.of(ctx).copyWith(
-              colorScheme:
-                  Theme.of(ctx).colorScheme.copyWith(primary: accentColor),
+              colorScheme: Theme.of(
+                ctx,
+              ).colorScheme.copyWith(primary: accentColor),
             ),
             child: child!,
           ),
@@ -310,37 +307,43 @@ class JourneyTimeField extends StatelessWidget {
           labelText: 'Departure Time (optional)',
           prefixIcon: Icons.schedule_outlined,
           suffixIcon: value != null
-              ? Builder(builder: (context) {
-                  final g = GlassColors.of(context);
-                  return IconButton(
-                  icon: Icon(Icons.clear,
-                      size: 18, color: g.textAlpha(0.5)),
-                  onPressed: () => onChanged(null),
-                );
-                })
+              ? Builder(
+                  builder: (context) {
+                    final g = GlassColors.of(context);
+                    return IconButton(
+                      icon: Icon(
+                        Icons.clear,
+                        size: 18,
+                        color: g.textAlpha(0.5),
+                      ),
+                      onPressed: () => onChanged(null),
+                    );
+                  },
+                )
               : null,
         ),
-        child: Builder(builder: (context) {
-          final g = GlassColors.of(context);
-          return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              value?.format(context) ?? 'Tap to set time',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: value != null ? FontWeight.w500 : FontWeight.w400,
-                color: value != null
-                    ? g.textAlpha(0.9)
-                    : g.textAlpha(0.4),
-              ),
-            ),
-            if (value == null)
-              Icon(Icons.expand_more,
-                  size: 22, color: g.textAlpha(0.4)),
-          ],
-        );
-        }),
+        child: Builder(
+          builder: (context) {
+            final g = GlassColors.of(context);
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  value?.format(context) ?? 'Tap to set time',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: value != null
+                        ? FontWeight.w500
+                        : FontWeight.w400,
+                    color: value != null ? g.textAlpha(0.9) : g.textAlpha(0.4),
+                  ),
+                ),
+                if (value == null)
+                  Icon(Icons.expand_more, size: 22, color: g.textAlpha(0.4)),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -437,68 +440,64 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
           link: _layerLink,
           showWhenUnlinked: false,
           offset: const Offset(0, 58),
-          child: Material(
-            elevation: 0,
+          child: ClipRRect(
             borderRadius: BorderRadius.circular(14),
-            color: Colors.transparent,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(14),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Builder(builder: (ctx) {
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Builder(
+                builder: (ctx) {
                   final g = GlassColors.of(ctx);
                   return Container(
-                  constraints: const BoxConstraints(maxHeight: 240),
-                  decoration: BoxDecoration(
-                    color: g.dropdownBg.withValues(alpha: 0.95),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: g.border(0.15),
+                    constraints: const BoxConstraints(maxHeight: 240),
+                    decoration: BoxDecoration(
+                      color: g.dropdownBg.withValues(alpha: 0.95),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: g.border(0.15)),
                     ),
-                  ),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    itemCount: _suggestions.length,
-                    itemBuilder: (_, i) {
-                      final s = _suggestions[i];
-                      return ListTile(
-                        dense: true,
-                        leading: CircleAvatar(
-                          radius: 16,
-                          backgroundColor:
-                              widget.accentColor.withValues(alpha: 0.2),
-                          child: Text(
-                            s.code.length >= 2
-                                ? s.code.substring(0, 2)
-                                : s.code,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: widget.accentColor,
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      itemCount: _suggestions.length,
+                      itemBuilder: (_, i) {
+                        final s = _suggestions[i];
+                        return ListTile(
+                          dense: true,
+                          leading: CircleAvatar(
+                            radius: 16,
+                            backgroundColor: widget.accentColor.withValues(
+                              alpha: 0.2,
+                            ),
+                            child: Text(
+                              s.code.length >= 2
+                                  ? s.code.substring(0, 2)
+                                  : s.code,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: widget.accentColor,
+                              ),
                             ),
                           ),
-                        ),
-                        title: Text(
-                          s.name,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w500,
-                            color: g.textAlpha(0.9),
+                          title: Text(
+                            s.name,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w500,
+                              color: g.textAlpha(0.9),
+                            ),
                           ),
-                        ),
-                        subtitle: Text(
-                          '${s.code}${s.state != null ? ' · ${s.state}' : ''}',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: g.textAlpha(0.5),
+                          subtitle: Text(
+                            '${s.code}${s.state != null ? ' · ${s.state}' : ''}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: g.textAlpha(0.5),
+                            ),
                           ),
-                        ),
-                        onTap: () => _select(s),
-                      );
-                    },
-                  ),
-                );
-                }),
+                          onTap: () => _select(s),
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
             ),
           ),
@@ -580,14 +579,11 @@ class _StationAutocompleteFieldState extends State<StationAutocompleteField> {
                   ),
                 )
               : widget.selected != null
-                  ? IconButton(
-                      icon: Icon(Icons.clear,
-                          size: 18,
-                          color: g.textAlpha(0.5)),
-                      onPressed: _clear,
-                    )
-                  : Icon(Icons.search,
-                      size: 20, color: g.textAlpha(0.4)),
+              ? IconButton(
+                  icon: Icon(Icons.clear, size: 18, color: g.textAlpha(0.5)),
+                  onPressed: _clear,
+                )
+              : Icon(Icons.search, size: 20, color: g.textAlpha(0.4)),
         ),
         onChanged: _search,
         validator: (_) => widget.validator?.call(widget.selected),
@@ -660,8 +656,10 @@ InputDecoration _glassInputDecoration({
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide:
-          BorderSide(color: Colors.white.withValues(alpha: 0.35), width: 2),
+      borderSide: BorderSide(
+        color: Colors.white.withValues(alpha: 0.35),
+        width: 2,
+      ),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
@@ -685,11 +683,10 @@ InputDecoration glassInputDecoration({
   IconData? prefixIcon,
   Widget? suffixIcon,
   String? helperText,
-}) =>
-    _glassInputDecoration(
-      labelText: labelText,
-      hintText: hintText,
-      prefixIcon: prefixIcon,
-      suffixIcon: suffixIcon,
-      helperText: helperText,
-    );
+}) => _glassInputDecoration(
+  labelText: labelText,
+  hintText: hintText,
+  prefixIcon: prefixIcon,
+  suffixIcon: suffixIcon,
+  helperText: helperText,
+);

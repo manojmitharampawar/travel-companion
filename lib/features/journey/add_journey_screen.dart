@@ -1,9 +1,12 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+import 'package:travel_companion/core/ui/adaptive_feedback.dart';
+import 'package:travel_companion/core/ui/adaptive_navigation.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/station.dart';
@@ -16,10 +19,7 @@ import 'package:travel_companion/providers/app_providers.dart';
 class AddJourneyScreen extends ConsumerStatefulWidget {
   final TransportType initialType;
 
-  const AddJourneyScreen({
-    super.key,
-    this.initialType = TransportType.train,
-  });
+  const AddJourneyScreen({super.key, this.initialType = TransportType.train});
 
   @override
   ConsumerState<AddJourneyScreen> createState() => _AddJourneyScreenState();
@@ -80,19 +80,20 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
           final stationRepo = ref.read(stationRepositoryProvider);
 
           if (_boardingStation == null) {
-            final from = await stationRepo
-                .getStationByCode(endpoints['from_station']!);
+            final from = await stationRepo.getStationByCode(
+              endpoints['from_station']!,
+            );
             if (from != null) setState(() => _boardingStation = from);
           }
 
           if (_destinationStation == null) {
-            final to = await stationRepo
-                .getStationByCode(endpoints['to_station']!);
+            final to = await stationRepo.getStationByCode(
+              endpoints['to_station']!,
+            );
             if (to != null) setState(() => _destinationStation = to);
           }
         }
-      } else if (value.length == 5 &&
-          _vehicleNameController.text.isEmpty) {
+      } else if (value.length == 5 && _vehicleNameController.text.isEmpty) {
         final api = ref.read(trainStatusApiProvider);
         final details = await api.getTrainDetails(value);
         if (details != null && details['train_name'] != null) {
@@ -112,8 +113,9 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
   Future<void> _useCurrentLocation({required bool isOrigin}) async {
     try {
       final position = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       final location = LocationPoint(
         name: 'Current Location',
@@ -129,13 +131,10 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Could not get current location'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-          ),
+        AdaptiveFeedback.showToast(
+          context,
+          'Could not get current location',
+          isError: true,
         );
       }
     }
@@ -144,11 +143,10 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
   Future<void> _pickOnMap({required bool isOrigin}) async {
     final result = await Navigator.push<LocationPoint>(
       context,
-      MaterialPageRoute(
-        builder: (_) => MapLocationPicker(
+      adaptivePageRoute(
+        MapLocationPicker(
           title: isOrigin ? 'Pick Origin' : 'Pick Destination',
-          initialLocation:
-              isOrigin ? _originLocation : _destinationLocation,
+          initialLocation: isOrigin ? _originLocation : _destinationLocation,
         ),
       ),
     );
@@ -166,31 +164,58 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
   @override
   Widget build(BuildContext context) {
     final g = GlassColors.of(context);
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: g.bg,
-      extendBodyBehindAppBar: true,
-      body: Stack(
+      child: Stack(
         children: [
           _AddJourneyBackground(accentColor: _accentColor),
           CustomScrollView(
             slivers: [
-              // Glass AppBar
-              SliverAppBar(
-                pinned: true,
-                backgroundColor: Colors.transparent,
-                foregroundColor: g.appBarForeground,
-                elevation: 0,
-                title: Text(
-                  'Add ${_transportType.label} Journey',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                  ),
-                ),
-                flexibleSpace: ClipRect(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                    child: Container(color: Colors.transparent),
+              SliverToBoxAdapter(
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                        child: Container(
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: g.cardFill(0.12),
+                            border: Border.all(color: g.border(0.15)),
+                          ),
+                          child: Row(
+                            children: [
+                              CupertinoButton(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                minimumSize: const Size(32, 32),
+                                onPressed: () => Navigator.maybePop(context),
+                                child: Icon(
+                                  CupertinoIcons.back,
+                                  color: g.appBarForeground,
+                                  size: 20,
+                                ),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  'Add ${_transportType.label} Journey',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 17,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 44),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -233,10 +258,8 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
                           ),
 
                           Padding(
-                            padding:
-                                const EdgeInsets.symmetric(vertical: 16),
-                            child: Divider(
-                                color: g.divider),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            child: Divider(color: g.divider),
                           ),
 
                           // Transport-specific fields
@@ -245,8 +268,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
                           if (_transportType == TransportType.bus)
                             ..._buildBusFields(),
                           if (_transportType == TransportType.metro ||
-                              _transportType ==
-                                  TransportType.localTrain)
+                              _transportType == TransportType.localTrain)
                             ..._buildMetroLocalFields(),
 
                           const SizedBox(height: 32),
@@ -258,14 +280,17 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
               ),
             ],
           ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _GlassSaveBar(
+              accentColor: _accentColor,
+              isLoading: _isLoading,
+              onSave: _saveJourney,
+            ),
+          ),
         ],
-      ),
-
-      // Glass save button
-      bottomNavigationBar: _GlassSaveBar(
-        accentColor: _accentColor,
-        isLoading: _isLoading,
-        onSave: _saveJourney,
       ),
     );
   }
@@ -313,8 +338,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
       errorStyle: const TextStyle(color: Color(0xFFE74C3C)),
       filled: true,
       fillColor: g.inputFill,
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
 
@@ -405,16 +429,14 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
         label: 'Boarding Station *',
         selectedStation: _boardingStation,
         accentColor: _accentColor,
-        onSelected: (station) =>
-            setState(() => _boardingStation = station),
+        onSelected: (station) => setState(() => _boardingStation = station),
       ),
       const SizedBox(height: 16),
       _GlassStationSearchField(
         label: 'Destination Station *',
         selectedStation: _destinationStation,
         accentColor: _accentColor,
-        onSelected: (station) =>
-            setState(() => _destinationStation = station),
+        onSelected: (station) => setState(() => _destinationStation = station),
       ),
       const SizedBox(height: 24),
       _glassSectionLabel('Travel Information'),
@@ -432,20 +454,13 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
         ),
         items: const [
           DropdownMenuItem(value: 'SL', child: Text('Sleeper (SL)')),
-          DropdownMenuItem(
-              value: '3A', child: Text('AC 3 Tier (3A)')),
-          DropdownMenuItem(
-              value: '2A', child: Text('AC 2 Tier (2A)')),
-          DropdownMenuItem(
-              value: '1A', child: Text('AC First (1A)')),
-          DropdownMenuItem(
-              value: '3E', child: Text('AC 3 Economy (3E)')),
-          DropdownMenuItem(
-              value: 'CC', child: Text('Chair Car (CC)')),
-          DropdownMenuItem(
-              value: 'EC', child: Text('Exec Chair (EC)')),
-          DropdownMenuItem(
-              value: '2S', child: Text('Second Sitting (2S)')),
+          DropdownMenuItem(value: '3A', child: Text('AC 3 Tier (3A)')),
+          DropdownMenuItem(value: '2A', child: Text('AC 2 Tier (2A)')),
+          DropdownMenuItem(value: '1A', child: Text('AC First (1A)')),
+          DropdownMenuItem(value: '3E', child: Text('AC 3 Economy (3E)')),
+          DropdownMenuItem(value: 'CC', child: Text('Chair Car (CC)')),
+          DropdownMenuItem(value: 'EC', child: Text('Exec Chair (EC)')),
+          DropdownMenuItem(value: '2S', child: Text('Second Sitting (2S)')),
         ],
         onChanged: (value) => _classController.text = value ?? '',
       ),
@@ -494,8 +509,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
         onSelected: (loc) => setState(() => _originLocation = loc),
         stationRepository: ref.read(stationRepositoryProvider),
         locationRepository: ref.read(locationRepositoryProvider),
-        onUseCurrentLocation: () =>
-            _useCurrentLocation(isOrigin: true),
+        onUseCurrentLocation: () => _useCurrentLocation(isOrigin: true),
         onPickOnMap: () => _pickOnMap(isOrigin: true),
         transportType: TransportType.bus,
         allowMapSelection: true,
@@ -504,12 +518,10 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
       LocationSearchField(
         label: 'Destination *',
         initialValue: _destinationLocation,
-        onSelected: (loc) =>
-            setState(() => _destinationLocation = loc),
+        onSelected: (loc) => setState(() => _destinationLocation = loc),
         stationRepository: ref.read(stationRepositoryProvider),
         locationRepository: ref.read(locationRepositoryProvider),
-        onUseCurrentLocation: () =>
-            _useCurrentLocation(isOrigin: false),
+        onUseCurrentLocation: () => _useCurrentLocation(isOrigin: false),
         onPickOnMap: () => _pickOnMap(isOrigin: false),
         transportType: TransportType.bus,
         allowMapSelection: true,
@@ -553,8 +565,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
       LocationSearchField(
         label: 'Destination Station *',
         initialValue: _destinationLocation,
-        onSelected: (loc) =>
-            setState(() => _destinationLocation = loc),
+        onSelected: (loc) => setState(() => _destinationLocation = loc),
         stationRepository: ref.read(stationRepositoryProvider),
         locationRepository: ref.read(locationRepositoryProvider),
         transportType: _transportType,
@@ -652,8 +663,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
         return _showError('Please select a destination station');
       }
       if (_boardingStation!.code == _destinationStation!.code) {
-        return _showError(
-            'Boarding and destination cannot be the same');
+        return _showError('Boarding and destination cannot be the same');
       }
     } else {
       if (_originLocation == null) {
@@ -699,9 +709,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
         travelClass: _classController.text.isEmpty
             ? null
             : _classController.text,
-        berth: _berthController.text.isEmpty
-            ? null
-            : _berthController.text,
+        berth: _berthController.text.isEmpty ? null : _berthController.text,
         scheduledTime: _journeyTime != null
             ? '${_journeyTime!.hour.toString().padLeft(2, '0')}:${_journeyTime!.minute.toString().padLeft(2, '0')}'
             : null,
@@ -709,8 +717,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
       );
 
       final locationRepo = ref.read(locationRepositoryProvider);
-      if (_originLocation != null &&
-          _originLocation!.stationCode == null) {
+      if (_originLocation != null && _originLocation!.stationCode == null) {
         await locationRepo.saveLocation(_originLocation!);
       }
       if (_destinationLocation != null &&
@@ -721,15 +728,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
       await ref.read(journeyRepositoryProvider).insertJourney(journey);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Journey added successfully!'),
-            backgroundColor: const Color(0xFF27AE60),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-          ),
-        );
+        AdaptiveFeedback.showToast(context, 'Journey added successfully!');
         Navigator.pop(context, true);
       }
     } catch (e) {
@@ -740,15 +739,7 @@ class _AddJourneyScreenState extends ConsumerState<AddJourneyScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFFE74C3C),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+    AdaptiveFeedback.showToast(context, message, isError: true);
   }
 }
 
@@ -845,9 +836,7 @@ class _GlassTransportTypeSelector extends StatelessWidget {
                           : Colors.transparent,
                       borderRadius: BorderRadius.circular(10),
                       border: isSelected
-                          ? Border.all(
-                              color:
-                                  type.color.withValues(alpha: 0.4))
+                          ? Border.all(color: type.color.withValues(alpha: 0.4))
                           : null,
                     ),
                     child: Column(
@@ -856,9 +845,7 @@ class _GlassTransportTypeSelector extends StatelessWidget {
                         Icon(
                           type.icon,
                           size: 18,
-                          color: isSelected
-                              ? type.color
-                              : g.textTertiary,
+                          color: isSelected ? type.color : g.textTertiary,
                         ),
                         const SizedBox(height: 3),
                         Text(
@@ -868,9 +855,7 @@ class _GlassTransportTypeSelector extends StatelessWidget {
                             fontWeight: isSelected
                                 ? FontWeight.w700
                                 : FontWeight.w500,
-                            color: isSelected
-                                ? type.color
-                                : g.textTertiary,
+                            color: isSelected ? type.color : g.textTertiary,
                           ),
                         ),
                       ],
@@ -949,8 +934,7 @@ class _GlassStationSearchFieldState
           decoration: InputDecoration(
             labelText: widget.label,
             labelStyle: TextStyle(color: g.textSecondary),
-            prefixIcon:
-                Icon(Icons.location_on, color: widget.accentColor),
+            prefixIcon: Icon(Icons.location_on, color: widget.accentColor),
             suffixIcon: widget.selectedStation != null
                 ? IconButton(
                     icon: Icon(Icons.clear, color: g.textSecondary),
@@ -973,19 +957,19 @@ class _GlassStationSearchFieldState
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  BorderSide(color: widget.accentColor, width: 2),
+              borderSide: BorderSide(color: widget.accentColor, width: 2),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: Color(0xFFE74C3C)),
+              borderSide: const BorderSide(color: Color(0xFFE74C3C)),
             ),
             errorStyle: const TextStyle(color: Color(0xFFE74C3C)),
             filled: true,
             fillColor: g.inputFill,
             contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 14),
+              horizontal: 16,
+              vertical: 14,
+            ),
           ),
           onChanged: _onSearchChanged,
           validator: (_) {
@@ -1014,21 +998,18 @@ class _GlassStationSearchFieldState
                     final station = _suggestions[index];
                     return ListTile(
                       dense: true,
-                      leading: Icon(Icons.train,
-                          size: 20, color: widget.accentColor),
+                      leading: Icon(
+                        Icons.train,
+                        size: 20,
+                        color: widget.accentColor,
+                      ),
                       title: Text(
                         station.name,
-                        style: TextStyle(
-                          color: g.text,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: g.text, fontSize: 14),
                       ),
                       subtitle: Text(
                         station.code,
-                        style: TextStyle(
-                          color: g.textTertiary,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: g.textTertiary, fontSize: 12),
                       ),
                       onTap: () {
                         _controller.text = station.displayName;
@@ -1091,9 +1072,7 @@ class _GlassSaveBar extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             color: g.bottomBarBg,
-            border: Border(
-              top: BorderSide(color: g.bottomBarBorder, width: 1),
-            ),
+            border: Border(top: BorderSide(color: g.bottomBarBorder, width: 1)),
           ),
           child: SafeArea(
             child: Padding(
@@ -1102,10 +1081,7 @@ class _GlassSaveBar extends StatelessWidget {
                 height: 50,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      accentColor,
-                      accentColor.withValues(alpha: 0.8),
-                    ],
+                    colors: [accentColor, accentColor.withValues(alpha: 0.8)],
                   ),
                   borderRadius: BorderRadius.circular(14),
                   boxShadow: [
@@ -1116,39 +1092,35 @@ class _GlassSaveBar extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: isLoading ? null : onSave,
-                    borderRadius: BorderRadius.circular(14),
-                    child: Center(
-                      child: isLoading
-                          ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
+                child: GestureDetector(
+                  onTap: isLoading ? null : onSave,
+                  child: Center(
+                    child: isLoading
+                        ? const SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CupertinoActivityIndicator(
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                CupertinoIcons.checkmark_circle,
                                 color: Colors.white,
                               ),
-                            )
-                          : const Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.check_circle_outline,
-                                    color: Colors.white),
-                                SizedBox(width: 8),
-                                Text(
-                                  'Save Journey',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Save Journey',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
                                 ),
-                              ],
-                            ),
-                    ),
+                              ),
+                            ],
+                          ),
                   ),
                 ),
               ),

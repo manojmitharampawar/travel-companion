@@ -1,7 +1,9 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_companion/core/ui/adaptive_feedback.dart';
 import 'package:travel_companion/core/utils/date_utils.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/station.dart';
@@ -17,10 +19,7 @@ import 'package:travel_companion/providers/app_providers.dart';
 class TrainJourneyDetailScreen extends ConsumerStatefulWidget {
   final EnrichedJourney enrichedJourney;
 
-  const TrainJourneyDetailScreen({
-    super.key,
-    required this.enrichedJourney,
-  });
+  const TrainJourneyDetailScreen({super.key, required this.enrichedJourney});
 
   @override
   ConsumerState<TrainJourneyDetailScreen> createState() =>
@@ -34,13 +33,39 @@ class _TrainJourneyDetailScreenState
   bool _stopsExpanded = true;
   bool _isEditingOrigin = false;
   bool _isEditingDestination = false;
+  bool _isFavorite = false;
   List<Station> _availableStations = [];
   List<Station> _filteredStations = [];
 
   @override
   void initState() {
     super.initState();
+    _isFavorite = widget.enrichedJourney.journey.isFavorite;
     _loadRouteStops();
+  }
+
+  @override
+  void didUpdateWidget(covariant TrainJourneyDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.enrichedJourney.journey.isFavorite !=
+        widget.enrichedJourney.journey.isFavorite) {
+      _isFavorite = widget.enrichedJourney.journey.isFavorite;
+    }
+  }
+
+  Future<void> _toggleFavorite(Journey journey) async {
+    final id = journey.id;
+    if (id == null) return;
+
+    final next = !_isFavorite;
+    final repo = ref.read(journeyRepositoryProvider);
+    await repo.toggleFavorite(id, next);
+
+    if (!mounted) return;
+    setState(() => _isFavorite = next);
+    ref.invalidate(upcomingJourneysProvider);
+    ref.invalidate(historyJourneysProvider);
+    ref.invalidate(favoriteJourneysProvider);
   }
 
   Future<void> _loadRouteStops() async {
@@ -93,9 +118,11 @@ class _TrainJourneyDetailScreenState
     final lower = query.toLowerCase();
     setState(() {
       _filteredStations = _availableStations
-          .where((s) =>
-              s.name.toLowerCase().contains(lower) ||
-              (s.code?.toLowerCase().contains(lower) ?? false))
+          .where(
+            (s) =>
+                s.name.toLowerCase().contains(lower) ||
+                s.code.toLowerCase().contains(lower),
+          )
           .toList();
     });
   }
@@ -112,9 +139,7 @@ class _TrainJourneyDetailScreenState
     ref.invalidate(upcomingJourneysProvider);
     if (mounted) {
       setState(() => _isEditingOrigin = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Origin station updated')),
-      );
+      AdaptiveFeedback.showToast(context, 'Origin station updated');
       _loadRouteStops();
     }
   }
@@ -131,9 +156,7 @@ class _TrainJourneyDetailScreenState
     ref.invalidate(upcomingJourneysProvider);
     if (mounted) {
       setState(() => _isEditingDestination = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Destination station updated')),
-      );
+      AdaptiveFeedback.showToast(context, 'Destination station updated');
       _loadRouteStops();
     }
   }
@@ -146,10 +169,9 @@ class _TrainJourneyDetailScreenState
     final accentColor = type.color;
     final g = GlassColors.of(context);
 
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: g.bg,
-      extendBodyBehindAppBar: true,
-      body: Stack(
+      child: Stack(
         children: [
           // Background orbs
           _DetailBackground(accentColor: accentColor),
@@ -157,77 +179,96 @@ class _TrainJourneyDetailScreenState
           CustomScrollView(
             slivers: [
               // ── Glass Hero AppBar ─────────────────────
-              Builder(builder: (ctx) {
-                final topPad = MediaQuery.paddingOf(ctx).top;
-                return SliverAppBar(
-                  pinned: true,
-                  expandedHeight: topPad + kToolbarHeight + 100,
-                  backgroundColor: Colors.transparent,
-                  foregroundColor: g.appBarForeground,
-                  elevation: 0,
-                  actions: [
-                    // Favourite toggle
-                    GlassFavoriteActionButton(
-                      isFavorite: journey.isFavorite,
-                      onToggle: () async {
-                        final repo = ref.read(journeyRepositoryProvider);
-                        await repo.toggleFavorite(
-                            journey.id!, !journey.isFavorite);
-                        ref.invalidate(upcomingJourneysProvider);
-                        ref.invalidate(historyJourneysProvider);
-                        ref.invalidate(favoriteJourneysProvider);
-                        if (mounted) setState(() {});
-                      },
-                    ),
-                    if (journey.isUpcoming)
-                      PopupMenuButton<String>(
-                        icon: const Icon(Icons.more_vert_rounded),
-                        color: g.dropdownBg,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        onSelected: (value) async {
-                          if (value == 'delete') {
-                            await _deleteJourney(context, ref, journey);
-                          } else if (value == 'cancel') {
-                            await _cancelJourney(context, ref, journey);
-                          }
-                        },
-                        itemBuilder: (_) => [
-                          PopupMenuItem(
-                            value: 'cancel',
-                            child: Row(children: [
-                              Icon(Icons.cancel_outlined,
-                                  size: 18, color: g.iconAlpha(0.7)),
-                              const SizedBox(width: 8),
-                              Text('Cancel Journey',
-                                  style:
-                                      TextStyle(color: g.textAlpha(0.9))),
-                            ]),
+              Builder(
+                builder: (ctx) {
+                  final topPad = MediaQuery.paddingOf(ctx).top;
+                  final headerHeight = topPad + kToolbarHeight + 100;
+                  return SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: headerHeight,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: _GlassJourneyHeroBanner(
+                              journey: journey,
+                              enrichedJourney: enrichedJourney,
+                              type: type,
+                            ),
                           ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Row(children: [
-                              const Icon(Icons.delete_outline_rounded,
-                                  size: 18, color: Color(0xFFE74C3C)),
-                              const SizedBox(width: 8),
-                              const Text('Delete',
-                                  style:
-                                      TextStyle(color: Color(0xFFE74C3C))),
-                            ]),
+                          SafeArea(
+                            bottom: false,
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(14),
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(
+                                    sigmaX: 12,
+                                    sigmaY: 12,
+                                  ),
+                                  child: Container(
+                                    height: 44,
+                                    decoration: BoxDecoration(
+                                      color: g.cardFill(0.12),
+                                      border: Border.all(color: g.border(0.15)),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        CupertinoButton(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                          ),
+                                          minimumSize: const Size(32, 32),
+                                          onPressed: () =>
+                                              Navigator.maybePop(context),
+                                          child: Icon(
+                                            CupertinoIcons.back,
+                                            color: g.appBarForeground,
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const Expanded(
+                                          child: Text(
+                                            'Train Journey',
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 17,
+                                            ),
+                                          ),
+                                        ),
+                                        GlassFavoriteActionButton(
+                                          isFavorite: _isFavorite,
+                                          onToggle: () =>
+                                              _toggleFavorite(journey),
+                                        ),
+                                        if (journey.isUpcoming)
+                                          IconButton(
+                                            icon: const Icon(
+                                              CupertinoIcons.ellipsis_circle,
+                                            ),
+                                            tooltip: 'Journey actions',
+                                            onPressed: () =>
+                                                _showJourneyActions(
+                                                  context,
+                                                  ref,
+                                                  journey,
+                                                ),
+                                          ),
+                                        const SizedBox(width: 4),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                  ],
-                  flexibleSpace: FlexibleSpaceBar(
-                    collapseMode: CollapseMode.pin,
-                    background: _GlassJourneyHeroBanner(
-                      journey: journey,
-                      enrichedJourney: enrichedJourney,
-                      type: type,
                     ),
-                  ),
-                );
-              }),
+                  );
+                },
+              ),
 
               // ── Body ────────────────────────────────
               SliverPadding(
@@ -253,22 +294,27 @@ class _TrainJourneyDetailScreenState
               ),
             ],
           ),
+          if (journey.isUpcoming || journey.isActive)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: GlassBottomCta(
+                journey: journey,
+                enrichedJourney: enrichedJourney,
+                type: type,
+              ),
+            ),
         ],
       ),
-
-      // ── Sticky CTA ──────────────────────────────
-      bottomNavigationBar: (journey.isUpcoming || journey.isActive)
-          ? GlassBottomCta(
-              journey: journey,
-              enrichedJourney: enrichedJourney,
-              type: type,
-            )
-          : null,
     );
   }
 
-  Widget _buildEditableRouteCard(BuildContext context, WidgetRef ref,
-      EnrichedJourney enrichedJourney) {
+  Widget _buildEditableRouteCard(
+    BuildContext context,
+    WidgetRef ref,
+    EnrichedJourney enrichedJourney,
+  ) {
     final journey = enrichedJourney.journey;
     final g = GlassColors.of(context);
     final type = TransportType.train;
@@ -397,20 +443,12 @@ class _TrainJourneyDetailScreenState
               if (code.isNotEmpty)
                 Text(
                   code,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: g.textAlpha(0.6),
-                  ),
+                  style: TextStyle(fontSize: 11, color: g.textAlpha(0.6)),
                 ),
             ],
           ),
           const Spacer(),
-          if (isEditable)
-            Icon(
-              Icons.edit_rounded,
-              size: 18,
-              color: color,
-            ),
+          if (isEditable) Icon(Icons.edit_rounded, size: 18, color: color),
         ],
       ),
     );
@@ -486,7 +524,7 @@ class _TrainJourneyDetailScreenState
                     final station = _filteredStations[index];
                     return ListTile(
                       title: Text(station.name),
-                      subtitle: Text(station.code ?? ''),
+                      subtitle: Text(station.code),
                       onTap: () => onSelect(station),
                     );
                   },
@@ -558,8 +596,10 @@ class _TrainJourneyDetailScreenState
               InkWell(
                 onTap: () => setState(() => _stopsExpanded = !_stopsExpanded),
                 child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -568,8 +608,11 @@ class _TrainJourneyDetailScreenState
                           color: type.color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Icon(Icons.route_rounded,
-                            size: 16, color: type.color),
+                        child: Icon(
+                          Icons.route_rounded,
+                          size: 16,
+                          color: type.color,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Text(
@@ -584,12 +627,15 @@ class _TrainJourneyDetailScreenState
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2),
+                          horizontal: 7,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: type.color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                              color: type.color.withValues(alpha: 0.3)),
+                            color: type.color.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Text(
                           '${_trainStops.length} stops',
@@ -644,35 +690,91 @@ class _TrainJourneyDetailScreenState
     );
   }
 
+  Future<void> _showJourneyActions(
+    BuildContext context,
+    WidgetRef ref,
+    Journey journey,
+  ) async {
+    final action = await showCupertinoModalPopup<String>(
+      context: context,
+      builder: (sheetContext) {
+        final g = GlassColors.of(sheetContext);
+        return CupertinoActionSheet(
+          actions: [
+            CupertinoActionSheetAction(
+              onPressed: () => Navigator.pop(sheetContext, 'cancel'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    CupertinoIcons.xmark_circle,
+                    size: 18,
+                    color: g.iconAlpha(0.7),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Cancel Journey',
+                    style: TextStyle(color: g.textAlpha(0.9)),
+                  ),
+                ],
+              ),
+            ),
+            CupertinoActionSheetAction(
+              isDestructiveAction: true,
+              onPressed: () => Navigator.pop(sheetContext, 'delete'),
+              child: const Text('Delete'),
+            ),
+          ],
+          cancelButton: CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(sheetContext),
+            child: const Text('Dismiss'),
+          ),
+        );
+      },
+    );
+
+    if (!mounted) return;
+
+    if (action == 'delete') {
+      await _deleteJourney(this.context, ref, journey);
+    } else if (action == 'cancel') {
+      await _cancelJourney(this.context, ref, journey);
+    }
+  }
+
   Future<void> _deleteJourney(
-      BuildContext context, WidgetRef ref, Journey journey) async {
-                    try {
-                      final confirm = await showDialog<bool>(
-                        context: context,
-                        builder: (context) => GlassConfirmDialog(
-                          title: 'Delete Journey?',
-                          message: 'This action cannot be undone.',
-                          confirmLabel: 'Delete',
-                          confirmColor: const Color(0xFFE74C3C),
-                          onConfirm: () => Navigator.pop(context, true),
-                          onCancel: () => Navigator.pop(context, false),
-                        ),
-                      );
-                      if (confirm != true) return;
-                      await ref.read(journeyRepositoryProvider).deleteJourney(journey.id!);
-                      ref.invalidate(upcomingJourneysProvider);
-                      if (context.mounted) Navigator.pop(context);
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Error: $e')),
-                        );
-                      }
-                    }
+    BuildContext context,
+    WidgetRef ref,
+    Journey journey,
+  ) async {
+    try {
+      final confirm = await showCupertinoDialog<bool>(
+        context: context,
+        builder: (context) => GlassConfirmDialog(
+          title: 'Delete Journey?',
+          message: 'This action cannot be undone.',
+          confirmLabel: 'Delete',
+          confirmColor: const Color(0xFFE74C3C),
+          onConfirm: () => Navigator.pop(context, true),
+          onCancel: () => Navigator.pop(context, false),
+        ),
+      );
+      if (confirm != true) return;
+      await ref.read(journeyRepositoryProvider).deleteJourney(journey.id!);
+      ref.invalidate(upcomingJourneysProvider);
+      if (context.mounted) Navigator.pop(context);
+    } catch (e) {
+      if (context.mounted) {
+        AdaptiveFeedback.showToast(context, 'Error: $e', isError: true);
+      }
+    }
   }
 
   Future<void> _cancelJourney(
-      BuildContext context, WidgetRef ref, Journey journey) async {
+    BuildContext context,
+    WidgetRef ref,
+    Journey journey,
+  ) async {
     await ref
         .read(journeyRepositoryProvider)
         .updateJourneyStatus(journey.id!, JourneyStatus.cancelled);
@@ -750,7 +852,8 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
     final topPad = MediaQuery.paddingOf(context).top;
     final accentColor = type.color;
 
-    final vehicleName = journey.vehicleName ??
+    final vehicleName =
+        journey.vehicleName ??
         (journey.vehicleNumber != null
             ? '${type.label} ${journey.vehicleNumber}'
             : type.label);
@@ -760,10 +863,7 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            accentColor.withValues(alpha: 0.15),
-            g.bg,
-          ],
+          colors: [accentColor.withValues(alpha: 0.15), g.bg],
         ),
       ),
       child: Stack(
@@ -781,8 +881,12 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
             ),
           ),
           Padding(
-            padding:
-                EdgeInsets.fromLTRB(20, topPad + kToolbarHeight + 6, 20, 20),
+            padding: EdgeInsets.fromLTRB(
+              20,
+              topPad + kToolbarHeight + 6,
+              20,
+              20,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -797,8 +901,7 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: g.border(0.15)),
                       ),
-                      child:
-                          Icon(type.icon, size: 30, color: accentColor),
+                      child: Icon(type.icon, size: 30, color: accentColor),
                     ),
                   ),
                 ),
@@ -832,8 +935,11 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.calendar_today_rounded,
-                              size: 11, color: g.textAlpha(0.6)),
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 11,
+                            color: g.textAlpha(0.6),
+                          ),
                           const SizedBox(width: 4),
                           Text(
                             AppDateUtils.relativeDay(journey.journeyDate),
@@ -845,8 +951,11 @@ class _GlassJourneyHeroBanner extends StatelessWidget {
                           ),
                           if (journey.scheduledTime != null) ...[
                             const SizedBox(width: 10),
-                            Icon(Icons.schedule_rounded,
-                                size: 11, color: g.textAlpha(0.6)),
+                            Icon(
+                              Icons.schedule_rounded,
+                              size: 11,
+                              color: g.textAlpha(0.6),
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               journey.scheduledTime!,
@@ -906,194 +1015,6 @@ class _GlassStatusPill extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _GlassFavoriteActionButton extends StatelessWidget {
-  final bool isFavorite;
-  final VoidCallback onToggle;
-
-  const _GlassFavoriteActionButton({
-    required this.isFavorite,
-    required this.onToggle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final g = GlassColors.of(context);
-    return IconButton(
-      icon: Icon(
-        isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        color: isFavorite ? const Color(0xFFFF5252) : g.appBarForeground,
-      ),
-      onPressed: onToggle,
-      tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
-    );
-  }
-}
-
-class _StopTimelineItem extends StatelessWidget {
-  final String name;
-  final String code;
-  final String? time;
-  final double? distanceKm;
-  final bool isFirst;
-  final bool isLast;
-  final Color accentColor;
-
-  const _StopTimelineItem({
-    required this.name,
-    required this.code,
-    required this.isFirst,
-    required this.isLast,
-    required this.accentColor,
-    this.time,
-    this.distanceKm,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final g = GlassColors.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Column(
-          children: [
-            Container(
-              width: 12,
-              height: 12,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isFirst
-                    ? const Color(0xFF27AE60)
-                    : isLast
-                        ? const Color(0xFFE74C3C)
-                        : accentColor,
-                boxShadow: [
-                  BoxShadow(
-                    color: (isFirst
-                            ? const Color(0xFF27AE60)
-                            : isLast
-                                ? const Color(0xFFE74C3C)
-                                : accentColor)
-                        .withValues(alpha: 0.3),
-                    blurRadius: 4,
-                  ),
-                ],
-              ),
-            ),
-            if (!isLast)
-              Container(
-                width: 2,
-                height: 60,
-                color: accentColor.withValues(alpha: 0.2),
-              ),
-          ],
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(top: isFirst ? 0 : 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: g.textAlpha(0.9),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  code,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: g.textAlpha(0.5),
-                  ),
-                ),
-                if (time != null || distanceKm != null) ...[
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      if (time != null) ...[
-                        Icon(Icons.schedule_rounded,
-                            size: 10, color: g.textAlpha(0.5)),
-                        const SizedBox(width: 4),
-                        Text(
-                          time!,
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: g.textAlpha(0.6),
-                          ),
-                        ),
-                      ],
-                      if (distanceKm != null) ...[
-                        const SizedBox(width: 12),
-                        Icon(Icons.location_on_rounded,
-                            size: 10, color: g.textAlpha(0.5)),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${distanceKm!.toStringAsFixed(1)} km',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: g.textAlpha(0.6),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _GlassConfirmDialog extends StatelessWidget {
-  final String title;
-  final String message;
-  final String confirmLabel;
-  final Color confirmColor;
-  final VoidCallback onConfirm;
-  final VoidCallback onCancel;
-
-  const _GlassConfirmDialog({
-    required this.title,
-    required this.message,
-    required this.confirmLabel,
-    required this.confirmColor,
-    required this.onConfirm,
-    required this.onCancel,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final g = GlassColors.of(context);
-    return AlertDialog(
-      backgroundColor: g.cardFill(),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Text(
-        title,
-        style: TextStyle(color: g.text, fontWeight: FontWeight.w700),
-      ),
-      content: Text(message, style: TextStyle(color: g.textAlpha(0.8))),
-      actions: [
-        TextButton(
-          onPressed: onCancel,
-          child: Text('Cancel', style: TextStyle(color: g.textAlpha(0.7))),
-        ),
-        TextButton(
-          onPressed: onConfirm,
-          child:
-              Text(confirmLabel, style: TextStyle(color: confirmColor)),
-        ),
-      ],
     );
   }
 }

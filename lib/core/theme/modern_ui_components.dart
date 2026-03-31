@@ -1,4 +1,19 @@
-import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart'
+    show
+        Colors,
+        Theme,
+        Icons,
+        CircularProgressIndicator,
+        AlwaysStoppedAnimation,
+        TextFormField,
+        FilledButton,
+        InputDecoration,
+        OutlineInputBorder,
+        BorderSide,
+        Divider;
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -28,24 +43,26 @@ class ModernCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
-    return Material(
-      color: backgroundColor ?? theme.colorScheme.surfaceContainerHigh,
-      elevation: elevation,
+    final g = GlassColors.of(context);
+    final effectiveBg = backgroundColor ?? g.cardFill(0.08);
+    return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: Container(
-          decoration: BoxDecoration(
-            border: borderColor != null
-                ? Border.all(color: borderColor!, width: 1.5)
-                : null,
-            borderRadius: BorderRadius.circular(borderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            decoration: BoxDecoration(
+              color: effectiveBg,
+              border: Border.all(
+                color: borderColor ?? g.border(0.12),
+                width: borderColor != null ? 1.5 : 1.0,
+              ),
+              borderRadius: BorderRadius.circular(borderRadius),
+            ),
+            padding: padding,
+            child: child,
           ),
-          padding: padding,
-          child: child,
         ),
       ),
     );
@@ -71,7 +88,10 @@ class TransportBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: transportType.color.withValues(alpha: 0.15),
-        border: Border.all(color: transportType.color.withValues(alpha: 0.3), width: 1),
+        border: Border.all(
+          color: transportType.color.withValues(alpha: 0.3),
+          width: 1,
+        ),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -107,7 +127,7 @@ class InfoRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
+
     return Row(
       mainAxisAlignment: mainAxisAlignment,
       children: [
@@ -154,7 +174,7 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final color = accentColor ?? theme.colorScheme.primary;
-    
+
     return Column(
       children: [
         Row(
@@ -231,7 +251,11 @@ class JourneyHeader extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ),
           if (onBackPressed != null) const SizedBox(height: 12),
@@ -338,15 +362,23 @@ class ModernInputField extends StatelessWidget {
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: theme.colorScheme.outlineVariant, width: 1.2),
+          borderSide: BorderSide(
+            color: theme.colorScheme.outlineVariant,
+            width: 1.2,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: color, width: 2),
         ),
         filled: true,
-        fillColor: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.5),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        fillColor: theme.colorScheme.surfaceContainerHigh.withValues(
+          alpha: 0.5,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }
@@ -385,7 +417,9 @@ class ModernButton extends StatelessWidget {
         style: FilledButton.styleFrom(
           backgroundColor: bg,
           disabledBackgroundColor: bg.withValues(alpha: 0.5),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         child: isLoading
             ? SizedBox(
@@ -405,7 +439,13 @@ class ModernButton extends StatelessWidget {
                     Icon(icon, size: 18),
                     const SizedBox(width: 8),
                   ],
-                  Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ],
               ),
       ),
@@ -488,4 +528,3 @@ class TextDivider extends StatelessWidget {
     );
   }
 }
-

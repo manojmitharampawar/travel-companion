@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -69,9 +70,9 @@ class _FullscreenMapScreenState extends State<FullscreenMapScreen> {
   @override
   Widget build(BuildContext context) {
     final g = GlassColors.of(context);
-    return Scaffold(
+    return CupertinoPageScaffold(
       backgroundColor: g.bg,
-      body: Stack(
+      child: Stack(
         children: [
           // Full-screen map
           Positioned.fill(
@@ -99,9 +100,7 @@ class _FullscreenMapScreenState extends State<FullscreenMapScreen> {
           Positioned(
             top: MediaQuery.of(context).padding.top + 12,
             left: 12,
-            child: _GlassCloseButton(
-              onTap: () => Navigator.of(context).pop(),
-            ),
+            child: _GlassCloseButton(onTap: () => Navigator.of(context).pop()),
           ),
 
           // Transport badge (top-center)
@@ -137,40 +136,35 @@ class _GlassCloseButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Material(
-          color: Colors.transparent,
-          child: Tooltip(
-            message: 'Exit fullscreen',
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(12),
-              child: Builder(builder: (context) {
-                final g = GlassColors.of(context);
-                return Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    color: g.isDark ? const Color(0xFF0A0E21).withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.85),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: g.border(0.15),
+        child: GestureDetector(
+          onTap: onTap,
+          child: Builder(
+            builder: (context) {
+              final g = GlassColors.of(context);
+              return Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: g.isDark
+                      ? const Color(0xFF0A0E21).withValues(alpha: 0.7)
+                      : Colors.white.withValues(alpha: 0.85),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: g.border(0.15)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.fullscreen_exit_rounded,
-                    size: 20,
-                    color: g.textAlpha(0.8),
-                  ),
-                );
-              }),
-            ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.fullscreen_exit_rounded,
+                  size: 20,
+                  color: g.textAlpha(0.8),
+                ),
+              );
+            },
           ),
         ),
       ),
@@ -201,7 +195,9 @@ class _GlassTransportBadge extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: g.isDark ? const Color(0xFF0A0E21).withValues(alpha: 0.7) : Colors.white.withValues(alpha: 0.85),
+            color: g.isDark
+                ? const Color(0xFF0A0E21).withValues(alpha: 0.7)
+                : Colors.white.withValues(alpha: 0.85),
             borderRadius: BorderRadius.circular(20),
             border: Border.all(
               color: transportType.color.withValues(alpha: 0.3),
@@ -217,11 +213,7 @@ class _GlassTransportBadge extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                transportType.icon,
-                size: 16,
-                color: transportType.color,
-              ),
+              Icon(transportType.icon, size: 16, color: transportType.color),
               const SizedBox(width: 6),
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 200),

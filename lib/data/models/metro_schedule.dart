@@ -1,4 +1,5 @@
-import 'package:flutter/material.dart';
+import 'dart:ui';
+import 'package:flutter/material.dart' show TimeOfDay;
 
 /// A metro schedule entry representing a departure from the first station.
 class MetroScheduleEntry {
