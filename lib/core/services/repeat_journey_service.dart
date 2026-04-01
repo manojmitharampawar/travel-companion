@@ -8,7 +8,7 @@ class RepeatJourneyService {
   Timer? _checkTimer;
 
   RepeatJourneyService({required JourneyRepository journeyRepository})
-      : _journeyRepository = journeyRepository;
+    : _journeyRepository = journeyRepository;
 
   void start() {
     // Check on startup
@@ -38,13 +38,15 @@ class RepeatJourneyService {
 
       // Check if a journey for today already exists with same route
       final existing = await _journeyRepository.getJourneysForDate(todayDate);
-      final alreadyExists = existing.any((j) =>
-          j.vehicleNumber == journey.vehicleNumber &&
-          j.boardingStationCode == journey.boardingStationCode &&
-          j.destinationStationCode == journey.destinationStationCode &&
-          j.originName == journey.originName &&
-          j.destinationName == journey.destinationName &&
-          j.id != journey.id);
+      final alreadyExists = existing.any(
+        (j) =>
+            j.vehicleNumber == journey.vehicleNumber &&
+            j.boardingStationCode == journey.boardingStationCode &&
+            j.destinationStationCode == journey.destinationStationCode &&
+            j.originName == journey.originName &&
+            j.destinationName == journey.destinationName &&
+            j.id != journey.id,
+      );
 
       if (!alreadyExists) {
         // Create today's instance from the repeat template
@@ -54,7 +56,13 @@ class RepeatJourneyService {
           if (parts.length == 2) {
             final hour = int.tryParse(parts[0]) ?? 0;
             final minute = int.tryParse(parts[1]) ?? 0;
-            journeyDateTime = DateTime(now.year, now.month, now.day, hour, minute);
+            journeyDateTime = DateTime(
+              now.year,
+              now.month,
+              now.day,
+              hour,
+              minute,
+            );
           }
         }
 

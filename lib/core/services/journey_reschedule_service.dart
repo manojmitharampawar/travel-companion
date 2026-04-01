@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/repositories/journey_repository.dart';
 
@@ -13,15 +12,13 @@ import 'package:travel_companion/data/repositories/journey_repository.dart';
 /// final newId = await service.rescheduleJourney(
 ///   journey: favorite,
 ///   selectedDate: DateTime(2026, 4, 15),
-///   selectedTime: const TimeOfDay(hour: 7, minute: 30),
+///   selectedTime: DateTime(0, 1, 1, 7, 30),
 /// );
 /// ```
 class JourneyRescheduleService {
   final JourneyRepository journeyRepository;
 
-  JourneyRescheduleService({
-    required this.journeyRepository,
-  });
+  JourneyRescheduleService({required this.journeyRepository});
 
   /// Clones a journey to a new date/time and inserts it.
   ///
@@ -36,7 +33,7 @@ class JourneyRescheduleService {
   Future<int> rescheduleJourney({
     required Journey journey,
     required DateTime selectedDate,
-    required TimeOfDay selectedTime,
+    required DateTime selectedTime,
   }) async {
     // Combine date and time
     final newJourneyDate = DateTime(

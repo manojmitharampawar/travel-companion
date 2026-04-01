@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show TimeOfDay;
+import 'package:travel_companion/core/models/app_time.dart';
 import 'package:travel_companion/data/database/app_database.dart';
 import 'package:travel_companion/data/models/local_train_line.dart';
 import 'package:travel_companion/data/models/local_train_schedule.dart';
@@ -37,7 +37,7 @@ class LocalTrainRepository {
     required int lineId,
     required int sourceIndex,
     required int destIndex,
-    required TimeOfDay after,
+    required AppTime after,
     int limit = 10,
   }) async {
     final db = await AppDatabase.database;
@@ -98,7 +98,9 @@ class LocalTrainRepository {
 
       final minutesToSource = (stopsToSource * minutesPerStop).round();
       final sourceDepartureMinutes =
-          schedule.departureHour * 60 + schedule.departureMinute + minutesToSource;
+          schedule.departureHour * 60 +
+          schedule.departureMinute +
+          minutesToSource;
       final sourceHour = (sourceDepartureMinutes ~/ 60) % 24;
       final sourceMinute = sourceDepartureMinutes % 60;
 
@@ -125,18 +127,23 @@ class LocalTrainRepository {
       final arrivalHour = (arrivalMinutes ~/ 60) % 24;
       final arrivalMinute = arrivalMinutes % 60;
 
-      results.add(UpcomingTrain(
-        schedule: schedule,
-        trainType: schedule.trainType,
-        direction: direction,
-        departureAtSource: TimeOfDay(hour: sourceHour, minute: sourceMinute),
-        arrivalAtDestination: TimeOfDay(hour: arrivalHour, minute: arrivalMinute),
-        travelMinutes: travelMinutes,
-        stopsCount: stopsSourceToDest,
-        lineCode: line.lineCode,
-        lineName: line.lineName,
-        lineColor: line.lineColor,
-      ));
+      results.add(
+        UpcomingTrain(
+          schedule: schedule,
+          trainType: schedule.trainType,
+          direction: direction,
+          departureAtSource: AppTime(hour: sourceHour, minute: sourceMinute),
+          arrivalAtDestination: AppTime(
+            hour: arrivalHour,
+            minute: arrivalMinute,
+          ),
+          travelMinutes: travelMinutes,
+          stopsCount: stopsSourceToDest,
+          lineCode: line.lineCode,
+          lineName: line.lineName,
+          lineColor: line.lineColor,
+        ),
+      );
 
       if (results.length >= limit) break;
     }

@@ -29,12 +29,12 @@ class LocalTrainLine {
   }
 
   factory LocalTrainLine.fromMap(Map<String, dynamic> map) => LocalTrainLine(
-        id: map['id'] as int,
-        city: map['city'] as String,
-        lineName: map['line_name'] as String,
-        lineCode: map['line_code'] as String,
-        color: map['color'] as String?,
-        startStation: map['start_station'] as String?,
-        endStation: map['end_station'] as String?,
-      );
+    id: map['id'] as int,
+    city: map['city'] as String,
+    lineName: map['line_name'] as String,
+    lineCode: map['line_code'] as String,
+    color: map['color'] as String?,
+    startStation: map['start_station'] as String?,
+    endStation: map['end_station'] as String?,
+  );
 }

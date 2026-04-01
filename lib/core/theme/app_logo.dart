@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 /// Travel Companion app logo — a stylized shield/compass-pin with a
 /// train silhouette, rendered entirely with CustomPaint.
@@ -38,7 +38,7 @@ class AppLogo extends StatelessWidget {
               fontSize: size * 0.22,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.3,
-              color: Colors.white.withValues(alpha: 0.9),
+              color: const Color(0xFFFFFFFF).withValues(alpha: 0.9),
             ),
           ),
           Text(
@@ -46,7 +46,7 @@ class AppLogo extends StatelessWidget {
             style: TextStyle(
               fontSize: size * 0.12,
               fontWeight: FontWeight.w500,
-              color: Colors.white.withValues(alpha: 0.45),
+              color: const Color(0xFFFFFFFF).withValues(alpha: 0.45),
               letterSpacing: 0.5,
             ),
           ),
@@ -69,24 +69,25 @@ class _LogoPainter extends CustomPainter {
     // ─── 1. Outer glow ───────────────────────
     final glowPaint = Paint()
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12)
-      ..color = (accentOverride ?? const Color(0xFF3498DB)).withValues(alpha: 0.25);
+      ..color = (accentOverride ?? const Color(0xFF3498DB)).withValues(
+        alpha: 0.25,
+      );
     canvas.drawCircle(center, s * 0.38, glowPaint);
 
     // ─── 2. Main shield / circle ─────────────
     final accent = accentOverride ?? const Color(0xFF3498DB);
     final gradPaint = Paint()
-      ..shader = ui.Gradient.linear(
-        Offset(s * 0.2, 0),
-        Offset(s * 0.8, s),
-        [accent, Color.lerp(accent, const Color(0xFF0A0E21), 0.5)!],
-      );
+      ..shader = ui.Gradient.linear(Offset(s * 0.2, 0), Offset(s * 0.8, s), [
+        accent,
+        Color.lerp(accent, const Color(0xFF0A0E21), 0.5)!,
+      ]);
     canvas.drawCircle(center, s * 0.4, gradPaint);
 
     // Glass ring
     final ringPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = s * 0.015
-      ..color = Colors.white.withValues(alpha: 0.3);
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.3);
     canvas.drawCircle(center, s * 0.4, ringPaint);
 
     // Inner glass sheen (top-left highlight arc)
@@ -96,9 +97,9 @@ class _LogoPainter extends CustomPainter {
       ..shader = ui.Gradient.sweep(
         center,
         [
-          Colors.white.withValues(alpha: 0.0),
-          Colors.white.withValues(alpha: 0.25),
-          Colors.white.withValues(alpha: 0.0),
+          const Color(0xFFFFFFFF).withValues(alpha: 0.0),
+          const Color(0xFFFFFFFF).withValues(alpha: 0.25),
+          const Color(0xFFFFFFFF).withValues(alpha: 0.0),
         ],
         [0.0, 0.15, 0.3],
       );
@@ -117,10 +118,9 @@ class _LogoPainter extends CustomPainter {
     final pinR = s * 0.16;
 
     // Pin circle
-    pinPath.addOval(Rect.fromCircle(
-      center: Offset(pinCx, pinTop + pinR),
-      radius: pinR,
-    ));
+    pinPath.addOval(
+      Rect.fromCircle(center: Offset(pinCx, pinTop + pinR), radius: pinR),
+    );
 
     // Pin tail
     pinPath.moveTo(pinCx - pinR * 0.65, pinTop + pinR + pinR * 0.5);
@@ -133,20 +133,16 @@ class _LogoPainter extends CustomPainter {
     pinPath.close();
 
     final pinPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.95);
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.95);
     canvas.drawPath(pinPath, pinPaint);
 
     // Inner circle of pin (accent color dot)
     final dotPaint = Paint()..color = accent;
-    canvas.drawCircle(
-      Offset(pinCx, pinTop + pinR),
-      pinR * 0.5,
-      dotPaint,
-    );
+    canvas.drawCircle(Offset(pinCx, pinTop + pinR), pinR * 0.5, dotPaint);
 
     // ─── 4. Compass arrows (N/S tiny marks) ──
     final compassPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.5)
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.5)
       ..strokeWidth = s * 0.012
       ..strokeCap = StrokeCap.round;
 
@@ -177,7 +173,7 @@ class _LogoPainter extends CustomPainter {
 
     // ─── 5. Subtle wave/track lines at bottom ─
     final trackPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.25)
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.25)
       ..strokeWidth = s * 0.012
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
@@ -192,7 +188,10 @@ class _LogoPainter extends CustomPainter {
     trackPath2.moveTo(s * 0.3, s * 0.78);
     trackPath2.quadraticBezierTo(s * 0.43, s * 0.73, s * 0.5, s * 0.78);
     trackPath2.quadraticBezierTo(s * 0.57, s * 0.83, s * 0.7, s * 0.78);
-    canvas.drawPath(trackPath2, trackPaint..color = Colors.white.withValues(alpha: 0.15));
+    canvas.drawPath(
+      trackPath2,
+      trackPaint..color = const Color(0xFFFFFFFF).withValues(alpha: 0.15),
+    );
   }
 
   @override

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart' show TimeOfDay;
+import 'package:travel_companion/core/models/app_time.dart';
 import 'package:travel_companion/data/database/app_database.dart';
 import 'package:travel_companion/data/models/metro_line.dart';
 import 'package:travel_companion/data/models/metro_schedule.dart';
@@ -53,7 +53,10 @@ class MetroRepository {
   }
 
   /// Search metro stations by name within a specific line.
-  Future<List<MetroStation>> searchStationsByLine(int lineId, String query) async {
+  Future<List<MetroStation>> searchStationsByLine(
+    int lineId,
+    String query,
+  ) async {
     final db = await AppDatabase.database;
     final results = await db.query(
       'metro_stations',
@@ -126,7 +129,7 @@ class MetroRepository {
     required int lineId,
     required int sourceIndex,
     required int destIndex,
-    required TimeOfDay after,
+    required AppTime after,
     int limit = 10,
   }) async {
     final db = await AppDatabase.database;
@@ -160,7 +163,9 @@ class MetroRepository {
       final stopsToSource = (sourceIndex - originIndex).abs();
       final minutesToSource = (stopsToSource * minutesPerStop).round();
       final sourceDepartureMinutes =
-          schedule.departureHour * 60 + schedule.departureMinute + minutesToSource;
+          schedule.departureHour * 60 +
+          schedule.departureMinute +
+          minutesToSource;
       final sourceHour = (sourceDepartureMinutes ~/ 60) % 24;
       final sourceMinute = sourceDepartureMinutes % 60;
 
@@ -175,17 +180,22 @@ class MetroRepository {
       final arrivalHour = (arrivalMinutes ~/ 60) % 24;
       final arrivalMinute = arrivalMinutes % 60;
 
-      results.add(UpcomingMetro(
-        schedule: schedule,
-        direction: direction,
-        departureAtSource: TimeOfDay(hour: sourceHour, minute: sourceMinute),
-        arrivalAtDestination: TimeOfDay(hour: arrivalHour, minute: arrivalMinute),
-        travelMinutes: travelMinutes,
-        stopsCount: stopsSourceToDest,
-        lineCode: line.lineCode ?? line.id.toString(),
-        lineName: line.displayName,
-        lineColor: line.color,
-      ));
+      results.add(
+        UpcomingMetro(
+          schedule: schedule,
+          direction: direction,
+          departureAtSource: AppTime(hour: sourceHour, minute: sourceMinute),
+          arrivalAtDestination: AppTime(
+            hour: arrivalHour,
+            minute: arrivalMinute,
+          ),
+          travelMinutes: travelMinutes,
+          stopsCount: stopsSourceToDest,
+          lineCode: line.lineCode ?? line.id.toString(),
+          lineName: line.displayName,
+          lineColor: line.color,
+        ),
+      );
 
       if (results.length >= limit) break;
     }
@@ -193,4 +203,3 @@ class MetroRepository {
     return results;
   }
 }
-

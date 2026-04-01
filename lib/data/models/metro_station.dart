@@ -47,4 +47,3 @@ class MetroStation extends Equatable {
   @override
   List<Object?> get props => [id, code, lineId, name, stationIndex];
 }
-

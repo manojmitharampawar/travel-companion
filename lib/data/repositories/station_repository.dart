@@ -42,7 +42,12 @@ class StationRepository {
     final results = await db.query(
       'stations',
       where: 'station_type = ? AND (name LIKE ? OR code LIKE ? OR zone LIKE ?)',
-      whereArgs: [stationType, '%$query%', '%${query.toUpperCase()}%', '%$query%'],
+      whereArgs: [
+        stationType,
+        '%$query%',
+        '%${query.toUpperCase()}%',
+        '%$query%',
+      ],
       limit: 20,
     );
 

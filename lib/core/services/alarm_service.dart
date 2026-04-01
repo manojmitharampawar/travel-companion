@@ -48,8 +48,8 @@ class AlarmService {
   AlarmService({
     required LocationService locationService,
     required JourneyRepository journeyRepository,
-  })  : _locationService = locationService,
-        _journeyRepository = journeyRepository;
+  }) : _locationService = locationService,
+       _journeyRepository = journeyRepository;
 
   Future<void> startJourneyTracking({
     required Journey journey,
@@ -75,9 +75,7 @@ class AlarmService {
 
     // Start location tracking with transport-specific intervals
     final type = journey.transportType;
-    await _locationService.startTracking(
-      transportType: type,
-    );
+    await _locationService.startTracking(transportType: type);
 
     // Show persistent tracking notification
     await NotificationService.showTrackingNotification(

@@ -1,16 +1,17 @@
 import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'package:travel_companion/core/theme/glass_theme.dart';
-import 'package:intl/intl.dart';
 
-/// Dialog for rescheduling a journey with date and time selection.
-/// SOLID-D: Depends on Material widgets, no business logic - purely UI
-/// Returns: (DateTime, TimeOfDay) tuple on confirmation, null on cancel
+import 'package:flutter/cupertino.dart';
+import 'package:intl/intl.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
+import 'package:travel_companion/features/history/widgets/reschedule_picker_tile.dart';
+
+/// Dialog for rescheduling a journey with Cupertino date and time pickers.
+/// Returns `(DateTime selectedDate, DateTime selectedTime)` when confirmed.
 class JourneyRescheduleDialog extends StatefulWidget {
   final DateTime initialDate;
   final DateTime firstDate;
   final DateTime lastDate;
-  final TimeOfDay? initialTime;
+  final DateTime? initialTime;
 
   const JourneyRescheduleDialog({
     required this.initialDate,
@@ -27,226 +28,179 @@ class JourneyRescheduleDialog extends StatefulWidget {
 
 class _JourneyRescheduleDialogState extends State<JourneyRescheduleDialog> {
   late DateTime selectedDate;
-  late TimeOfDay selectedTime;
+  late DateTime selectedTime;
 
   @override
   void initState() {
     super.initState();
     selectedDate = widget.initialDate;
-    selectedTime = widget.initialTime ?? const TimeOfDay(hour: 6, minute: 0);
+    selectedTime = widget.initialTime ?? DateTime(0, 1, 1, 6, 0);
   }
 
-  Future<void> _selectDate(BuildContext context) async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: widget.firstDate,
-      lastDate: widget.lastDate,
-      helpText: 'Select journey date',
+  Future<void> _selectDate() async {
+    final picked = await _showPicker(
+      mode: CupertinoDatePickerMode.date,
+      initial: selectedDate,
+      minimum: widget.firstDate,
+      maximum: widget.lastDate,
     );
-    if (picked != null) {
-      setState(() => selectedDate = picked);
+    if (picked != null && mounted) {
+      setState(() {
+        selectedDate = DateTime(picked.year, picked.month, picked.day);
+      });
     }
   }
 
-  Future<void> _selectTime(BuildContext context) async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: selectedTime,
-      helpText: 'Select boarding time',
+  Future<void> _selectTime() async {
+    final base = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      selectedTime.hour,
+      selectedTime.minute,
     );
-    if (picked != null) {
-      setState(() => selectedTime = picked);
+    final picked = await _showPicker(
+      mode: CupertinoDatePickerMode.time,
+      initial: base,
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        selectedTime = DateTime(0, 1, 1, picked.hour, picked.minute);
+      });
     }
+  }
+
+  Future<DateTime?> _showPicker({
+    required CupertinoDatePickerMode mode,
+    required DateTime initial,
+    DateTime? minimum,
+    DateTime? maximum,
+  }) async {
+    DateTime tempValue = initial;
+    return showCupertinoModalPopup<DateTime>(
+      context: context,
+      builder: (context) {
+        final g = GlassColors.of(context);
+        return Container(
+          height: 290,
+          margin: const EdgeInsets.only(bottom: 12, left: 12, right: 12),
+          decoration: BoxDecoration(
+            color: g.cardFill(),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: g.border(0.15)),
+          ),
+          child: Column(
+            children: [
+              Align(
+                alignment: Alignment.centerRight,
+                child: CupertinoButton(
+                  onPressed: () => Navigator.pop(context, tempValue),
+                  child: const Text('Done'),
+                ),
+              ),
+              Expanded(
+                child: CupertinoDatePicker(
+                  mode: mode,
+                  initialDateTime: initial,
+                  minimumDate: minimum,
+                  maximumDate: maximum,
+                  use24hFormat: false,
+                  onDateTimeChanged: (value) => tempValue = value,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final g = GlassColors.of(context);
     final dateStr = DateFormat('dd MMM yyyy').format(selectedDate);
-    final timeStr = selectedTime.format(context);
+    final timeStr = DateFormat(
+      'hh:mm a',
+    ).format(DateTime(0, 1, 1, selectedTime.hour, selectedTime.minute));
 
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  g.cardFill(),
-                  g.cardFill(),
-                ],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(
-                color: g.border(0.15),
-              ),
-            ),
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Title
-                    Text(
-                      'Reschedule Journey',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
-                        color: g.text,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Date selector
-                    _buildDateTimeSelector(
-                      context: context,
-                      label: 'Date',
-                      value: dateStr,
-                      icon: Icons.calendar_today_rounded,
-                      onTap: () => _selectDate(context),
-                      g: g,
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Time selector
-                    _buildDateTimeSelector(
-                      context: context,
-                      label: 'Time',
-                      value: timeStr,
-                      icon: Icons.schedule_rounded,
-                      onTap: () => _selectTime(context),
-                      g: g,
-                    ),
-                    const SizedBox(height: 28),
-
-                    // Buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () => Navigator.pop(context),
-                            child: _buildButton(
-                              label: 'Cancel',
-                              color: g.textAlpha(0.15),
-                              textColor: g.text,
-                              g: g,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: GestureDetector(
-                            onTap: () =>
-                                Navigator.pop(context, (selectedDate, selectedTime)),
-                            child: _buildButton(
-                              label: 'Confirm',
-                              color: const Color(0xFF00BCD4),
-                              textColor: Colors.white,
-                              g: g,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [g.cardFill(), g.cardFill(0.92)],
                 ),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: g.border(0.15)),
               ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDateTimeSelector({
-    required BuildContext context,
-    required String label,
-    required String value,
-    required IconData icon,
-    required VoidCallback onTap,
-    required GlassColors g,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: g.dropdownBg,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: g.border(0.1),
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: g.textAlpha(0.6)),
-            const SizedBox(width: 12),
-            Expanded(
+              padding: const EdgeInsets.all(20),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    label,
+                    'Reschedule Journey',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: g.textAlpha(0.5),
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
                       color: g.text,
                     ),
                   ),
+                  const SizedBox(height: 18),
+                  ReschedulePickerTile(
+                    label: 'Date',
+                    value: dateStr,
+                    icon: CupertinoIcons.calendar,
+                    onTap: _selectDate,
+                  ),
+                  const SizedBox(height: 12),
+                  ReschedulePickerTile(
+                    label: 'Time',
+                    value: timeStr,
+                    icon: CupertinoIcons.time,
+                    onTap: _selectTime,
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: CupertinoButton(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          color: g.textAlpha(0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(
+                            'Cancel',
+                            style: TextStyle(color: g.text),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: CupertinoButton(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          color: const Color(0xFF00BCD4),
+                          borderRadius: BorderRadius.circular(12),
+                          onPressed: () => Navigator.pop(context, (
+                            selectedDate,
+                            selectedTime,
+                          )),
+                          child: const Text(
+                            'Confirm',
+                            style: TextStyle(color: CupertinoColors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
-              ),
-            ),
-            Icon(Icons.edit_rounded, size: 18, color: g.textAlpha(0.4)),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildButton({
-    required String label,
-    required Color color,
-    required Color textColor,
-    required GlassColors g,
-  }) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.1),
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.w700,
-                fontSize: 14,
               ),
             ),
           ),

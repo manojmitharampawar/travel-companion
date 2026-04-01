@@ -8,14 +8,16 @@ import 'package:travel_companion/data/models/location_point.dart';
 class GeocodingService {
   GeocodingService._();
 
-  static final _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 12),
-    receiveTimeout: const Duration(seconds: 12),
-    headers: {
-      'User-Agent': 'TravelCompanionApp/1.0 (contact@travelcompanion.app)',
-      'Accept-Language': 'en',
-    },
-  ));
+  static final _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 12),
+      receiveTimeout: const Duration(seconds: 12),
+      headers: {
+        'User-Agent': 'TravelCompanionApp/1.0 (contact@travelcompanion.app)',
+        'Accept-Language': 'en',
+      },
+    ),
+  );
 
   /// Forward geocoding — query → list of [LocationPoint].
   /// Restricted to India (`countrycodes=in`) for relevance.
@@ -35,7 +37,10 @@ class GeocodingService {
         },
       );
       final data = resp.data ?? [];
-      dev.log('GeocodingService.search: got ${data.length} results', name: 'Geocoding');
+      dev.log(
+        'GeocodingService.search: got ${data.length} results',
+        name: 'Geocoding',
+      );
       return data.map((e) {
         final map = e as Map<String, dynamic>;
         final displayName = (map['display_name'] as String? ?? '');
@@ -44,8 +49,8 @@ class GeocodingService {
         final addressSnippet = parts.length > 2
             ? '${parts[1].trim()}, ${parts[2].trim()}'
             : parts.length > 1
-                ? parts[1].trim()
-                : '';
+            ? parts[1].trim()
+            : '';
         return LocationPoint(
           name: shortName,
           latitude: double.tryParse(map['lat'] as String? ?? '0') ?? 0,
@@ -54,7 +59,12 @@ class GeocodingService {
         );
       }).toList();
     } catch (e, st) {
-      dev.log('GeocodingService.search FAILED: $e', name: 'Geocoding', error: e, stackTrace: st);
+      dev.log(
+        'GeocodingService.search FAILED: $e',
+        name: 'Geocoding',
+        error: e,
+        stackTrace: st,
+      );
       return [];
     }
   }
@@ -62,15 +72,13 @@ class GeocodingService {
   /// Reverse geocoding — lat/lon → [LocationPoint] with address.
   static Future<LocationPoint?> reverseGeocode(double lat, double lon) async {
     try {
-      dev.log('GeocodingService.reverseGeocode: ($lat, $lon)', name: 'Geocoding');
+      dev.log(
+        'GeocodingService.reverseGeocode: ($lat, $lon)',
+        name: 'Geocoding',
+      );
       final resp = await _dio.get<Map<String, dynamic>>(
         'https://nominatim.openstreetmap.org/reverse',
-        queryParameters: {
-          'lat': lat,
-          'lon': lon,
-          'format': 'json',
-          'zoom': 17,
-        },
+        queryParameters: {'lat': lat, 'lon': lon, 'format': 'json', 'zoom': 17},
       );
       final data = resp.data;
       if (data == null) return null;
@@ -80,8 +88,8 @@ class GeocodingService {
       final addressSnippet = parts.length > 2
           ? '${parts[1].trim()}, ${parts[2].trim()}'
           : parts.length > 1
-              ? parts[1].trim()
-              : '';
+          ? parts[1].trim()
+          : '';
       return LocationPoint(
         name: shortName.isNotEmpty ? shortName : 'Pinned Location',
         latitude: lat,
@@ -89,7 +97,12 @@ class GeocodingService {
         address: addressSnippet.isNotEmpty ? addressSnippet : null,
       );
     } catch (e, st) {
-      dev.log('GeocodingService.reverseGeocode FAILED: $e', name: 'Geocoding', error: e, stackTrace: st);
+      dev.log(
+        'GeocodingService.reverseGeocode FAILED: $e',
+        name: 'Geocoding',
+        error: e,
+        stackTrace: st,
+      );
       return LocationPoint(
         name: 'Pinned Location',
         latitude: lat,

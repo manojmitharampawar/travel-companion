@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_companion/core/models/app_time.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/local_train_line.dart';
 import 'package:travel_companion/data/models/local_train_schedule.dart';
@@ -7,103 +7,10 @@ import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/data/repositories/journey_repository.dart';
 import 'package:travel_companion/data/repositories/local_train_repository.dart';
 import 'package:travel_companion/providers/app_providers.dart';
+import 'package:travel_companion/features/journey/local_train/local_train_journey_state.dart';
 
 // ─────────────────────────────────────────────
 // State
-// ─────────────────────────────────────────────
-
-class LocalTrainJourneyState {
-  // Step 1: line selection
-  final List<LocalTrainLine> availableLines;
-  final LocalTrainLine? selectedLine;
-  final bool isLoadingLines;
-
-  // Step 2: station selection
-  final List<LocalTrainStation> lineStations;
-  final LocalTrainStation? sourceStation;
-  final LocalTrainStation? destStation;
-  final bool isLoadingStations;
-
-  // Step 3: schedule results
-  final List<UpcomingTrain> upcomingTrains;
-  final bool isLoadingSchedule;
-  final UpcomingTrain? selectedTrain;
-
-  // Step 4: optional extras
-  final String? travelClass;
-
-  // Status
-  final bool isSaving;
-  final String? errorMessage;
-  final bool savedSuccessfully;
-
-  LocalTrainJourneyState({
-    this.availableLines = const [],
-    this.selectedLine,
-    this.isLoadingLines = false,
-    this.lineStations = const [],
-    this.sourceStation,
-    this.destStation,
-    this.isLoadingStations = false,
-    this.upcomingTrains = const [],
-    this.isLoadingSchedule = false,
-    this.selectedTrain,
-    this.travelClass,
-    this.isSaving = false,
-    this.errorMessage,
-    this.savedSuccessfully = false,
-  });
-
-  LocalTrainJourneyState copyWith({
-    List<LocalTrainLine>? availableLines,
-    LocalTrainLine? selectedLine,
-    bool clearSelectedLine = false,
-    bool? isLoadingLines,
-    List<LocalTrainStation>? lineStations,
-    LocalTrainStation? sourceStation,
-    bool clearSourceStation = false,
-    LocalTrainStation? destStation,
-    bool clearDestStation = false,
-    bool? isLoadingStations,
-    List<UpcomingTrain>? upcomingTrains,
-    bool? isLoadingSchedule,
-    UpcomingTrain? selectedTrain,
-    bool clearSelectedTrain = false,
-    String? travelClass,
-    bool clearTravelClass = false,
-    bool? isSaving,
-    String? errorMessage,
-    bool clearError = false,
-    bool? savedSuccessfully,
-  }) {
-    return LocalTrainJourneyState(
-      availableLines: availableLines ?? this.availableLines,
-      selectedLine: clearSelectedLine ? null : (selectedLine ?? this.selectedLine),
-      isLoadingLines: isLoadingLines ?? this.isLoadingLines,
-      lineStations: lineStations ?? this.lineStations,
-      sourceStation: clearSourceStation ? null : (sourceStation ?? this.sourceStation),
-      destStation: clearDestStation ? null : (destStation ?? this.destStation),
-      isLoadingStations: isLoadingStations ?? this.isLoadingStations,
-      upcomingTrains: upcomingTrains ?? this.upcomingTrains,
-      isLoadingSchedule: isLoadingSchedule ?? this.isLoadingSchedule,
-      selectedTrain: clearSelectedTrain ? null : (selectedTrain ?? this.selectedTrain),
-      travelClass: clearTravelClass ? null : (travelClass ?? this.travelClass),
-      isSaving: isSaving ?? this.isSaving,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      savedSuccessfully: savedSuccessfully ?? this.savedSuccessfully,
-    );
-  }
-
-  /// Current step in the flow (0-indexed).
-  int get currentStep {
-    if (selectedLine == null) return 0;
-    if (sourceStation == null || destStation == null) return 1;
-    return 2;
-  }
-}
-
-// ─────────────────────────────────────────────
-// Notifier
 // ─────────────────────────────────────────────
 
 class LocalTrainJourneyNotifier extends StateNotifier<LocalTrainJourneyState> {
@@ -113,9 +20,9 @@ class LocalTrainJourneyNotifier extends StateNotifier<LocalTrainJourneyState> {
   LocalTrainJourneyNotifier({
     required JourneyRepository journeyRepo,
     required LocalTrainRepository localTrainRepo,
-  })  : _journeyRepo = journeyRepo,
-        _localTrainRepo = localTrainRepo,
-        super(LocalTrainJourneyState()) {
+  }) : _journeyRepo = journeyRepo,
+       _localTrainRepo = localTrainRepo,
+       super(LocalTrainJourneyState()) {
     _loadLines();
   }
 
@@ -201,13 +108,15 @@ class LocalTrainJourneyNotifier extends StateNotifier<LocalTrainJourneyState> {
     final dst = state.destStation;
     if (src == null || dst == null || state.selectedLine == null) return;
     if (src.code == dst.code) {
-      state = state.copyWith(errorMessage: 'Source and destination must differ');
+      state = state.copyWith(
+        errorMessage: 'Source and destination must differ',
+      );
       return;
     }
 
     state = state.copyWith(isLoadingSchedule: true, clearError: true);
     try {
-      final now = TimeOfDay.now();
+      final now = AppTime.now();
       final trains = await _localTrainRepo.getUpcomingTrains(
         lineId: state.selectedLine!.id,
         sourceIndex: src.stationIndex,
@@ -244,10 +153,7 @@ class LocalTrainJourneyNotifier extends StateNotifier<LocalTrainJourneyState> {
   }
 
   void goBackToStationSelection() {
-    state = state.copyWith(
-      upcomingTrains: const [],
-      clearSelectedTrain: true,
-    );
+    state = state.copyWith(upcomingTrains: const [], clearSelectedTrain: true);
   }
 
   /// Save the selected train as a journey.
@@ -289,7 +195,10 @@ class LocalTrainJourneyNotifier extends StateNotifier<LocalTrainJourneyState> {
       await _journeyRepo.insertJourney(journey);
       state = state.copyWith(isSaving: false, savedSuccessfully: true);
     } catch (e) {
-      state = state.copyWith(isSaving: false, errorMessage: 'Failed to save: $e');
+      state = state.copyWith(
+        isSaving: false,
+        errorMessage: 'Failed to save: $e',
+      );
     }
   }
 }
@@ -299,9 +208,12 @@ class LocalTrainJourneyNotifier extends StateNotifier<LocalTrainJourneyState> {
 // ─────────────────────────────────────────────
 
 final localTrainJourneyNotifierProvider =
-    StateNotifierProvider.autoDispose<LocalTrainJourneyNotifier, LocalTrainJourneyState>(
-  (ref) => LocalTrainJourneyNotifier(
-    journeyRepo: ref.read(journeyRepositoryProvider),
-    localTrainRepo: ref.read(localTrainRepositoryProvider),
-  ),
-);
+    StateNotifierProvider.autoDispose<
+      LocalTrainJourneyNotifier,
+      LocalTrainJourneyState
+    >(
+      (ref) => LocalTrainJourneyNotifier(
+        journeyRepo: ref.read(journeyRepositoryProvider),
+        localTrainRepo: ref.read(localTrainRepositoryProvider),
+      ),
+    );

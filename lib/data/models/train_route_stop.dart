@@ -27,7 +27,8 @@ class TrainRouteStop extends Equatable {
   factory TrainRouteStop.fromMap(Map<String, dynamic> map) {
     return TrainRouteStop(
       stationCode: map['station_code'] as String,
-      stationName: (map['station_name'] as String?) ?? (map['station_code'] as String),
+      stationName:
+          (map['station_name'] as String?) ?? (map['station_code'] as String),
       stopSequence: map['stop_sequence'] as int,
       latitude: (map['latitude'] as num).toDouble(),
       longitude: (map['longitude'] as num).toDouble(),
@@ -43,8 +44,12 @@ class TrainRouteStop extends Equatable {
 
   /// Returns departure time if available, otherwise arrival time.
   String get timeDisplay {
-    if (departureTime != null && departureTime!.isNotEmpty) return departureTime!;
-    if (arrivalTime != null && arrivalTime!.isNotEmpty) return arrivalTime!;
+    if (departureTime != null && departureTime!.isNotEmpty) {
+      return departureTime!;
+    }
+    if (arrivalTime != null && arrivalTime!.isNotEmpty) {
+      return arrivalTime!;
+    }
     return '';
   }
 

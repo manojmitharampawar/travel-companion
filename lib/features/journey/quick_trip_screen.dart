@@ -1,7 +1,4 @@
-import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:travel_companion/core/ui/adaptive_feedback.dart';
@@ -11,6 +8,10 @@ import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/journey/journey_tracking_screen.dart';
 import 'package:travel_companion/features/journey/widgets/location_search_field.dart';
+import 'package:travel_companion/features/journey/widgets/quick_trip_background.dart';
+import 'package:travel_companion/features/journey/widgets/quick_trip_origin_card.dart';
+import 'package:travel_companion/features/journey/widgets/quick_trip_start_button.dart';
+import 'package:travel_companion/features/journey/widgets/quick_trip_transport_selector.dart';
 import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/providers/app_providers.dart';
 
@@ -134,7 +135,7 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
       backgroundColor: g.bg,
       child: Stack(
         children: [
-          _QuickTripBackground(accentColor: accentColor),
+          QuickTripBackground(accentColor: accentColor),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -144,9 +145,11 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
                   // Glass AppBar row
                   Row(
                     children: [
-                      IconButton(
-                        icon: Icon(Icons.arrow_back_rounded, color: g.text),
+                      CupertinoButton(
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(36, 36),
                         onPressed: () => Navigator.pop(context),
+                        child: Icon(CupertinoIcons.back, color: g.text),
                       ),
                       const SizedBox(width: 8),
                       Text(
@@ -162,7 +165,7 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
                   const SizedBox(height: 24),
 
                   // Transport type selector
-                  _GlassTransportSelector(
+                  QuickTripTransportSelector(
                     selected: _transportType,
                     types: const [
                       TransportType.metro,
@@ -174,7 +177,7 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
                   const SizedBox(height: 24),
 
                   // Origin card
-                  _GlassOriginCard(
+                  QuickTripOriginCard(
                     origin: _origin,
                     isGettingLocation: _isGettingLocation,
                   ),
@@ -193,7 +196,7 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
                   const Spacer(),
 
                   // Glass start button
-                  _GlassStartButton(
+                  QuickTripStartButton(
                     accentColor: accentColor,
                     isStarting: _isStarting,
                     isDisabled: _destination == null,
@@ -210,299 +213,6 @@ class _QuickTripScreenState extends ConsumerState<QuickTripScreen> {
   }
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Background
-// ─────────────────────────────────────────────
-
-class _QuickTripBackground extends StatelessWidget {
-  final Color accentColor;
-  const _QuickTripBackground({required this.accentColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-          top: -60,
-          right: -80,
-          child: Container(
-            width: 240,
-            height: 240,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  accentColor.withValues(alpha: 0.15),
-                  accentColor.withValues(alpha: 0.0),
-                ],
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          bottom: 120,
-          left: -60,
-          child: Container(
-            width: 180,
-            height: 180,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  accentColor.withValues(alpha: 0.08),
-                  accentColor.withValues(alpha: 0.0),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// Glass Transport Selector
-// ─────────────────────────────────────────────
-
-class _GlassTransportSelector extends StatelessWidget {
-  final TransportType selected;
-  final List<TransportType> types;
-  final ValueChanged<TransportType> onChanged;
-
-  const _GlassTransportSelector({
-    required this.selected,
-    required this.types,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final g = GlassColors.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            color: g.cardFill(0.06),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: g.border(0.1)),
-          ),
-          child: Row(
-            children: types.map((type) {
-              final isSelected = type == selected;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => onChanged(type),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? type.color.withValues(alpha: 0.2)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                      border: isSelected
-                          ? Border.all(color: type.color.withValues(alpha: 0.4))
-                          : null,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          type.icon,
-                          size: 20,
-                          color: isSelected ? type.color : g.textAlpha(0.4),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          type.label,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: isSelected
-                                ? FontWeight.w700
-                                : FontWeight.w500,
-                            color: isSelected ? type.color : g.textAlpha(0.4),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// Glass Origin Card
-// ─────────────────────────────────────────────
-
-class _GlassOriginCard extends StatelessWidget {
-  final LocationPoint? origin;
-  final bool isGettingLocation;
-
-  const _GlassOriginCard({
-    required this.origin,
-    required this.isGettingLocation,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final g = GlassColors.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(14),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: g.cardFill(0.06),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: g.border(0.1)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF27AE60).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(
-                  Icons.my_location,
-                  color: Color(0xFF27AE60),
-                  size: 20,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'From',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: g.textAlpha(0.45),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (isGettingLocation)
-                      Text(
-                        'Detecting location...',
-                        style: TextStyle(fontSize: 14, color: g.textAlpha(0.6)),
-                      )
-                    else
-                      Text(
-                        origin?.displayName ?? 'Unknown location',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: g.textAlpha(0.9),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              if (isGettingLocation)
-                SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: g.textAlpha(0.5),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// Glass Start Button
-// ─────────────────────────────────────────────
-
-class _GlassStartButton extends StatelessWidget {
-  final Color accentColor;
-  final bool isStarting;
-  final bool isDisabled;
-  final VoidCallback onTap;
-
-  const _GlassStartButton({
-    required this.accentColor,
-    required this.isStarting,
-    required this.isDisabled,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final g = GlassColors.of(context);
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        gradient: isDisabled
-            ? null
-            : LinearGradient(
-                colors: [accentColor, accentColor.withValues(alpha: 0.8)],
-              ),
-        color: isDisabled ? g.cardFill(0.06) : null,
-        borderRadius: BorderRadius.circular(16),
-        border: isDisabled ? Border.all(color: g.border(0.1)) : null,
-        boxShadow: isDisabled
-            ? null
-            : [
-                BoxShadow(
-                  color: accentColor.withValues(alpha: 0.3),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-      ),
-      child: GestureDetector(
-        onTap: isStarting || isDisabled ? null : onTap,
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (isStarting)
-                const SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              else
-                Icon(
-                  Icons.play_arrow,
-                  size: 28,
-                  color: isDisabled ? g.textAlpha(0.3) : Colors.white,
-                ),
-              const SizedBox(width: 8),
-              Text(
-                isStarting ? 'Starting...' : 'Start Tracking',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: isDisabled ? g.textAlpha(0.3) : Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

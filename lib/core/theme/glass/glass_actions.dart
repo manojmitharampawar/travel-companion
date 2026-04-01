@@ -1,7 +1,7 @@
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
-import 'package:travel_companion/core/theme/glass_theme.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:travel_companion/core/theme/glass/cupertino_glass_stepper.dart';
 
 class GlassButton extends StatelessWidget {
   final String label;
@@ -23,6 +23,9 @@ class GlassButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark =
+        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       child: GestureDetector(
@@ -44,13 +47,13 @@ class GlassButton extends StatelessWidget {
                     : null,
                 color: filled
                     ? null
-                    : (Theme.of(context).brightness == Brightness.dark
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Colors.black.withValues(alpha: 0.06)),
+                    : (isDark
+                          ? CupertinoColors.white.withValues(alpha: 0.1)
+                          : CupertinoColors.black.withValues(alpha: 0.06)),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                   color: filled
-                      ? Colors.white.withValues(alpha: 0.25)
+                      ? CupertinoColors.white.withValues(alpha: 0.25)
                       : accentColor.withValues(alpha: 0.35),
                   width: 1.2,
                 ),
@@ -71,20 +74,19 @@ class GlassButton extends StatelessWidget {
                     const SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.white,
+                      child: CupertinoActivityIndicator(
+                        color: CupertinoColors.white,
                       ),
                     )
                   else if (icon != null)
-                    Icon(icon, size: 22, color: Colors.white),
+                    Icon(icon, size: 22, color: CupertinoColors.white),
                   if (icon != null || isLoading) const SizedBox(width: 10),
                   Text(
                     isLoading ? 'Saving...' : label,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: filled ? Colors.white : accentColor,
+                      color: filled ? CupertinoColors.white : accentColor,
                     ),
                   ),
                 ],
@@ -116,7 +118,7 @@ class GlassAppBarHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final secondary = secondaryColor ?? primaryColor.withValues(alpha: 0.7);
-    final topPad = MediaQuery.paddingOf(context).top + kToolbarHeight + 4;
+    final topPad = MediaQuery.paddingOf(context).top + 44 + 4;
 
     return Container(
       decoration: BoxDecoration(
@@ -138,8 +140,8 @@ class GlassAppBarHero extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.12),
-                    Colors.white.withValues(alpha: 0.0),
+                    CupertinoColors.white.withValues(alpha: 0.12),
+                    CupertinoColors.white.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -155,8 +157,8 @@ class GlassAppBarHero extends StatelessWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.08),
-                    Colors.white.withValues(alpha: 0.0),
+                    CupertinoColors.white.withValues(alpha: 0.08),
+                    CupertinoColors.white.withValues(alpha: 0.0),
                   ],
                 ),
               ),
@@ -173,13 +175,13 @@ class GlassAppBarHero extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
+                        color: CupertinoColors.white.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.25),
+                          color: CupertinoColors.white.withValues(alpha: 0.25),
                         ),
                       ),
-                      child: Icon(icon, size: 32, color: Colors.white),
+                      child: Icon(icon, size: 32, color: CupertinoColors.white),
                     ),
                   ),
                 ),
@@ -189,10 +191,11 @@ class GlassAppBarHero extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SizedBox.shrink(),
                       Text(
                         title,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: CupertinoColors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.4,
@@ -202,7 +205,7 @@ class GlassAppBarHero extends StatelessWidget {
                       Text(
                         subtitle,
                         style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.82),
+                          color: CupertinoColors.white.withValues(alpha: 0.82),
                           fontSize: 13,
                         ),
                       ),
@@ -234,90 +237,10 @@ class GlassStepIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(14),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white.withValues(alpha: 0.08)
-                  : Colors.white.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white.withValues(alpha: 0.12)
-                    : Colors.black.withValues(alpha: 0.08),
-              ),
-            ),
-            child: Row(
-              children: List.generate(labels.length, (i) {
-                final isActive = i <= currentStep;
-                final isCurrent = i == currentStep;
-                final isCompleted = i < currentStep;
-                return Expanded(
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 26,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          color: isActive
-                              ? accent.withValues(alpha: isCurrent ? 1.0 : 0.7)
-                              : GlassColors.of(context).cardFill(0.08),
-                          shape: BoxShape.circle,
-                          border: isCurrent
-                              ? Border.all(
-                                  color: GlassColors.of(context).border(0.4),
-                                  width: 2,
-                                )
-                              : null,
-                          boxShadow: isCurrent
-                              ? [
-                                  BoxShadow(
-                                    color: accent.withValues(alpha: 0.4),
-                                    blurRadius: 8,
-                                  )
-                                ]
-                              : null,
-                        ),
-                        child: Center(
-                          child: isCompleted
-                              ? const Icon(Icons.check, size: 14, color: Colors.white)
-                              : Text(
-                                  '${i + 1}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w700,
-                                    color: isActive
-                                        ? Colors.white
-                                        : GlassColors.of(context).textTertiary,
-                                  ),
-                                ),
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          labels[i],
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-                            color: isActive
-                                ? GlassColors.of(context).text
-                                : GlassColors.of(context).textTertiary,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
-            ),
-          ),
-        ),
+      child: CupertinoGlassStepper(
+        currentStep: currentStep,
+        accentColor: accent,
+        steps: labels.map((label) => CupertinoGlassStep(title: label)).toList(),
       ),
     );
   }

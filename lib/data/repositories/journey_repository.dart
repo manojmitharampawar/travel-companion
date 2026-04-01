@@ -53,7 +53,8 @@ class JourneyRepository {
     await db.update(
       'journeys',
       {'status': 'completed'},
-      where: "status IN ('upcoming', 'active') AND journey_date < ? AND (repeat_days IS NULL OR repeat_days = 0)",
+      where:
+          "status IN ('upcoming', 'active') AND journey_date < ? AND (repeat_days IS NULL OR repeat_days = 0)",
       whereArgs: [todayStr],
     );
 

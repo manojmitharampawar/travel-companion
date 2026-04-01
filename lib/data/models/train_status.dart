@@ -32,9 +32,13 @@ class TrainStatus extends Equatable {
 
   @override
   List<Object?> get props => [
-        trainNumber, trainName, currentStation,
-        delayMinutes, lastUpdated, stationStatuses,
-      ];
+    trainNumber,
+    trainName,
+    currentStation,
+    delayMinutes,
+    lastUpdated,
+    stationStatuses,
+  ];
 }
 
 class StationStatus extends Equatable {
@@ -60,8 +64,13 @@ class StationStatus extends Equatable {
 
   @override
   List<Object?> get props => [
-        stationCode, stationName, scheduledArrival,
-        actualArrival, scheduledDeparture, actualDeparture,
-        delayMinutes, hasPassed,
-      ];
+    stationCode,
+    stationName,
+    scheduledArrival,
+    actualArrival,
+    scheduledDeparture,
+    actualDeparture,
+    delayMinutes,
+    hasPassed,
+  ];
 }

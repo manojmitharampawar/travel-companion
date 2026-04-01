@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors;
 
 /// Centralized glass-morphism color system that adapts to light/dark mode.
 ///
@@ -40,34 +39,38 @@ class GlassColors {
 
   // ── Surface / Card fills ────────────────────
   Color cardFill([double alpha = 0.07]) => isDark
-      ? Colors.white.withValues(alpha: alpha)
-      : Colors.white.withValues(alpha: 0.65 + alpha);
+      ? CupertinoColors.white.withValues(alpha: 0.12 + alpha)
+      : CupertinoColors.white.withValues(alpha: 0.65 + alpha);
 
   Color cardFillSolid([double alpha = 0.07]) => isDark
-      ? Colors.white.withValues(alpha: alpha)
+      ? CupertinoColors.white.withValues(alpha: alpha)
       : const Color(0xFFFFFFFF).withValues(alpha: 0.72);
 
   // ── Borders ─────────────────────────────────
   Color border([double alpha = 0.12]) => isDark
-      ? Colors.white.withValues(alpha: alpha)
-      : Colors.black.withValues(alpha: alpha * 0.7);
+      ? CupertinoColors.white.withValues(alpha: alpha)
+      : CupertinoColors.black.withValues(alpha: alpha * 0.7);
 
   // ── Text ────────────────────────────────────
-  Color get text =>
-      isDark ? Colors.white.withValues(alpha: 0.92) : const Color(0xFF1A1D2E);
+  Color get text => isDark
+      ? CupertinoColors.white.withValues(alpha: 0.92)
+      : const Color(0xFF1A1D2E);
 
-  Color get textSecondary =>
-      isDark ? Colors.white.withValues(alpha: 0.6) : const Color(0xFF5A5E6E);
+  Color get textSecondary => isDark
+      ? CupertinoColors.white.withValues(alpha: 0.6)
+      : const Color(0xFF5A5E6E);
 
-  Color get textTertiary =>
-      isDark ? Colors.white.withValues(alpha: 0.4) : const Color(0xFF8A8E9E);
+  Color get textTertiary => isDark
+      ? CupertinoColors.white.withValues(alpha: 0.4)
+      : const Color(0xFF8A8E9E);
 
-  Color get textHint =>
-      isDark ? Colors.white.withValues(alpha: 0.3) : const Color(0xFFAAAEB8);
+  Color get textHint => isDark
+      ? CupertinoColors.white.withValues(alpha: 0.3)
+      : const Color(0xFFAAAEB8);
 
   /// Custom text alpha — maps dark-mode white alpha to appropriate light equivalent.
   Color textAlpha(double darkAlpha) {
-    if (isDark) return Colors.white.withValues(alpha: darkAlpha);
+    if (isDark) return CupertinoColors.white.withValues(alpha: darkAlpha);
     // Map alpha to light-mode opacity: higher dark alpha → more opaque dark text
     if (darkAlpha >= 0.85) return const Color(0xFF1A1D2E);
     if (darkAlpha >= 0.7) return const Color(0xFF3A3E4E);
@@ -77,15 +80,16 @@ class GlassColors {
   }
 
   // ── Icon colors ─────────────────────────────
-  Color get icon =>
-      isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF4A4E5E);
+  Color get icon => isDark
+      ? CupertinoColors.white.withValues(alpha: 0.8)
+      : const Color(0xFF4A4E5E);
 
   Color iconAlpha(double darkAlpha) => textAlpha(darkAlpha);
 
   // ── Dividers ────────────────────────────────
   Color get divider => isDark
-      ? Colors.white.withValues(alpha: 0.06)
-      : Colors.black.withValues(alpha: 0.06);
+      ? CupertinoColors.white.withValues(alpha: 0.06)
+      : CupertinoColors.black.withValues(alpha: 0.06);
 
   // ── Dropdown / popup background ─────────────
   Color get dropdownBg =>
@@ -93,48 +97,50 @@ class GlassColors {
 
   // ── Input fields ────────────────────────────
   Color get inputFill => isDark
-      ? Colors.white.withValues(alpha: 0.06)
-      : Colors.white.withValues(alpha: 0.8);
+      ? CupertinoColors.white.withValues(alpha: 0.14)
+      : CupertinoColors.white.withValues(alpha: 0.8);
 
   Color get inputBorder => isDark
-      ? Colors.white.withValues(alpha: 0.12)
-      : Colors.black.withValues(alpha: 0.12);
+      ? CupertinoColors.white.withValues(alpha: 0.12)
+      : CupertinoColors.black.withValues(alpha: 0.12);
 
   Color get inputFocusBorder => isDark
-      ? Colors.white.withValues(alpha: 0.3)
-      : Colors.black.withValues(alpha: 0.3);
+      ? CupertinoColors.white.withValues(alpha: 0.3)
+      : CupertinoColors.black.withValues(alpha: 0.3);
 
   // ── AppBar glass ────────────────────────────
   Color get appBarBg => isDark
       ? const Color(0xFF0A0E21).withValues(alpha: 0.85)
-      : Colors.white.withValues(alpha: 0.85);
+      : CupertinoColors.white.withValues(alpha: 0.85);
 
   Color get appBarBorder => isDark
-      ? Colors.white.withValues(alpha: 0.1)
-      : Colors.black.withValues(alpha: 0.08);
+      ? CupertinoColors.white.withValues(alpha: 0.1)
+      : CupertinoColors.black.withValues(alpha: 0.08);
 
   // ── Bottom bar ──────────────────────────────
   Color get bottomBarBg => isDark
       ? const Color(0xFF0A0E21).withValues(alpha: 0.85)
-      : Colors.white.withValues(alpha: 0.9);
+      : CupertinoColors.white.withValues(alpha: 0.9);
 
   Color get bottomBarBorder => isDark
-      ? Colors.white.withValues(alpha: 0.1)
-      : Colors.black.withValues(alpha: 0.08);
+      ? CupertinoColors.white.withValues(alpha: 0.1)
+      : CupertinoColors.black.withValues(alpha: 0.08);
 
   // ── Switch styling ──────────────────────────
   Color get switchActiveThumb => const Color(0xFF3498DB);
   Color get switchActiveTrack =>
       const Color(0xFF3498DB).withValues(alpha: 0.35);
-  Color get switchInactiveThumb =>
-      isDark ? Colors.white.withValues(alpha: 0.5) : Colors.grey.shade400;
-  Color get switchInactiveTrack =>
-      isDark ? Colors.white.withValues(alpha: 0.1) : Colors.grey.shade300;
+  Color get switchInactiveThumb => isDark
+      ? CupertinoColors.white.withValues(alpha: 0.5)
+      : const Color(0xFFBDBDBD);
+  Color get switchInactiveTrack => isDark
+      ? CupertinoColors.white.withValues(alpha: 0.1)
+      : const Color(0xFFE0E0E0);
 
   // ── Shadows ─────────────────────────────────
   Color get shadow => isDark
-      ? Colors.black.withValues(alpha: 0.2)
-      : Colors.black.withValues(alpha: 0.06);
+      ? CupertinoColors.black.withValues(alpha: 0.2)
+      : CupertinoColors.black.withValues(alpha: 0.06);
 
   // ── Orb decorations (background accents) ────
   Color orbAlpha(Color color, double darkAlpha) => isDark
@@ -142,7 +148,8 @@ class GlassColors {
       : color.withValues(alpha: darkAlpha * 0.4);
 
   // ── Foreground color for AppBar icons/text ──
-  Color get appBarForeground => isDark ? Colors.white : const Color(0xFF1A1D2E);
+  Color get appBarForeground =>
+      isDark ? CupertinoColors.white : const Color(0xFF1A1D2E);
 
   // ── Snackbar styling ────────────────────────
   Color get snackBarBg =>
@@ -150,19 +157,22 @@ class GlassColors {
 
   // ── Loading indicator ─────────────────────
   Color get loadingIndicator =>
-      isDark ? Colors.white70 : const Color(0xFF4A4E5E);
+      isDark ? const Color(0xB3FFFFFF) : const Color(0xFF4A4E5E);
 
   // ── Semantic colors ───────────────────────
   Color get statusInfo => const Color(0xFF3498DB);
   Color get statusSuccess => const Color(0xFF27AE60);
   Color get statusWarning => const Color(0xFFF39C12);
   Color get statusDanger => const Color(0xFFE74C3C);
-  Color get statusNeutral => isDark ? Colors.white54 : Colors.grey;
+  Color get statusNeutral =>
+      isDark ? const Color(0x8AFFFFFF) : CupertinoColors.systemGrey;
   Color get favorite => const Color(0xFFFF5252);
 
   // ── Hero / gradient headers (text on accent bg is always white) ──
-  static const Color onAccent = Colors.white;
-  static final Color onAccentSecondary = Colors.white.withValues(alpha: 0.82);
+  static const Color onAccent = CupertinoColors.white;
+  static final Color onAccentSecondary = CupertinoColors.white.withValues(
+    alpha: 0.82,
+  );
 
   // ── App accent colors ────────────────────
   /// Primary brand accent (deep railway blue) — slightly brighter in dark mode.
@@ -196,5 +206,5 @@ class GlassColors {
   // ── Overlay / scrim ───────────────────────
   Color get scrim => isDark
       ? const Color(0xFF0A0E21).withValues(alpha: 0.92)
-      : Colors.black.withValues(alpha: 0.45);
+      : CupertinoColors.black.withValues(alpha: 0.45);
 }

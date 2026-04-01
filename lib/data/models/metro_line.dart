@@ -64,4 +64,3 @@ class MetroLine extends Equatable {
   @override
   List<Object?> get props => [id, city, lineName, lineCode, lineColorHex];
 }
-

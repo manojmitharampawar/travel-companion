@@ -66,28 +66,33 @@ class EmailService {
     fields['pnr'] = pnrMatch?.group(1);
 
     // Train
-    final trainMatch = RegExp(r'Train\s*(?:No\.?|Number)?\s*[:\-]?\s*(\d{5})\s*[-/]?\s*([A-Za-z\s]+?)(?:\s*<|\s*\n|\s*,)')
-        .firstMatch(emailBody);
+    final trainMatch = RegExp(
+      r'Train\s*(?:No\.?|Number)?\s*[:\-]?\s*(\d{5})\s*[-/]?\s*([A-Za-z\s]+?)(?:\s*<|\s*\n|\s*,)',
+    ).firstMatch(emailBody);
     fields['trainNumber'] = trainMatch?.group(1);
     fields['trainName'] = trainMatch?.group(2)?.trim();
 
     // Date
-    final dateMatch = RegExp(r'Date\s*(?:of\s*Journey)?\s*[:\-]?\s*(\d{1,2}[-/]\w{3}[-/]\d{4})')
-        .firstMatch(emailBody);
+    final dateMatch = RegExp(
+      r'Date\s*(?:of\s*Journey)?\s*[:\-]?\s*(\d{1,2}[-/]\w{3}[-/]\d{4})',
+    ).firstMatch(emailBody);
     fields['date'] = dateMatch?.group(1);
 
     // Stations
-    final fromMatch = RegExp(r'(?:From|Boarding)\s*[:\-]?\s*([A-Za-z\s]+?)(?:\s*\(([A-Z]{2,5})\)|\s*<|\s*\n)')
-        .firstMatch(emailBody);
+    final fromMatch = RegExp(
+      r'(?:From|Boarding)\s*[:\-]?\s*([A-Za-z\s]+?)(?:\s*\(([A-Z]{2,5})\)|\s*<|\s*\n)',
+    ).firstMatch(emailBody);
     fields['fromStation'] = fromMatch?.group(2) ?? fromMatch?.group(1)?.trim();
 
-    final toMatch = RegExp(r'(?:To|Destination)\s*[:\-]?\s*([A-Za-z\s]+?)(?:\s*\(([A-Z]{2,5})\)|\s*<|\s*\n)')
-        .firstMatch(emailBody);
+    final toMatch = RegExp(
+      r'(?:To|Destination)\s*[:\-]?\s*([A-Za-z\s]+?)(?:\s*\(([A-Z]{2,5})\)|\s*<|\s*\n)',
+    ).firstMatch(emailBody);
     fields['toStation'] = toMatch?.group(2) ?? toMatch?.group(1)?.trim();
 
     // Class
-    final classMatch = RegExp(r'Class\s*[:\-]?\s*(SL|1A|2A|3A|CC|EC|2S|FC|3E)')
-        .firstMatch(emailBody);
+    final classMatch = RegExp(
+      r'Class\s*[:\-]?\s*(SL|1A|2A|3A|CC|EC|2S|FC|3E)',
+    ).firstMatch(emailBody);
     fields['class'] = classMatch?.group(1);
 
     return fields;

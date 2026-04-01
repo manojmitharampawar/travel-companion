@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:travel_companion/core/models/app_time.dart';
 import 'package:travel_companion/data/models/journey.dart';
 import 'package:travel_companion/data/models/metro_line.dart';
 import 'package:travel_companion/data/models/metro_schedule.dart';
@@ -8,111 +8,10 @@ import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/data/repositories/journey_repository.dart';
 import 'package:travel_companion/data/repositories/metro_repository.dart';
 import 'package:travel_companion/providers/app_providers.dart';
+import 'package:travel_companion/features/journey/metro/metro_journey_state.dart';
 
 // ─────────────────────────────────────────────
 // State
-// ─────────────────────────────────────────────
-
-class MetroJourneyState {
-  // Step 0: city selection
-  final List<String> availableCities;
-  final String city;
-  final bool isLoadingCities;
-
-  // Step 1: line selection
-  final List<MetroLine> availableLines;
-  final MetroLine? selectedLine;
-  final bool isLoadingLines;
-
-  // Step 2: station selection
-  final List<MetroStation> stationsOnLine;
-  final MetroStation? sourceStation;
-  final MetroStation? destStation;
-  final bool isLoadingStations;
-
-  // Step 3: schedule results
-  final List<UpcomingMetro> upcomingTrains;
-  final bool isLoadingSchedule;
-  final UpcomingMetro? selectedTrain;
-
-  // Status
-  final bool isSaving;
-  final String? errorMessage;
-  final bool savedSuccessfully;
-
-  MetroJourneyState({
-    this.availableCities = const [],
-    this.city = '',
-    this.isLoadingCities = false,
-    this.availableLines = const [],
-    this.selectedLine,
-    this.isLoadingLines = false,
-    this.stationsOnLine = const [],
-    this.sourceStation,
-    this.destStation,
-    this.isLoadingStations = false,
-    this.upcomingTrains = const [],
-    this.isLoadingSchedule = false,
-    this.selectedTrain,
-    this.isSaving = false,
-    this.errorMessage,
-    this.savedSuccessfully = false,
-  });
-
-  MetroJourneyState copyWith({
-    List<String>? availableCities,
-    String? city,
-    bool? isLoadingCities,
-    List<MetroLine>? availableLines,
-    MetroLine? selectedLine,
-    bool clearSelectedLine = false,
-    bool? isLoadingLines,
-    List<MetroStation>? stationsOnLine,
-    MetroStation? sourceStation,
-    bool clearSourceStation = false,
-    MetroStation? destStation,
-    bool clearDestStation = false,
-    bool? isLoadingStations,
-    List<UpcomingMetro>? upcomingTrains,
-    bool? isLoadingSchedule,
-    UpcomingMetro? selectedTrain,
-    bool clearSelectedTrain = false,
-    bool? isSaving,
-    String? errorMessage,
-    bool clearError = false,
-    bool? savedSuccessfully,
-  }) {
-    return MetroJourneyState(
-      availableCities: availableCities ?? this.availableCities,
-      city: city ?? this.city,
-      isLoadingCities: isLoadingCities ?? this.isLoadingCities,
-      availableLines: availableLines ?? this.availableLines,
-      selectedLine: clearSelectedLine ? null : (selectedLine ?? this.selectedLine),
-      isLoadingLines: isLoadingLines ?? this.isLoadingLines,
-      stationsOnLine: stationsOnLine ?? this.stationsOnLine,
-      sourceStation: clearSourceStation ? null : (sourceStation ?? this.sourceStation),
-      destStation: clearDestStation ? null : (destStation ?? this.destStation),
-      isLoadingStations: isLoadingStations ?? this.isLoadingStations,
-      upcomingTrains: upcomingTrains ?? this.upcomingTrains,
-      isLoadingSchedule: isLoadingSchedule ?? this.isLoadingSchedule,
-      selectedTrain: clearSelectedTrain ? null : (selectedTrain ?? this.selectedTrain),
-      isSaving: isSaving ?? this.isSaving,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      savedSuccessfully: savedSuccessfully ?? this.savedSuccessfully,
-    );
-  }
-
-  /// Current step (0-indexed).
-  int get currentStep {
-    if (city.isEmpty) return 0;
-    if (selectedLine == null) return 1;
-    if (sourceStation == null || destStation == null) return 2;
-    return 3;
-  }
-}
-
-// ─────────────────────────────────────────────
-// Notifier
 // ─────────────────────────────────────────────
 
 class MetroJourneyNotifier extends StateNotifier<MetroJourneyState> {
@@ -122,9 +21,9 @@ class MetroJourneyNotifier extends StateNotifier<MetroJourneyState> {
   MetroJourneyNotifier({
     required JourneyRepository journeyRepo,
     required MetroRepository metroRepo,
-  })  : _journeyRepo = journeyRepo,
-        _metroRepo = metroRepo,
-        super(MetroJourneyState()) {
+  }) : _journeyRepo = journeyRepo,
+       _metroRepo = metroRepo,
+       super(MetroJourneyState()) {
     loadCities();
   }
 
@@ -177,7 +76,10 @@ class MetroJourneyNotifier extends StateNotifier<MetroJourneyState> {
     );
     try {
       final stations = await _metroRepo.getStationsByLine(line.id);
-      state = state.copyWith(stationsOnLine: stations, isLoadingStations: false);
+      state = state.copyWith(
+        stationsOnLine: stations,
+        isLoadingStations: false,
+      );
     } catch (_) {
       state = state.copyWith(
         isLoadingStations: false,
@@ -233,13 +135,15 @@ class MetroJourneyNotifier extends StateNotifier<MetroJourneyState> {
     final dst = state.destStation;
     if (src == null || dst == null || state.selectedLine == null) return;
     if (src.code == dst.code) {
-      state = state.copyWith(errorMessage: 'Source and destination must differ');
+      state = state.copyWith(
+        errorMessage: 'Source and destination must differ',
+      );
       return;
     }
 
     state = state.copyWith(isLoadingSchedule: true, clearError: true);
     try {
-      final now = TimeOfDay.now();
+      final now = AppTime.now();
       final trains = await _metroRepo.getUpcomingMetros(
         lineId: state.selectedLine!.id,
         sourceIndex: src.stationIndex,
@@ -261,9 +165,7 @@ class MetroJourneyNotifier extends StateNotifier<MetroJourneyState> {
   }
 
   void goBackToCitySelection() {
-    state = MetroJourneyState(
-      availableCities: state.availableCities,
-    );
+    state = MetroJourneyState(availableCities: state.availableCities);
   }
 
   void goBackToLineSelection() {
@@ -315,7 +217,10 @@ class MetroJourneyNotifier extends StateNotifier<MetroJourneyState> {
       await _journeyRepo.insertJourney(journey);
       state = state.copyWith(isSaving: false, savedSuccessfully: true);
     } catch (e) {
-      state = state.copyWith(isSaving: false, errorMessage: 'Failed to save: $e');
+      state = state.copyWith(
+        isSaving: false,
+        errorMessage: 'Failed to save: $e',
+      );
     }
   }
 }
@@ -326,8 +231,8 @@ class MetroJourneyNotifier extends StateNotifier<MetroJourneyState> {
 
 final metroJourneyNotifierProvider =
     StateNotifierProvider.autoDispose<MetroJourneyNotifier, MetroJourneyState>(
-  (ref) => MetroJourneyNotifier(
-    journeyRepo: ref.read(journeyRepositoryProvider),
-    metroRepo: ref.read(metroRepositoryProvider),
-  ),
-);
+      (ref) => MetroJourneyNotifier(
+        journeyRepo: ref.read(journeyRepositoryProvider),
+        metroRepo: ref.read(metroRepositoryProvider),
+      ),
+    );

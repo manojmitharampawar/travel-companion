@@ -9,95 +9,10 @@ import 'package:travel_companion/data/repositories/journey_repository.dart';
 import 'package:travel_companion/data/repositories/station_repository.dart';
 import 'package:travel_companion/data/repositories/train_repository.dart';
 import 'package:travel_companion/providers/app_providers.dart';
+import 'package:travel_companion/features/journey/train/train_journey_state.dart';
 
 // ─────────────────────────────────────────────
 // State
-// ─────────────────────────────────────────────
-
-class TrainJourneyState {
-  final String pnr;
-  final String trainNumber;
-  final String trainName;
-  final Station? boardingStation;
-  final Station? destinationStation;
-  final DateTime journeyDate;
-  final String? travelClass;
-  final String berth;
-  final bool isAutoFilling;
-  final bool isSaving;
-  final String? errorMessage;
-  final bool savedSuccessfully;
-
-  /// All stops for the resolved train, with coordinates. Used by TrainStopSelector.
-  final List<TrainRouteStop> trainRouteStops;
-
-  TrainJourneyState({
-    this.pnr = '',
-    this.trainNumber = '',
-    this.trainName = '',
-    this.boardingStation,
-    this.destinationStation,
-    DateTime? journeyDate,
-    this.travelClass,
-    this.berth = '',
-    this.isAutoFilling = false,
-    this.isSaving = false,
-    this.errorMessage,
-    this.savedSuccessfully = false,
-    this.trainRouteStops = const [],
-  }) : journeyDate = journeyDate ?? DateTime.now().add(const Duration(days: 1));
-
-  TrainJourneyState copyWith({
-    String? pnr,
-    String? trainNumber,
-    String? trainName,
-    Station? boardingStation,
-    bool clearBoardingStation = false,
-    Station? destinationStation,
-    bool clearDestinationStation = false,
-    DateTime? journeyDate,
-    String? travelClass,
-    bool clearTravelClass = false,
-    String? berth,
-    bool? isAutoFilling,
-    bool? isSaving,
-    String? errorMessage,
-    bool clearError = false,
-    bool? savedSuccessfully,
-    List<TrainRouteStop>? trainRouteStops,
-  }) {
-    return TrainJourneyState(
-      pnr: pnr ?? this.pnr,
-      trainNumber: trainNumber ?? this.trainNumber,
-      trainName: trainName ?? this.trainName,
-      boardingStation: clearBoardingStation ? null : (boardingStation ?? this.boardingStation),
-      destinationStation:
-          clearDestinationStation ? null : (destinationStation ?? this.destinationStation),
-      journeyDate: journeyDate ?? this.journeyDate,
-      travelClass: clearTravelClass ? null : (travelClass ?? this.travelClass),
-      berth: berth ?? this.berth,
-      isAutoFilling: isAutoFilling ?? this.isAutoFilling,
-      isSaving: isSaving ?? this.isSaving,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      savedSuccessfully: savedSuccessfully ?? this.savedSuccessfully,
-      trainRouteStops: trainRouteStops ?? this.trainRouteStops,
-    );
-  }
-
-  /// Stops available for destination (after boarding stop sequence).
-  List<TrainRouteStop> get destinationStops {
-    if (boardingStation == null || trainRouteStops.isEmpty) return trainRouteStops;
-    final boardingSeq = trainRouteStops
-        .where((s) => s.stationCode == boardingStation!.code)
-        .map((s) => s.stopSequence)
-        .firstOrNull;
-    if (boardingSeq == null) return trainRouteStops;
-    return trainRouteStops.where((s) => s.stopSequence > boardingSeq).toList();
-  }
-}
-
-// ─────────────────────────────────────────────
-// Notifier
 // ─────────────────────────────────────────────
 
 class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
@@ -115,11 +30,11 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
     required StationRepository stationRepo,
     required TrainRepository trainRepo,
     required TrainStatusApi trainApi,
-  })  : _journeyRepo = journeyRepo,
-        _stationRepo = stationRepo,
-        _trainRepo = trainRepo,
-        _trainApi = trainApi,
-        super(TrainJourneyState());
+  }) : _journeyRepo = journeyRepo,
+       _stationRepo = stationRepo,
+       _trainRepo = trainRepo,
+       _trainApi = trainApi,
+       super(TrainJourneyState());
 
   @override
   void dispose() {
@@ -127,7 +42,8 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
     super.dispose();
   }
 
-  void setPnr(String value) => state = state.copyWith(pnr: value, clearError: true);
+  void setPnr(String value) =>
+      state = state.copyWith(pnr: value, clearError: true);
   void setTrainName(String value) => state = state.copyWith(trainName: value);
 
   void setBoardingStation(Station? s) => s == null
@@ -140,8 +56,9 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
 
   void setJourneyDate(DateTime d) => state = state.copyWith(journeyDate: d);
 
-  void setTravelClass(String? c) =>
-      c == null ? state = state.copyWith(clearTravelClass: true) : state = state.copyWith(travelClass: c);
+  void setTravelClass(String? c) => c == null
+      ? state = state.copyWith(clearTravelClass: true)
+      : state = state.copyWith(travelClass: c);
 
   void setBerth(String value) => state = state.copyWith(berth: value);
 
@@ -151,9 +68,9 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
     state = state.copyWith(
       boardingStation: station,
       // Clear destination if it is now before the new boarding stop
-      clearDestinationStation: state.destinationStation != null &&
-          _stopSequenceFor(state.destinationStation!.code) <=
-              stop.stopSequence,
+      clearDestinationStation:
+          state.destinationStation != null &&
+          _stopSequenceFor(state.destinationStation!.code) <= stop.stopSequence,
     );
   }
 
@@ -164,9 +81,10 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
 
   int _stopSequenceFor(String code) {
     return state.trainRouteStops
-        .where((s) => s.stationCode == code)
-        .map((s) => s.stopSequence)
-        .firstOrNull ?? 0;
+            .where((s) => s.stationCode == code)
+            .map((s) => s.stopSequence)
+            .firstOrNull ??
+        0;
   }
 
   Station _stopToStation(TrainRouteStop stop) {
@@ -191,10 +109,7 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
     // Cancel previous debounce timer
     _trainNumberDebounceTimer?.cancel();
 
-    state = state.copyWith(
-      trainNumber: value,
-      clearError: true,
-    );
+    state = state.copyWith(trainNumber: value, clearError: true);
 
     // Clear route stops immediately to show the input is being processed
     if (value.length < 4) {
@@ -252,15 +167,17 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
                 final name = r['station_name'] as String? ?? code;
                 // Try to resolve coordinates from local station DB
                 final localStation = await _stationRepo.getStationByCode(code);
-                apiStops.add(TrainRouteStop(
-                  stationCode: code,
-                  stationName: name,
-                  stopSequence: i + 1,
-                  arrivalTime: r['scheduled_arrival'] as String?,
-                  departureTime: r['scheduled_departure'] as String?,
-                  latitude: localStation?.latitude ?? 0.0,
-                  longitude: localStation?.longitude ?? 0.0,
-                ));
+                apiStops.add(
+                  TrainRouteStop(
+                    stationCode: code,
+                    stationName: name,
+                    stopSequence: i + 1,
+                    arrivalTime: r['scheduled_arrival'] as String?,
+                    departureTime: r['scheduled_departure'] as String?,
+                    latitude: localStation?.latitude ?? 0.0,
+                    longitude: localStation?.longitude ?? 0.0,
+                  ),
+                );
               }
               // Only use API stops if we got valid data
               if (apiStops.isNotEmpty) {
@@ -277,24 +194,28 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
         if (resolvedStops.isNotEmpty) {
           if (state.boardingStation == null) {
             state = state.copyWith(
-                boardingStation: _stopToStation(resolvedStops.first));
+              boardingStation: _stopToStation(resolvedStops.first),
+            );
           }
           if (state.destinationStation == null) {
             state = state.copyWith(
-                destinationStation: _stopToStation(resolvedStops.last));
+              destinationStation: _stopToStation(resolvedStops.last),
+            );
           }
         } else {
           // Last resort: use endpoint codes from train_routes table
           final endpoints = await _trainRepo.getTrainEndpoints(trainNumber);
           if (endpoints != null) {
             if (state.boardingStation == null) {
-              final from =
-                  await _stationRepo.getStationByCode(endpoints['from_station']!);
+              final from = await _stationRepo.getStationByCode(
+                endpoints['from_station']!,
+              );
               if (from != null) state = state.copyWith(boardingStation: from);
             }
             if (state.destinationStation == null) {
-              final to =
-                  await _stationRepo.getStationByCode(endpoints['to_station']!);
+              final to = await _stationRepo.getStationByCode(
+                endpoints['to_station']!,
+              );
               if (to != null) state = state.copyWith(destinationStation: to);
             }
           }
@@ -353,7 +274,10 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
       await _journeyRepo.insertJourney(journey);
       state = state.copyWith(isSaving: false, savedSuccessfully: true);
     } catch (e) {
-      state = state.copyWith(isSaving: false, errorMessage: 'Failed to save: $e');
+      state = state.copyWith(
+        isSaving: false,
+        errorMessage: 'Failed to save: $e',
+      );
     }
   }
 }
@@ -364,10 +288,10 @@ class TrainJourneyNotifier extends StateNotifier<TrainJourneyState> {
 
 final trainJourneyNotifierProvider =
     StateNotifierProvider.autoDispose<TrainJourneyNotifier, TrainJourneyState>(
-  (ref) => TrainJourneyNotifier(
-    journeyRepo: ref.read(journeyRepositoryProvider),
-    stationRepo: ref.read(stationRepositoryProvider),
-    trainRepo: ref.read(trainRepositoryProvider),
-    trainApi: ref.read(trainStatusApiProvider),
-  ),
-);
+      (ref) => TrainJourneyNotifier(
+        journeyRepo: ref.read(journeyRepositoryProvider),
+        stationRepo: ref.read(stationRepositoryProvider),
+        trainRepo: ref.read(trainRepositoryProvider),
+        trainApi: ref.read(trainStatusApiProvider),
+      ),
+    );

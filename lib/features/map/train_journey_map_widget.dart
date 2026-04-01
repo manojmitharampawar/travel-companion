@@ -1,15 +1,15 @@
-import 'dart:ui' as ui;
-
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:travel_companion/core/theme/app_theme.dart';
-import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/train_route_stop.dart';
 import 'package:travel_companion/providers/app_providers.dart';
+import 'package:travel_companion/features/map/widgets/glass_map_control_button.dart';
+import 'package:travel_companion/features/map/widgets/pulsing_position_marker.dart';
+import 'package:travel_companion/features/map/widgets/next_stop_callout.dart';
 
 /// Railway-specific map widget for train and local-train journeys.
 ///
@@ -164,7 +164,7 @@ class _TrainJourneyMapWidgetState extends ConsumerState<TrainJourneyMapWidget> {
           point: curLatLng,
           width: 52,
           height: 52,
-          child: _PulsingPositionMarker(),
+          child: const PulsingPositionMarker(),
         ),
       );
     }
@@ -255,7 +255,7 @@ class _TrainJourneyMapWidgetState extends ConsumerState<TrainJourneyMapWidget> {
                           .map((s) => s.latLng)
                           .toList(),
                       strokeWidth: 3,
-                      color: Colors.grey.shade400,
+                      color: const Color(0xFFBDBDBD),
                       pattern: const StrokePattern.solid(),
                     ),
                   // Upcoming segment: railway blue
@@ -308,29 +308,26 @@ class _TrainJourneyMapWidgetState extends ConsumerState<TrainJourneyMapWidget> {
         children: [
           // Fullscreen button
           if (widget.onFullscreen != null)
-            _GlassMapButton(
-              icon: Icons.fullscreen_rounded,
+            GlassMapControlButton(
+              icon: CupertinoIcons.fullscreen,
               onTap: widget.onFullscreen!,
-              tooltip: 'Fullscreen',
             ),
           if (widget.onFullscreen != null) const SizedBox(height: 8),
 
           // Zoom to full route
-          _GlassMapButton(
-            icon: Icons.zoom_out_map_rounded,
+          GlassMapControlButton(
+            icon: CupertinoIcons.arrow_up_left_arrow_down_right,
             onTap: _zoomToFullRoute,
-            tooltip: 'View full route',
           ),
           const SizedBox(height: 8),
 
           // Recenter on current location
-          _GlassMapButton(
+          GlassMapControlButton(
             icon: _isFollowingUser
-                ? Icons.my_location_rounded
-                : Icons.location_searching_rounded,
+                ? CupertinoIcons.location_fill
+                : CupertinoIcons.scope,
             onTap: _zoomToCurrentLocation,
             isActive: _isFollowingUser,
-            tooltip: 'My location',
           ),
         ],
       ),
@@ -351,7 +348,7 @@ class _TrainJourneyMapWidgetState extends ConsumerState<TrainJourneyMapWidget> {
         width: 120,
         height: 60,
         alignment: Alignment.bottomCenter,
-        child: _NextStopCallout(stop: stop),
+        child: NextStopCallout(stop: stop),
       );
     }
 
@@ -362,7 +359,7 @@ class _TrainJourneyMapWidgetState extends ConsumerState<TrainJourneyMapWidget> {
         height: 36,
         alignment: Alignment.topCenter,
         child: const Icon(
-          Icons.location_on_rounded,
+          CupertinoIcons.location_solid,
           size: 36,
           color: AppTheme.dangerColor,
         ),
@@ -370,9 +367,9 @@ class _TrainJourneyMapWidgetState extends ConsumerState<TrainJourneyMapWidget> {
     }
 
     final color = isPassed
-        ? Colors.grey.shade400
+        ? const Color(0xFFBDBDBD)
         : isFirst
-        ? Colors.green.shade600
+        ? const Color(0xFF2E7D32)
         : const Color(0xFF1565C0).withValues(alpha: 0.7);
 
     final size = (isFirst || isLast) ? 12.0 : (isPassed ? 6.0 : 8.0);
@@ -387,7 +384,10 @@ class _TrainJourneyMapWidgetState extends ConsumerState<TrainJourneyMapWidget> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: color,
-          border: Border.all(color: Colors.white, width: isPassed ? 1 : 1.5),
+          border: Border.all(
+            color: CupertinoColors.white,
+            width: isPassed ? 1 : 1.5,
+          ),
           boxShadow: isPassed
               ? null
               : [BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 4)],
@@ -462,216 +462,3 @@ class _TrainJourneyMapWidgetState extends ConsumerState<TrainJourneyMapWidget> {
 // ─────────────────────────────────────────────
 // Glass Map Button
 // ─────────────────────────────────────────────
-
-class _GlassMapButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool isActive;
-  final String? tooltip;
-
-  const _GlassMapButton({
-    required this.icon,
-    required this.onTap,
-    this.isActive = false,
-    this.tooltip,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final g = GlassColors.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: isActive
-                  ? const Color(0xFF3498DB).withValues(alpha: 0.2)
-                  : g.isDark
-                  ? const Color(0xFF0A0E21).withValues(alpha: 0.7)
-                  : Colors.white.withValues(alpha: 0.85),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isActive
-                    ? const Color(0xFF3498DB).withValues(alpha: 0.4)
-                    : g.border(0.15),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: g.shadow,
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: isActive ? const Color(0xFF3498DB) : g.icon,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// Next-stop callout bubble
-// ─────────────────────────────────────────────
-
-class _NextStopCallout extends StatelessWidget {
-  final TrainRouteStop stop;
-
-  const _NextStopCallout({required this.stop});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.orange.shade700,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.orange.shade700.withValues(alpha: 0.4),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Text(
-                stop.stationCode,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
-                ),
-              ),
-              if (stop.timeDisplay.isNotEmpty)
-                Text(
-                  stop.timeDisplay,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        CustomPaint(
-          size: const Size(10, 6),
-          painter: _CalloutTailPainter(color: Colors.orange.shade700),
-        ),
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.orange.shade700,
-            border: Border.all(color: Colors.white, width: 2),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CalloutTailPainter extends CustomPainter {
-  final Color color;
-  const _CalloutTailPainter({required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    final path = ui.Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width / 2, size.height)
-      ..lineTo(size.width, 0)
-      ..close();
-    canvas.drawPath(path, paint);
-  }
-
-  @override
-  bool shouldRepaint(_CalloutTailPainter old) => old.color != color;
-}
-
-// ─────────────────────────────────────────────
-// Pulsing current-position marker
-// ─────────────────────────────────────────────
-
-class _PulsingPositionMarker extends StatefulWidget {
-  @override
-  State<_PulsingPositionMarker> createState() => _PulsingPositionMarkerState();
-}
-
-class _PulsingPositionMarkerState extends State<_PulsingPositionMarker>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
-    _anim = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _anim,
-      builder: (_, _) => Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 44 * _anim.value,
-            height: 44 * _anim.value,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.blue.withValues(alpha: 0.15 * _anim.value),
-            ),
-          ),
-          Container(
-            width: 18,
-            height: 18,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.blue.shade700,
-              border: Border.all(color: Colors.white, width: 2.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.shade700.withValues(alpha: 0.5),
-                  blurRadius: 6,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

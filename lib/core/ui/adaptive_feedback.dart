@@ -16,7 +16,9 @@ class AdaptiveFeedback {
     if (overlay == null) return;
 
     final g = GlassColors.of(context);
-    final background = isError ? const Color(0xFFE74C3C) : const Color(0xFF27AE60);
+    final background = isError
+        ? const Color(0xFFE74C3C)
+        : const Color(0xFF27AE60);
 
     late OverlayEntry entry;
     entry = OverlayEntry(
@@ -33,7 +35,10 @@ class AdaptiveFeedback {
                 border: Border.all(color: g.border(0.2)),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Text(
                   message,
                   textAlign: TextAlign.center,

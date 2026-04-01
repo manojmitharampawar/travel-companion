@@ -1,11 +1,6 @@
 import 'package:flutter/cupertino.dart';
 
-enum TransportType {
-  train,
-  bus,
-  metro,
-  localTrain,
-}
+enum TransportType { train, bus, metro, localTrain }
 
 extension TransportTypeExtension on TransportType {
   String get label {

@@ -75,5 +75,12 @@ class LocationPoint extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, name, latitude, longitude, stationCode, address];
+  List<Object?> get props => [
+    id,
+    name,
+    latitude,
+    longitude,
+    stationCode,
+    address,
+  ];
 }

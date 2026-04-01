@@ -70,10 +70,10 @@ class Journey extends Equatable {
         map['transport_type'] as String?,
       ),
       pnr: map['pnr'] as String?,
-      vehicleNumber: map['vehicle_number'] as String? ??
-          map['train_number'] as String?,
-      vehicleName: map['vehicle_name'] as String? ??
-          map['train_name'] as String?,
+      vehicleNumber:
+          map['vehicle_number'] as String? ?? map['train_number'] as String?,
+      vehicleName:
+          map['vehicle_name'] as String? ?? map['train_name'] as String?,
       journeyDate: DateTime.parse(map['journey_date'] as String),
       boardingStationCode: map['boarding_station_code'] as String?,
       destinationStationCode: map['destination_station_code'] as String?,
@@ -160,7 +160,8 @@ class Journey extends Equatable {
       vehicleName: vehicleName ?? this.vehicleName,
       journeyDate: journeyDate ?? this.journeyDate,
       boardingStationCode: boardingStationCode ?? this.boardingStationCode,
-      destinationStationCode: destinationStationCode ?? this.destinationStationCode,
+      destinationStationCode:
+          destinationStationCode ?? this.destinationStationCode,
       originLatitude: originLatitude ?? this.originLatitude,
       originLongitude: originLongitude ?? this.originLongitude,
       destinationLatitude: destinationLatitude ?? this.destinationLatitude,
@@ -176,7 +177,8 @@ class Journey extends Equatable {
       repeatDays: repeatDays ?? this.repeatDays,
       scheduledTime: scheduledTime ?? this.scheduledTime,
       boardingStationName: boardingStationName ?? this.boardingStationName,
-      destinationStationName: destinationStationName ?? this.destinationStationName,
+      destinationStationName:
+          destinationStationName ?? this.destinationStationName,
     );
   }
 
@@ -199,7 +201,9 @@ class Journey extends Equatable {
       if (repeatDays! & (1 << i) != 0) active.add(days[i]);
     }
     if (active.length == 7) return 'Daily';
-    if (active.length == 5 && !(repeatDays! & (1 << 5) != 0) && !(repeatDays! & (1 << 6) != 0)) {
+    if (active.length == 5 &&
+        !(repeatDays! & (1 << 5) != 0) &&
+        !(repeatDays! & (1 << 6) != 0)) {
       return 'Weekdays';
     }
     return active.join(', ');
@@ -211,15 +215,34 @@ class Journey extends Equatable {
 
   /// Effective destination display name
   String get effectiveDestinationName =>
-      destinationStationName ?? destinationName ?? destinationStationCode ?? 'Destination';
+      destinationStationName ??
+      destinationName ??
+      destinationStationCode ??
+      'Destination';
 
   @override
   List<Object?> get props => [
-        id, transportType, pnr, vehicleNumber, vehicleName, journeyDate,
-        boardingStationCode, destinationStationCode,
-        originLatitude, originLongitude, destinationLatitude, destinationLongitude,
-        originName, destinationName,
-        travelClass, berth, status, createdAt, isFavorite,
-        isQuickTrip, repeatDays, scheduledTime,
-      ];
+    id,
+    transportType,
+    pnr,
+    vehicleNumber,
+    vehicleName,
+    journeyDate,
+    boardingStationCode,
+    destinationStationCode,
+    originLatitude,
+    originLongitude,
+    destinationLatitude,
+    destinationLongitude,
+    originName,
+    destinationName,
+    travelClass,
+    berth,
+    status,
+    createdAt,
+    isFavorite,
+    isQuickTrip,
+    repeatDays,
+    scheduledTime,
+  ];
 }

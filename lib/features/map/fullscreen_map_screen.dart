@@ -1,37 +1,18 @@
-import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/train_route.dart';
 import 'package:travel_companion/data/models/train_route_stop.dart';
-import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/features/map/journey_map_widget.dart';
 import 'package:travel_companion/features/map/train_journey_map_widget.dart';
+import 'package:travel_companion/features/map/widgets/fullscreen_map_close_button.dart';
+import 'package:travel_companion/features/map/widgets/fullscreen_map_transport_badge.dart';
 
-/// Fullscreen map screen that shows the journey map edge-to-edge.
-///
-/// Supports both the generic [JourneyMapWidget] and rail-specific
-/// [TrainJourneyMapWidget] depending on the parameters provided.
 class FullscreenMapScreen extends StatefulWidget {
-  final LocationPoint? origin;
-  final LocationPoint destination;
-  final Position? currentPosition;
-  final TransportType transportType;
-
-  // For generic (bus/metro) map
-  final List<TrainRoute> routeStops;
-  final List<LatLng> roadRoutePoints;
-
-  // For train/local-train map
-  final List<TrainRouteStop> trainRouteStops;
-  final int nextStopIndex;
-  final bool useTrainMap;
-
   const FullscreenMapScreen({
     super.key,
     this.origin,
@@ -45,6 +26,16 @@ class FullscreenMapScreen extends StatefulWidget {
     this.useTrainMap = false,
   });
 
+  final LocationPoint? origin;
+  final LocationPoint destination;
+  final Position? currentPosition;
+  final TransportType transportType;
+  final List<TrainRoute> routeStops;
+  final List<LatLng> roadRoutePoints;
+  final List<TrainRouteStop> trainRouteStops;
+  final int nextStopIndex;
+  final bool useTrainMap;
+
   @override
   State<FullscreenMapScreen> createState() => _FullscreenMapScreenState();
 }
@@ -53,13 +44,11 @@ class _FullscreenMapScreenState extends State<FullscreenMapScreen> {
   @override
   void initState() {
     super.initState();
-    // Hide system UI for true fullscreen
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
 
   @override
   void dispose() {
-    // Restore system UI
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.manual,
       overlays: SystemUiOverlay.values,
@@ -69,12 +58,12 @@ class _FullscreenMapScreenState extends State<FullscreenMapScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final g = GlassColors.of(context);
+    final colors = GlassColors.of(context);
+
     return CupertinoPageScaffold(
-      backgroundColor: g.bg,
+      backgroundColor: colors.bg,
       child: Stack(
         children: [
-          // Full-screen map
           Positioned.fill(
             child: widget.useTrainMap
                 ? TrainJourneyMapWidget(
@@ -95,141 +84,25 @@ class _FullscreenMapScreenState extends State<FullscreenMapScreen> {
                     showControls: true,
                   ),
           ),
-
-          // Close button (top-left)
           Positioned(
             top: MediaQuery.of(context).padding.top + 12,
             left: 12,
-            child: _GlassCloseButton(onTap: () => Navigator.of(context).pop()),
+            child: FullscreenMapCloseButton(
+              onTap: () => Navigator.of(context).pop(),
+            ),
           ),
-
-          // Transport badge (top-center)
           Positioned(
             top: MediaQuery.of(context).padding.top + 12,
             left: 0,
             right: 0,
             child: Center(
-              child: _GlassTransportBadge(
+              child: FullscreenMapTransportBadge(
                 transportType: widget.transportType,
                 destination: widget.destination.name,
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// Glass Close Button
-// ─────────────────────────────────────────────
-
-class _GlassCloseButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _GlassCloseButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: GestureDetector(
-          onTap: onTap,
-          child: Builder(
-            builder: (context) {
-              final g = GlassColors.of(context);
-              return Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: g.isDark
-                      ? const Color(0xFF0A0E21).withValues(alpha: 0.7)
-                      : Colors.white.withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: g.border(0.15)),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.2),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Icon(
-                  Icons.fullscreen_exit_rounded,
-                  size: 20,
-                  color: g.textAlpha(0.8),
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// Glass Transport Badge
-// ─────────────────────────────────────────────
-
-class _GlassTransportBadge extends StatelessWidget {
-  final TransportType transportType;
-  final String destination;
-
-  const _GlassTransportBadge({
-    required this.transportType,
-    required this.destination,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final g = GlassColors.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: g.isDark
-                ? const Color(0xFF0A0E21).withValues(alpha: 0.7)
-                : Colors.white.withValues(alpha: 0.85),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: transportType.color.withValues(alpha: 0.3),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(transportType.icon, size: 16, color: transportType.color),
-              const SizedBox(width: 6),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 200),
-                child: Text(
-                  destination,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: g.textAlpha(0.9),
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

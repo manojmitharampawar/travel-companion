@@ -10,7 +10,7 @@ class JourneyReminderService {
   Timer? _reminderTimer;
 
   JourneyReminderService({required JourneyRepository journeyRepository})
-      : _journeyRepository = journeyRepository;
+    : _journeyRepository = journeyRepository;
 
   void startPeriodicCheck() {
     _reminderTimer = Timer.periodic(
@@ -65,7 +65,8 @@ class JourneyReminderService {
         await NotificationService.showJourneyStartNotification(
           journeyId: journey.id!,
           trainName: vehicleInfo,
-          destinationCode: journey.destinationStationCode ??
+          destinationCode:
+              journey.destinationStationCode ??
               journey.destinationName ??
               'Destination',
         );

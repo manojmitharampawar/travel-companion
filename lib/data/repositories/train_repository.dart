@@ -63,10 +63,14 @@ class TrainRepository {
       ['%$query%', '%$query%'],
     );
 
-    return results.map((r) => {
-      'train_number': r['train_number'] as String,
-      'train_name': r['train_name'] as String,
-    }).toList();
+    return results
+        .map(
+          (r) => {
+            'train_number': r['train_number'] as String,
+            'train_name': r['train_name'] as String,
+          },
+        )
+        .toList();
   }
 
   /// Get source and destination for a train
@@ -84,7 +88,8 @@ class TrainRepository {
   /// Get all stops for a train with geographic coordinates (JOIN with stations).
   /// Only returns stops that have matching station records with coordinates.
   Future<List<TrainRouteStop>> getRouteStopsWithCoordinates(
-      String trainNumber) async {
+    String trainNumber,
+  ) async {
     final db = await AppDatabase.database;
     final results = await db.rawQuery(
       '''

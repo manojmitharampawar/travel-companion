@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
+
 import 'glass_constants.dart';
 
 class GlassBackground extends StatelessWidget {
@@ -9,24 +11,8 @@ class GlassBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = scheme.brightness == Brightness.dark;
-
-    final bgColors =
-        colors ??
-        (isDark
-            ? [
-                const Color(0xFF0A0E21),
-                const Color(0xFF0D1B3E),
-                const Color(0xFF1A0A2E),
-                const Color(0xFF0A1628),
-              ]
-            : [
-                const Color(0xFFE8EAF6),
-                const Color(0xFFE0F7FA),
-                const Color(0xFFF3E5F5),
-                const Color(0xFFE8EAF6),
-              ]);
+    final g = GlassColors.of(context);
+    final bgColors = colors ?? g.bgGradient;
 
     return Container(
       decoration: BoxDecoration(
@@ -54,9 +40,9 @@ class GlassMeshBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = primaryColor ?? GlassConstants.meshBlue;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final baseBg = isDark ? const Color(0xFF0A0E21) : const Color(0xFFF0F2F8);
+    final g = GlassColors.of(context);
+    final accent = primaryColor ?? g.accent;
+    final baseBg = g.bg;
 
     return Container(
       color: baseBg,

@@ -47,13 +47,13 @@ class MetroScheduleSeedData {
       case 'Delhi':
         // Delhi Metro: 5 AM to 11 PM, high frequency
         return [
-          _TimeSlot(5, 5, 15),    // Early: every 15 min
-          _TimeSlot(6, 7, 8),     // Pre-peak: every 8 min
-          _TimeSlot(8, 10, 4),    // Morning peak: every 4 min
-          _TimeSlot(11, 16, 6),   // Off-peak: every 6 min
-          _TimeSlot(17, 20, 4),   // Evening peak: every 4 min
-          _TimeSlot(21, 22, 8),   // Late: every 8 min
-          _TimeSlot(23, 23, 15),  // Last trains: every 15 min
+          _TimeSlot(5, 5, 15), // Early: every 15 min
+          _TimeSlot(6, 7, 8), // Pre-peak: every 8 min
+          _TimeSlot(8, 10, 4), // Morning peak: every 4 min
+          _TimeSlot(11, 16, 6), // Off-peak: every 6 min
+          _TimeSlot(17, 20, 4), // Evening peak: every 4 min
+          _TimeSlot(21, 22, 8), // Late: every 8 min
+          _TimeSlot(23, 23, 15), // Last trains: every 15 min
         ];
       case 'Mumbai':
         // Mumbai Metro: 6 AM to 10:30 PM

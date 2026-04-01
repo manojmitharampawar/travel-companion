@@ -88,8 +88,14 @@ class SmsParser {
 
   String? _extractTrainName(String text) {
     final patterns = [
-      RegExp(r'\d{5}\s*[-/]\s*([A-Za-z\s]+?)(?:\s*[,.]|\s+DOJ|\s+Date|\s+on)', caseSensitive: false),
-      RegExp(r'TRAIN\s*:\s*\d{5}\s*[-/]?\s*([A-Za-z\s]+?)(?:\s*[,.])', caseSensitive: false),
+      RegExp(
+        r'\d{5}\s*[-/]\s*([A-Za-z\s]+?)(?:\s*[,.]|\s+DOJ|\s+Date|\s+on)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'TRAIN\s*:\s*\d{5}\s*[-/]?\s*([A-Za-z\s]+?)(?:\s*[,.])',
+        caseSensitive: false,
+      ),
     ];
     for (final pattern in patterns) {
       final match = pattern.firstMatch(text);
@@ -100,7 +106,9 @@ class SmsParser {
 
   DateTime? _extractDate(String text) {
     // Try DD-Mon-YYYY first (e.g. 15-Mar-2026)
-    final monthPattern = RegExp(r'(\d{1,2})\s*[-/]\s*([A-Za-z]{3})\s*[-/]\s*(\d{4})');
+    final monthPattern = RegExp(
+      r'(\d{1,2})\s*[-/]\s*([A-Za-z]{3})\s*[-/]\s*(\d{4})',
+    );
     final monthMatch = monthPattern.firstMatch(text);
     if (monthMatch != null) {
       final day = int.parse(monthMatch.group(1)!);
@@ -131,18 +139,33 @@ class SmsParser {
 
   int? _monthFromString(String month) {
     const months = {
-      'JAN': 1, 'FEB': 2, 'MAR': 3, 'APR': 4,
-      'MAY': 5, 'JUN': 6, 'JUL': 7, 'AUG': 8,
-      'SEP': 9, 'OCT': 10, 'NOV': 11, 'DEC': 12,
+      'JAN': 1,
+      'FEB': 2,
+      'MAR': 3,
+      'APR': 4,
+      'MAY': 5,
+      'JUN': 6,
+      'JUL': 7,
+      'AUG': 8,
+      'SEP': 9,
+      'OCT': 10,
+      'NOV': 11,
+      'DEC': 12,
     };
     return months[month.toUpperCase()];
   }
 
   String? _extractBoardingStation(String text) {
     final patterns = [
-      RegExp(r'FROM\s*[:\-]?\s*([A-Za-z\s]+?)\s*\(([A-Z]{2,5})\)', caseSensitive: false),
+      RegExp(
+        r'FROM\s*[:\-]?\s*([A-Za-z\s]+?)\s*\(([A-Z]{2,5})\)',
+        caseSensitive: false,
+      ),
       RegExp(r'FROM\s*[:\-]?\s*([A-Za-z\s]+?)\s+TO\b', caseSensitive: false),
-      RegExp(r'(?:from|depart)\s+([A-Za-z\s]+?)\s+(?:to|for)\b', caseSensitive: false),
+      RegExp(
+        r'(?:from|depart)\s+([A-Za-z\s]+?)\s+(?:to|for)\b',
+        caseSensitive: false,
+      ),
     ];
     for (final pattern in patterns) {
       final match = pattern.firstMatch(text);
@@ -158,8 +181,14 @@ class SmsParser {
 
   String? _extractDestinationStation(String text) {
     final patterns = [
-      RegExp(r'TO\s*[:\-]?\s*([A-Za-z\s]+?)\s*\(([A-Z]{2,5})\)', caseSensitive: false),
-      RegExp(r'\bTO\s*[:\-]?\s*([A-Za-z\s]+?)(?:\s*[,.]|\s+CLASS|\s+SL|\s+\dA)', caseSensitive: false),
+      RegExp(
+        r'TO\s*[:\-]?\s*([A-Za-z\s]+?)\s*\(([A-Z]{2,5})\)',
+        caseSensitive: false,
+      ),
+      RegExp(
+        r'\bTO\s*[:\-]?\s*([A-Za-z\s]+?)(?:\s*[,.]|\s+CLASS|\s+SL|\s+\dA)',
+        caseSensitive: false,
+      ),
     ];
     for (final pattern in patterns) {
       final match = pattern.firstMatch(text);
@@ -174,17 +203,25 @@ class SmsParser {
   }
 
   String? _extractClass(String text) {
-    final pattern = RegExp(r'CLASS\s*[:\-]?\s*(SL|1A|2A|3A|CC|EC|2S|FC|3E)', caseSensitive: false);
+    final pattern = RegExp(
+      r'CLASS\s*[:\-]?\s*(SL|1A|2A|3A|CC|EC|2S|FC|3E)',
+      caseSensitive: false,
+    );
     final match = pattern.firstMatch(text);
     if (match != null) return match.group(1)!.toUpperCase();
 
-    final standaloneMatch = RegExp(r'\b(SL|1A|2A|3A|CC|EC|2S|FC|3E)\s+CLASS', caseSensitive: false)
-        .firstMatch(text);
+    final standaloneMatch = RegExp(
+      r'\b(SL|1A|2A|3A|CC|EC|2S|FC|3E)\s+CLASS',
+      caseSensitive: false,
+    ).firstMatch(text);
     return standaloneMatch?.group(1)?.toUpperCase();
   }
 
   String? _extractBerth(String text) {
-    final match = RegExp(r'BERTH\s*[:\-]?\s*([A-Z0-9/]+)', caseSensitive: false).firstMatch(text);
+    final match = RegExp(
+      r'BERTH\s*[:\-]?\s*([A-Z0-9/]+)',
+      caseSensitive: false,
+    ).firstMatch(text);
     return match?.group(1)?.trim();
   }
 

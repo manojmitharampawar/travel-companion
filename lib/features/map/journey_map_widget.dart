@@ -1,13 +1,12 @@
-import 'dart:ui';
-
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/train_route.dart';
-import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
+import 'package:travel_companion/features/map/widgets/glass_map_control_button.dart';
+import 'package:travel_companion/features/map/widgets/pulsing_position_marker.dart';
 
 class JourneyMapWidget extends StatefulWidget {
   final LocationPoint? origin;
@@ -133,7 +132,7 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
             decoration: BoxDecoration(
               color: const Color(0xFF1A73E8),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white, width: 2.5),
+              border: Border.all(color: CupertinoColors.white, width: 2.5),
               boxShadow: [
                 BoxShadow(
                   color: const Color(0xFF1A73E8).withValues(alpha: 0.4),
@@ -159,7 +158,7 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
           point: curLatLng,
           width: 52,
           height: 52,
-          child: _PulsingPositionMarker(),
+          child: const PulsingPositionMarker(),
         ),
       );
       boundsPoints.add(curLatLng);
@@ -173,7 +172,7 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
         height: 36,
         alignment: Alignment.topCenter,
         child: const Icon(
-          Icons.location_on_rounded,
+          CupertinoIcons.location_solid,
           size: 36,
           color: Color(0xFFE74C3C),
         ),
@@ -284,29 +283,26 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
         children: [
           // Fullscreen button
           if (widget.onFullscreen != null)
-            _GlassMapButton(
-              icon: Icons.fullscreen_rounded,
+            GlassMapControlButton(
+              icon: CupertinoIcons.fullscreen,
               onTap: widget.onFullscreen!,
-              tooltip: 'Fullscreen',
             ),
           if (widget.onFullscreen != null) const SizedBox(height: 8),
 
           // Zoom to full route
-          _GlassMapButton(
-            icon: Icons.zoom_out_map_rounded,
+          GlassMapControlButton(
+            icon: CupertinoIcons.arrow_up_left_arrow_down_right,
             onTap: _zoomToFullRoute,
-            tooltip: 'View full route',
           ),
           const SizedBox(height: 8),
 
           // Recenter on current location
-          _GlassMapButton(
+          GlassMapControlButton(
             icon: _isFollowingUser
-                ? Icons.my_location_rounded
-                : Icons.location_searching_rounded,
+                ? CupertinoIcons.location_fill
+                : CupertinoIcons.scope,
             onTap: _zoomToCurrentLocation,
             isActive: _isFollowingUser,
-            tooltip: 'My location',
           ),
         ],
       ),
@@ -362,129 +358,3 @@ class _JourneyMapWidgetState extends State<JourneyMapWidget> {
 // ─────────────────────────────────────────────
 // Glass Map Button
 // ─────────────────────────────────────────────
-
-class _GlassMapButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool isActive;
-  final String? tooltip;
-
-  const _GlassMapButton({
-    required this.icon,
-    required this.onTap,
-    this.isActive = false,
-    this.tooltip,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final g = GlassColors.of(context);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: GestureDetector(
-          onTap: onTap,
-          child: Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: isActive
-                  ? const Color(0xFF3498DB).withValues(alpha: 0.2)
-                  : g.isDark
-                  ? const Color(0xFF0A0E21).withValues(alpha: 0.7)
-                  : Colors.white.withValues(alpha: 0.85),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isActive
-                    ? const Color(0xFF3498DB).withValues(alpha: 0.4)
-                    : g.border(0.15),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: isActive ? const Color(0xFF3498DB) : g.textAlpha(0.8),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// Pulsing current-position marker
-// ─────────────────────────────────────────────
-
-class _PulsingPositionMarker extends StatefulWidget {
-  @override
-  State<_PulsingPositionMarker> createState() => _PulsingPositionMarkerState();
-}
-
-class _PulsingPositionMarkerState extends State<_PulsingPositionMarker>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-  late final Animation<double> _anim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1200),
-    )..repeat(reverse: true);
-    _anim = Tween<double>(
-      begin: 0.5,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _anim,
-      builder: (_, _) => Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 44 * _anim.value,
-            height: 44 * _anim.value,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.blue.withValues(alpha: 0.15 * _anim.value),
-            ),
-          ),
-          Container(
-            width: 18,
-            height: 18,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.blue.shade700,
-              border: Border.all(color: Colors.white, width: 2.5),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.blue.shade700.withValues(alpha: 0.5),
-                  blurRadius: 6,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

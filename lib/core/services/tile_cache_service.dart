@@ -19,14 +19,16 @@ import 'package:path_provider/path_provider.dart';
 class TileCacheService {
   TileCacheService._();
 
-  static final _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
-    responseType: ResponseType.bytes,
-    headers: {
-      'User-Agent': 'TravelCompanionApp/1.0 (contact@travelcompanion.app)',
-    },
-  ));
+  static final _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      responseType: ResponseType.bytes,
+      headers: {
+        'User-Agent': 'TravelCompanionApp/1.0 (contact@travelcompanion.app)',
+      },
+    ),
+  );
 
   static String? _cacheDir;
 
@@ -57,7 +59,12 @@ class TileCacheService {
   }
 
   /// Downloads a single tile and saves to disk. Returns the file.
-  static Future<File?> downloadTile(String urlTemplate, int z, int x, int y) async {
+  static Future<File?> downloadTile(
+    String urlTemplate,
+    int z,
+    int x,
+    int y,
+  ) async {
     try {
       final path = await tilePath(z, x, y);
       final file = File(path);
@@ -78,8 +85,10 @@ class TileCacheService {
         return file;
       }
     } catch (e) {
-      dev.log('TileCacheService: failed to download tile $z/$x/$y: $e',
-          name: 'TileCache');
+      dev.log(
+        'TileCacheService: failed to download tile $z/$x/$y: $e',
+        name: 'TileCache',
+      );
     }
     return null;
   }
@@ -129,23 +138,27 @@ class TileCacheService {
     int downloaded = 0;
     int skipped = 0;
 
-    dev.log('TileCacheService: pre-downloading ${tiles.length} tiles for route',
-        name: 'TileCache');
+    dev.log(
+      'TileCacheService: pre-downloading ${tiles.length} tiles for route',
+      name: 'TileCache',
+    );
 
     // Download in batches of 6 concurrent requests
     const batchSize = 6;
     for (int i = 0; i < tiles.length; i += batchSize) {
       final batch = tiles.skip(i).take(batchSize);
-      await Future.wait(batch.map((t) async {
-        // Check if already cached
-        final cached = await getCachedTile(t.z, t.x, t.y);
-        if (cached != null) {
-          skipped++;
-        } else {
-          await downloadTile(urlTemplate, t.z, t.x, t.y);
-          downloaded++;
-        }
-      }));
+      await Future.wait(
+        batch.map((t) async {
+          // Check if already cached
+          final cached = await getCachedTile(t.z, t.x, t.y);
+          if (cached != null) {
+            skipped++;
+          } else {
+            await downloadTile(urlTemplate, t.z, t.x, t.y);
+            downloaded++;
+          }
+        }),
+      );
       onProgress?.call(downloaded + skipped, tiles.length);
       // Yield to UI thread between batches
       await Future.delayed(Duration.zero);
@@ -195,13 +208,15 @@ class TileCacheService {
     const batchSize = 6;
     for (int i = 0; i < tiles.length; i += batchSize) {
       final batch = tiles.skip(i).take(batchSize);
-      await Future.wait(batch.map((t) async {
-        final cached = await getCachedTile(t.z, t.x, t.y);
-        if (cached == null) {
-          await downloadTile(urlTemplate, t.z, t.x, t.y);
-        }
-        done++;
-      }));
+      await Future.wait(
+        batch.map((t) async {
+          final cached = await getCachedTile(t.z, t.x, t.y);
+          if (cached == null) {
+            await downloadTile(urlTemplate, t.z, t.x, t.y);
+          }
+          done++;
+        }),
+      );
       onProgress?.call(done, tiles.length);
       // Yield to UI thread between batches
       await Future.delayed(Duration.zero);
@@ -249,7 +264,9 @@ class TileCacheService {
 
   static int _latToTileY(double lat, int zoom) {
     final latRad = lat * pi / 180.0;
-    return ((1.0 - log(tan(latRad) + 1.0 / cos(latRad)) / pi) / 2.0 * (1 << zoom))
+    return ((1.0 - log(tan(latRad) + 1.0 / cos(latRad)) / pi) /
+            2.0 *
+            (1 << zoom))
         .floor();
   }
 }
@@ -263,10 +280,7 @@ class _TileCoord {
 class CachedTileProvider extends TileProvider {
   final String urlTemplate;
 
-  CachedTileProvider({
-    required this.urlTemplate,
-    super.headers,
-  });
+  CachedTileProvider({required this.urlTemplate, super.headers});
 
   @override
   ImageProvider getImage(TileCoordinates coordinates, TileLayer options) {
@@ -296,20 +310,77 @@ class CachedTileImageProvider extends ImageProvider<CachedTileImageProvider> {
     CachedTileImageProvider key,
     ImageDecoderCallback decode,
   ) {
-    return MultiFrameImageStreamCompleter(
-      codec: _loadTile(decode),
-      scale: 1.0,
-    );
+    return MultiFrameImageStreamCompleter(codec: _loadTile(decode), scale: 1.0);
   }
 
   // Minimal valid 1x1 transparent PNG (67 bytes)
   static const _kTransparentPng = <int>[
-    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
-    0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
-    0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
-    0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x62, 0x00, 0x00, 0x00, 0x02,
-    0x00, 0x01, 0xE5, 0x27, 0xDE, 0xFC, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45,
-    0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+    0x89,
+    0x50,
+    0x4E,
+    0x47,
+    0x0D,
+    0x0A,
+    0x1A,
+    0x0A,
+    0x00,
+    0x00,
+    0x00,
+    0x0D,
+    0x49,
+    0x48,
+    0x44,
+    0x52,
+    0x00,
+    0x00,
+    0x00,
+    0x01,
+    0x00,
+    0x00,
+    0x00,
+    0x01,
+    0x08,
+    0x06,
+    0x00,
+    0x00,
+    0x00,
+    0x1F,
+    0x15,
+    0xC4,
+    0x89,
+    0x00,
+    0x00,
+    0x00,
+    0x0A,
+    0x49,
+    0x44,
+    0x41,
+    0x54,
+    0x78,
+    0x9C,
+    0x62,
+    0x00,
+    0x00,
+    0x00,
+    0x02,
+    0x00,
+    0x01,
+    0xE5,
+    0x27,
+    0xDE,
+    0xFC,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x49,
+    0x45,
+    0x4E,
+    0x44,
+    0xAE,
+    0x42,
+    0x60,
+    0x82,
   ];
 
   Future<ui.Codec> _loadTile(ImageDecoderCallback decode) async {
@@ -344,8 +415,10 @@ class CachedTileImageProvider extends ImageProvider<CachedTileImageProvider> {
       );
       return decode(buffer);
     } catch (e) {
-      dev.log('CachedTileImageProvider: failed to load tile $z/$x/$y: $e',
-          name: 'TileCache');
+      dev.log(
+        'CachedTileImageProvider: failed to load tile $z/$x/$y: $e',
+        name: 'TileCache',
+      );
       // Return a transparent 1x1 pixel PNG to avoid crashing the widget tree
       final bytes = Uint8List.fromList(_kTransparentPng);
       final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);

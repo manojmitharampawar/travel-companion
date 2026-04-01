@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:travel_companion/core/theme/glass_theme.dart';
 
 class GlassTrainCard extends StatelessWidget {
@@ -55,7 +55,7 @@ class GlassTrainCard extends StatelessWidget {
                         BoxShadow(
                           color: accent.withValues(alpha: 0.2),
                           blurRadius: 12,
-                        )
+                        ),
                       ]
                     : null,
               ),
@@ -88,8 +88,12 @@ class GlassTrainCard extends StatelessWidget {
                               ),
                             ),
                             Container(
-                              margin: const EdgeInsets.symmetric(horizontal: 6),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              margin:
+                                  const EdgeInsets.symmetric(horizontal: 6),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: g.cardFill(0.1),
                                 borderRadius: BorderRadius.circular(8),
@@ -117,7 +121,11 @@ class GlassTrainCard extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            Icon(Icons.arrow_forward_ios, size: 10, color: g.textTertiary),
+                            Icon(
+                              CupertinoIcons.chevron_right,
+                              size: 10,
+                              color: g.textTertiary,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 6),
@@ -130,7 +138,8 @@ class GlassTrainCard extends StatelessWidget {
                                 isFast: isFast,
                                 color: lineColor,
                               ),
-                            if (trainTypeLabel != null) const SizedBox(width: 8),
+                            if (trainTypeLabel != null)
+                              const SizedBox(width: 8),
                             Text(
                               '$stopsCount stops',
                               style: TextStyle(
@@ -152,7 +161,11 @@ class GlassTrainCard extends StatelessWidget {
                   ),
                   if (isSelected) ...[
                     const SizedBox(width: 8),
-                    Icon(Icons.check_circle, color: accent, size: 22),
+                    Icon(
+                      CupertinoIcons.check_mark_circled_solid,
+                      color: accent,
+                      size: 22,
+                    ),
                   ],
                 ],
               ),
@@ -229,7 +242,7 @@ class _GlassTypeBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (isFast) ...[
-            Icon(Icons.bolt, size: 10, color: color),
+            Icon(CupertinoIcons.bolt_fill, size: 10, color: color),
             const SizedBox(width: 2),
           ],
           Text(

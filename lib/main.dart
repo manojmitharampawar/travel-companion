@@ -19,9 +19,7 @@ void main() async {
   reminderService.startPeriodicCheck();
 
   // Start repeat journey service to auto-create daily instances
-  final repeatService = RepeatJourneyService(
-    journeyRepository: journeyRepo,
-  );
+  final repeatService = RepeatJourneyService(journeyRepository: journeyRepo);
   repeatService.start();
 
   runApp(const ProviderScope(child: TravelCompanionApp()));

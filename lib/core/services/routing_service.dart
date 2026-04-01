@@ -15,7 +15,11 @@ class RouteResult {
     required this.durationMinutes,
   });
 
-  static const empty = RouteResult(points: [], distanceKm: 0, durationMinutes: 0);
+  static const empty = RouteResult(
+    points: [],
+    distanceKm: 0,
+    durationMinutes: 0,
+  );
 
   bool get isEmpty => points.isEmpty;
   bool get isNotEmpty => points.isNotEmpty;
@@ -39,13 +43,15 @@ class RouteResult {
 class RoutingService {
   RoutingService._();
 
-  static final _dio = Dio(BaseOptions(
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
-    headers: {
-      'User-Agent': 'TravelCompanionApp/1.0 (contact@travelcompanion.app)',
-    },
-  ));
+  static final _dio = Dio(
+    BaseOptions(
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      headers: {
+        'User-Agent': 'TravelCompanionApp/1.0 (contact@travelcompanion.app)',
+      },
+    ),
+  );
 
   /// Returns a [RouteResult] with road-following polyline, distance, and duration.
   ///
@@ -94,7 +100,12 @@ class RoutingService {
         durationMinutes: durationS / 60,
       );
     } catch (e, st) {
-      dev.log('RoutingService.fetchRoute FAILED: $e', name: 'Routing', error: e, stackTrace: st);
+      dev.log(
+        'RoutingService.fetchRoute FAILED: $e',
+        name: 'Routing',
+        error: e,
+        stackTrace: st,
+      );
       return RouteResult.empty;
     }
   }

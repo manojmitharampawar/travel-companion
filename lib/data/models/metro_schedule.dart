@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'package:flutter/material.dart' show TimeOfDay;
+import 'package:travel_companion/core/models/app_time.dart';
 
 /// A metro schedule entry representing a departure from the first station.
 class MetroScheduleEntry {
@@ -27,16 +27,16 @@ class MetroScheduleEntry {
     );
   }
 
-  TimeOfDay get departureTime =>
-      TimeOfDay(hour: departureHour, minute: departureMinute);
+  AppTime get departureTime =>
+      AppTime(hour: departureHour, minute: departureMinute);
 }
 
 /// A computed upcoming metro train with arrival times at source and destination.
 class UpcomingMetro {
   final MetroScheduleEntry schedule;
   final String direction;
-  final TimeOfDay departureAtSource;
-  final TimeOfDay arrivalAtDestination;
+  final AppTime departureAtSource;
+  final AppTime arrivalAtDestination;
   final int travelMinutes;
   final int stopsCount;
   final String lineCode;

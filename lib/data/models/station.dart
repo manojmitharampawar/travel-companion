@@ -50,7 +50,16 @@ class Station extends Equatable {
   String get displayName => '$name ($code)';
 
   @override
-  List<Object?> get props => [id, code, name, latitude, longitude, state, zone, stationType];
+  List<Object?> get props => [
+    id,
+    code,
+    name,
+    latitude,
+    longitude,
+    state,
+    zone,
+    stationType,
+  ];
 
   @override
   String toString() => displayName;

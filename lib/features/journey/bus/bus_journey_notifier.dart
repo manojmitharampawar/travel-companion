@@ -1,9 +1,9 @@
 import 'dart:developer' as dev;
 
-import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:travel_companion/core/models/app_time.dart';
 import 'package:travel_companion/core/services/routing_service.dart';
 import 'package:travel_companion/core/services/tile_cache_service.dart';
 import 'package:travel_companion/data/models/journey.dart';
@@ -12,94 +12,10 @@ import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/data/repositories/journey_repository.dart';
 import 'package:travel_companion/data/repositories/location_repository.dart';
 import 'package:travel_companion/providers/app_providers.dart';
+import 'package:travel_companion/features/journey/bus/bus_journey_state.dart';
 
 // ─────────────────────────────────────────────
 // State
-// ─────────────────────────────────────────────
-
-class BusJourneyState {
-  final String routeNumber;
-  final String operatorName;
-  final LocationPoint? origin;
-  final LocationPoint? destination;
-  final DateTime journeyDate;
-  final TimeOfDay? departureTime;
-  final bool isDetectingLocation;
-  final bool isSaving;
-  final String? errorMessage;
-  final bool savedSuccessfully;
-
-  // OSRM route
-  final RouteResult? routeResult;
-  final bool isFetchingRoute;
-
-  // Offline tile cache
-  final bool isCachingTiles;
-  final int tileCacheProgress; // 0-100
-  final bool tilesCached;
-
-  BusJourneyState({
-    this.routeNumber = '',
-    this.operatorName = '',
-    this.origin,
-    this.destination,
-    DateTime? journeyDate,
-    this.departureTime,
-    this.isDetectingLocation = false,
-    this.isSaving = false,
-    this.errorMessage,
-    this.savedSuccessfully = false,
-    this.routeResult,
-    this.isFetchingRoute = false,
-    this.isCachingTiles = false,
-    this.tileCacheProgress = 0,
-    this.tilesCached = false,
-  }) : journeyDate = journeyDate ?? DateTime.now();
-
-  BusJourneyState copyWith({
-    String? routeNumber,
-    String? operatorName,
-    LocationPoint? origin,
-    bool clearOrigin = false,
-    LocationPoint? destination,
-    bool clearDestination = false,
-    DateTime? journeyDate,
-    TimeOfDay? departureTime,
-    bool clearDepartureTime = false,
-    bool? isDetectingLocation,
-    bool? isSaving,
-    String? errorMessage,
-    bool clearError = false,
-    bool? savedSuccessfully,
-    RouteResult? routeResult,
-    bool clearRoute = false,
-    bool? isFetchingRoute,
-    bool? isCachingTiles,
-    int? tileCacheProgress,
-    bool? tilesCached,
-  }) {
-    return BusJourneyState(
-      routeNumber: routeNumber ?? this.routeNumber,
-      operatorName: operatorName ?? this.operatorName,
-      origin: clearOrigin ? null : (origin ?? this.origin),
-      destination: clearDestination ? null : (destination ?? this.destination),
-      journeyDate: journeyDate ?? this.journeyDate,
-      departureTime: clearDepartureTime ? null : (departureTime ?? this.departureTime),
-      isDetectingLocation: isDetectingLocation ?? this.isDetectingLocation,
-      isSaving: isSaving ?? this.isSaving,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      savedSuccessfully: savedSuccessfully ?? this.savedSuccessfully,
-      routeResult: clearRoute ? null : (routeResult ?? this.routeResult),
-      isFetchingRoute: isFetchingRoute ?? this.isFetchingRoute,
-      isCachingTiles: isCachingTiles ?? this.isCachingTiles,
-      tileCacheProgress: tileCacheProgress ?? this.tileCacheProgress,
-      tilesCached: tilesCached ?? this.tilesCached,
-    );
-  }
-}
-
-// ─────────────────────────────────────────────
-// Notifier
 // ─────────────────────────────────────────────
 
 class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
@@ -109,14 +25,15 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
   BusJourneyNotifier({
     required JourneyRepository journeyRepo,
     required LocationRepository locationRepo,
-  })  : _journeyRepo = journeyRepo,
-        _locationRepo = locationRepo,
-        super(BusJourneyState());
+  }) : _journeyRepo = journeyRepo,
+       _locationRepo = locationRepo,
+       super(BusJourneyState());
 
   void setRouteNumber(String value) =>
       state = state.copyWith(routeNumber: value, clearError: true);
 
-  void setOperatorName(String value) => state = state.copyWith(operatorName: value);
+  void setOperatorName(String value) =>
+      state = state.copyWith(operatorName: value);
 
   void setOrigin(LocationPoint? point) {
     if (point == null) {
@@ -151,7 +68,7 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
 
   void setJourneyDate(DateTime d) => state = state.copyWith(journeyDate: d);
 
-  void setDepartureTime(TimeOfDay? t) => t == null
+  void setDepartureTime(AppTime? t) => t == null
       ? state = state.copyWith(clearDepartureTime: true)
       : state = state.copyWith(departureTime: t);
 
@@ -164,7 +81,9 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
         await Geolocator.requestPermission();
       }
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       final point = LocationPoint(
         name: 'Current Location',
@@ -214,10 +133,15 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
     final d = state.destination;
     if (o == null || d == null) return;
 
-    state = state.copyWith(isCachingTiles: true, tileCacheProgress: 0, tilesCached: false);
+    state = state.copyWith(
+      isCachingTiles: true,
+      tileCacheProgress: 0,
+      tilesCached: false,
+    );
 
     try {
-      const tileUrl = 'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png';
+      const tileUrl =
+          'https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png';
 
       if (route != null && route.isNotEmpty) {
         // Cache along the OSRM road route
@@ -265,7 +189,10 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
       }
 
       final cacheSize = await TileCacheService.getCacheSizeText();
-      dev.log('Tile cache complete. Total cache size: $cacheSize', name: 'BusJourney');
+      dev.log(
+        'Tile cache complete. Total cache size: $cacheSize',
+        name: 'BusJourney',
+      );
     } catch (e) {
       dev.log('Tile caching failed: $e', name: 'BusJourney');
       if (mounted) {
@@ -313,20 +240,30 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
       // This runs independently so disposing the notifier won't cause crashes.
       final routePoints = s.routeResult?.points ?? [];
       final originLatLng = LatLng(s.origin!.latitude, s.origin!.longitude);
-      final destLatLng = LatLng(s.destination!.latitude, s.destination!.longitude);
+      final destLatLng = LatLng(
+        s.destination!.latitude,
+        s.destination!.longitude,
+      );
       TileCacheService.preDownloadRoute(
-        routePoints: routePoints.isNotEmpty ? routePoints : [originLatLng, destLatLng],
-        minZoom: 10,
-        maxZoom: 15,
-      ).then((_) {
-        dev.log('Background tile pre-cache complete', name: 'BusJourney');
-      }).catchError((e) {
-        dev.log('Background tile pre-cache failed: $e', name: 'BusJourney');
-      });
+            routePoints: routePoints.isNotEmpty
+                ? routePoints
+                : [originLatLng, destLatLng],
+            minZoom: 10,
+            maxZoom: 15,
+          )
+          .then((_) {
+            dev.log('Background tile pre-cache complete', name: 'BusJourney');
+          })
+          .catchError((e) {
+            dev.log('Background tile pre-cache failed: $e', name: 'BusJourney');
+          });
 
       state = state.copyWith(isSaving: false, savedSuccessfully: true);
     } catch (e) {
-      state = state.copyWith(isSaving: false, errorMessage: 'Failed to save: $e');
+      state = state.copyWith(
+        isSaving: false,
+        errorMessage: 'Failed to save: $e',
+      );
     }
   }
 }
@@ -337,8 +274,8 @@ class BusJourneyNotifier extends StateNotifier<BusJourneyState> {
 
 final busJourneyNotifierProvider =
     StateNotifierProvider.autoDispose<BusJourneyNotifier, BusJourneyState>(
-  (ref) => BusJourneyNotifier(
-    journeyRepo: ref.read(journeyRepositoryProvider),
-    locationRepo: ref.read(locationRepositoryProvider),
-  ),
-);
+      (ref) => BusJourneyNotifier(
+        journeyRepo: ref.read(journeyRepositoryProvider),
+        locationRepo: ref.read(locationRepositoryProvider),
+      ),
+    );

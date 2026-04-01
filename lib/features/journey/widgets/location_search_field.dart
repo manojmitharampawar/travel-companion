@@ -1,10 +1,10 @@
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/models/location_point.dart';
 import 'package:travel_companion/data/models/transport_type.dart';
 import 'package:travel_companion/data/repositories/location_repository.dart';
-import 'package:travel_companion/core/theme/glass_theme.dart';
 import 'package:travel_companion/data/repositories/station_repository.dart';
 
 class LocationSearchField extends StatefulWidget {
@@ -15,11 +15,7 @@ class LocationSearchField extends StatefulWidget {
   final LocationRepository locationRepository;
   final VoidCallback? onPickOnMap;
   final VoidCallback? onUseCurrentLocation;
-
-  /// Transport type for filtering stations (metro/local train only)
   final TransportType? transportType;
-
-  /// Whether to show map and current location buttons
   final bool allowMapSelection;
 
   const LocationSearchField({
@@ -93,37 +89,38 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
       List<LocationPoint> stations = [];
 
       if (widget.transportType == TransportType.metro) {
-        final metroStations =
-            await widget.stationRepository.searchMetroStations(query);
-        stations =
-            metroStations.map((s) => LocationPoint.fromStation(s)).toList();
+        final metroStations = await widget.stationRepository
+            .searchMetroStations(query);
+        stations = metroStations.map(LocationPoint.fromStation).toList();
       } else if (widget.transportType == TransportType.localTrain) {
         final localStations = await widget.stationRepository
             .searchLocalTrainStations(query);
-        stations =
-            localStations.map((s) => LocationPoint.fromStation(s)).toList();
+        stations = localStations.map(LocationPoint.fromStation).toList();
       } else {
-        final foundStations =
-            await widget.stationRepository.searchStations(query);
-        stations =
-            foundStations.map((s) => LocationPoint.fromStation(s)).toList();
+        final foundStations = await widget.stationRepository.searchStations(
+          query,
+        );
+        stations = foundStations.map(LocationPoint.fromStation).toList();
       }
 
       List<LocationPoint> customLocations = [];
       if (widget.transportType != TransportType.metro &&
           widget.transportType != TransportType.localTrain) {
-        customLocations =
-            await widget.locationRepository.searchLocations(query);
+        customLocations = await widget.locationRepository.searchLocations(
+          query,
+        );
       }
 
       setState(() {
         _suggestions = [...customLocations.take(5), ...stations.take(15)];
         _showSuggestions = _suggestions.isNotEmpty;
       });
-    } catch (e) {
-      // Handle error silently
+    } catch (_) {
+      // Keep UX silent on transient search errors.
     } finally {
-      if (mounted) setState(() => _isSearching = false);
+      if (mounted) {
+        setState(() => _isSearching = false);
+      }
     }
   }
 
@@ -163,7 +160,9 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
           Row(
             children: [
               Icon(
-                isStation ? Icons.train : Icons.location_on,
+                isStation
+                    ? CupertinoIcons.train_style_one
+                    : CupertinoIcons.location_solid,
                 size: 24,
                 color: isStation
                     ? const Color(0xFF3498DB)
@@ -202,10 +201,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
             const SizedBox(height: 8),
             Text(
               _tentativeSelection!.address!,
-              style: TextStyle(
-                fontSize: 12,
-                color: g.textAlpha(0.45),
-              ),
+              style: TextStyle(fontSize: 12, color: g.textAlpha(0.45)),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -214,45 +210,31 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
           Row(
             children: [
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                        color: g.border(0.15)),
-                  ),
-                  child: TextButton(
-                    onPressed: _discardTentativeSelection,
-                    style: TextButton.styleFrom(
-                      foregroundColor:
-                          g.textAlpha(0.7),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    child: const Text('Change'),
+                child: CupertinoButton(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  color: g.textAlpha(0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  onPressed: _discardTentativeSelection,
+                  child: Text(
+                    'Change',
+                    style: TextStyle(color: g.textAlpha(0.7), fontSize: 14),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF3498DB),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF3498DB)
-                            .withValues(alpha: 0.3),
-                        blurRadius: 8,
-                      ),
-                    ],
-                  ),
-                  child: TextButton(
-                    onPressed: () =>
-                        _confirmSelection(_tentativeSelection!),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                child: CupertinoButton(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  color: const Color(0xFF3498DB),
+                  borderRadius: BorderRadius.circular(10),
+                  onPressed: () => _confirmSelection(_tentativeSelection!),
+                  child: const Text(
+                    'Confirm',
+                    style: TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
-                    child: const Text('Confirm'),
                   ),
                 ),
               ),
@@ -266,99 +248,135 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
   @override
   Widget build(BuildContext context) {
     final g = GlassColors.of(context);
+    final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextFormField(
-          controller: _controller,
-          focusNode: _focusNode,
-          style: TextStyle(color: g.textAlpha(0.9)),
-          decoration: InputDecoration(
-            labelText: widget.label,
-            labelStyle:
-                TextStyle(color: g.textAlpha(0.5)),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(
-                  color: g.border(0.15)),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(
-                  color: g.border(0.15)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(
-                  color: Color(0xFF3498DB), width: 2),
-            ),
-            errorBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
-              borderSide:
-                  const BorderSide(color: Color(0xFFE74C3C)),
-            ),
-            errorStyle: const TextStyle(color: Color(0xFFE74C3C)),
-            filled: true,
-            fillColor: g.cardFill(0.06),
-            contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 14),
-            suffixIcon: _isSearching
-                ? Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: g.textAlpha(0.5),
+        FormField<LocationPoint?>(
+          initialValue: _selected,
+          validator: (_) =>
+              _selected == null ? 'Please select a location' : null,
+          builder: (field) {
+            final hasError = field.errorText != null;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: g.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: g.cardFill(0.06),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: hasError
+                              ? const Color(0xFFE74C3C)
+                              : g.border(0.15),
+                        ),
+                      ),
+                      child: CupertinoTextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        style: TextStyle(color: g.textAlpha(0.9)),
+                        placeholder: 'Search ${widget.label.toLowerCase()}',
+                        placeholderStyle: TextStyle(color: g.textAlpha(0.45)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 13,
+                        ),
+                        suffix: _isSearching
+                            ? Padding(
+                                padding: const EdgeInsets.only(right: 12),
+                                child: SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CupertinoActivityIndicator(
+                                    color: g.textAlpha(0.5),
+                                  ),
+                                ),
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (widget.allowMapSelection &&
+                                      widget.onUseCurrentLocation != null)
+                                    CupertinoButton(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      onPressed: widget.onUseCurrentLocation,
+                                      child: Icon(
+                                        CupertinoIcons.location_fill,
+                                        size: 18,
+                                        color: g.textAlpha(0.5),
+                                      ),
+                                    ),
+                                  if (widget.allowMapSelection &&
+                                      widget.onPickOnMap != null)
+                                    CupertinoButton(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      onPressed: widget.onPickOnMap,
+                                      child: Icon(
+                                        CupertinoIcons.map_pin_ellipse,
+                                        size: 18,
+                                        color: g.textAlpha(0.5),
+                                      ),
+                                    ),
+                                  if (_selected != null)
+                                    CupertinoButton(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: Size.zero,
+                                      onPressed: () {
+                                        _controller.clear();
+                                        setState(() {
+                                          _selected = null;
+                                          _tentativeSelection = null;
+                                          _suggestions = [];
+                                        });
+                                        widget.onSelected(null);
+                                        field.didChange(null);
+                                      },
+                                      child: Icon(
+                                        CupertinoIcons.clear_circled_solid,
+                                        size: 18,
+                                        color: g.textAlpha(0.5),
+                                      ),
+                                    ),
+                                  const SizedBox(width: 8),
+                                ],
+                              ),
+                        decoration: null,
+                        onChanged: (value) {
+                          _onSearchChanged(value);
+                          field.didChange(_selected);
+                        },
                       ),
                     ),
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (widget.allowMapSelection &&
-                          widget.onUseCurrentLocation != null)
-                        IconButton(
-                          icon: Icon(Icons.my_location,
-                              size: 20,
-                              color: g.textAlpha(0.5)),
-                          tooltip: 'Use current location',
-                          onPressed: widget.onUseCurrentLocation,
-                        ),
-                      if (widget.allowMapSelection &&
-                          widget.onPickOnMap != null)
-                        IconButton(
-                          icon: Icon(Icons.map,
-                              size: 20,
-                              color: g.textAlpha(0.5)),
-                          tooltip: 'Pick on map',
-                          onPressed: widget.onPickOnMap,
-                        ),
-                      if (_selected != null)
-                        IconButton(
-                          icon: Icon(Icons.clear,
-                              size: 20,
-                              color: g.textAlpha(0.5)),
-                          onPressed: () {
-                            _controller.clear();
-                            setState(() {
-                              _selected = null;
-                              _tentativeSelection = null;
-                              _suggestions = [];
-                            });
-                            widget.onSelected(null);
-                          },
-                        ),
-                    ],
                   ),
-          ),
-          onChanged: _onSearchChanged,
-          validator: (value) {
-            if (_selected == null) {
-              return 'Please select a location';
-            }
-            return null;
+                ),
+                if (hasError)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6, left: 2),
+                    child: Text(
+                      field.errorText!,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFFE74C3C),
+                      ),
+                    ),
+                  ),
+              ],
+            );
           },
         ),
         if (_showSuggestions || _tentativeSelection != null)
@@ -369,10 +387,23 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
               child: Container(
                 constraints: const BoxConstraints(maxHeight: 400),
                 decoration: BoxDecoration(
-                  color: g.dropdownBg.withValues(alpha: 0.95),
+                  color: isDark
+                      ? CupertinoColors.white.withValues(alpha: 0.08)
+                      : CupertinoColors.white.withValues(alpha: 0.7),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      CupertinoColors.white.withValues(
+                        alpha: isDark ? 0.14 : 0.75,
+                      ),
+                      CupertinoColors.white.withValues(
+                        alpha: isDark ? 0.04 : 0.5,
+                      ),
+                    ],
+                  ),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: g.border(0.1)),
+                  border: Border.all(color: g.border(0.18)),
                 ),
                 child: _tentativeSelection != null
                     ? _buildConfirmationUI(context)
@@ -382,38 +413,71 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
                         itemBuilder: (context, index) {
                           final loc = _suggestions[index];
                           final isStation = loc.stationCode != null;
-                          return ListTile(
-                            dense: true,
-                            leading: Icon(
-                              isStation
-                                  ? Icons.train
-                                  : Icons.location_on,
-                              size: 20,
-                              color: isStation
-                                  ? const Color(0xFF3498DB)
-                                  : const Color(0xFFE74C3C),
-                            ),
-                            title: Text(
-                              loc.displayName,
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: g.textAlpha(0.9),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            subtitle: loc.address != null
-                                ? Text(
-                                    loc.address!,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: g.textAlpha(0.4),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  )
-                                : null,
+                          return GestureDetector(
                             onTap: () => _selectLocation(loc),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: g.border(0.08),
+                                    width: index == _suggestions.length - 1
+                                        ? 0
+                                        : 1,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    isStation
+                                        ? CupertinoIcons.train_style_one
+                                        : CupertinoIcons.location_solid,
+                                    size: 20,
+                                    color: isStation
+                                        ? const Color(0xFF3498DB)
+                                        : const Color(0xFFE74C3C),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          loc.displayName,
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: g.textAlpha(0.9),
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        if (loc.address != null)
+                                          Text(
+                                            loc.address!,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: g.textAlpha(0.45),
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(
+                                    CupertinoIcons.chevron_right,
+                                    size: 12,
+                                    color: g.textAlpha(0.35),
+                                  ),
+                                ],
+                              ),
+                            ),
                           );
                         },
                       ),

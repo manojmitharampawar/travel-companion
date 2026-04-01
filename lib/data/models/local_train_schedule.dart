@@ -1,5 +1,5 @@
 import 'dart:ui';
-import 'package:flutter/material.dart' show TimeOfDay;
+import 'package:travel_companion/core/models/app_time.dart';
 
 /// A single station on a local train line, with its position and coordinates.
 class LocalTrainStation {
@@ -73,11 +73,10 @@ class LocalTrainScheduleEntry {
     );
   }
 
-  TimeOfDay get departureTime =>
-      TimeOfDay(hour: departureHour, minute: departureMinute);
+  AppTime get departureTime =>
+      AppTime(hour: departureHour, minute: departureMinute);
 
-  bool stopsAt(int stationIndex) =>
-      !skipStationIndices.contains(stationIndex);
+  bool stopsAt(int stationIndex) => !skipStationIndices.contains(stationIndex);
 }
 
 /// A computed "next train" result with arrival times at source and destination.
@@ -85,8 +84,8 @@ class UpcomingTrain {
   final LocalTrainScheduleEntry schedule;
   final String trainType;
   final String direction;
-  final TimeOfDay departureAtSource;
-  final TimeOfDay arrivalAtDestination;
+  final AppTime departureAtSource;
+  final AppTime arrivalAtDestination;
   final int travelMinutes;
   final int stopsCount;
   final String lineCode;

@@ -53,7 +53,14 @@ class TrainRoute extends Equatable {
 
   @override
   List<Object?> get props => [
-        id, trainNumber, trainName, stationCode,
-        stopSequence, arrivalTime, departureTime, day, distanceKm,
-      ];
+    id,
+    trainNumber,
+    trainName,
+    stationCode,
+    stopSequence,
+    arrivalTime,
+    departureTime,
+    day,
+    distanceKm,
+  ];
 }

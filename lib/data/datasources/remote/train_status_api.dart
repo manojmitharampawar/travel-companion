@@ -11,11 +11,14 @@ class TrainStatusApi {
   final Dio _dio;
 
   TrainStatusApi({Dio? dio})
-      : _dio = dio ??
-            Dio(BaseOptions(
+    : _dio =
+          dio ??
+          Dio(
+            BaseOptions(
               connectTimeout: const Duration(seconds: 10),
               receiveTimeout: const Duration(seconds: 10),
-            ));
+            ),
+          );
 
   /// Fetch live running status for a train on a given date.
   /// Returns null if the API is unavailable or train not found.
@@ -31,10 +34,7 @@ class TrainStatusApi {
 
       final response = await _dio.get(
         'https://rappid.in/apis/train.php',
-        queryParameters: {
-          'train_no': trainNumber,
-          'date': dateStr,
-        },
+        queryParameters: {'train_no': trainNumber, 'date': dateStr},
       );
 
       if (response.statusCode != 200 || response.data == null) return null;
@@ -97,10 +97,7 @@ class TrainStatusApi {
     try {
       final response = await _dio.get(
         'https://rappid.in/apis/train.php',
-        queryParameters: {
-          'from': fromStation,
-          'to': toStation,
-        },
+        queryParameters: {'from': fromStation, 'to': toStation},
       );
 
       if (response.statusCode != 200 || response.data == null) return [];

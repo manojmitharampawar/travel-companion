@@ -15,10 +15,10 @@ class AppConstants {
 
   // Transport-specific alarm thresholds (meters)
   static const Map<TransportType, List<double>> alertThresholds = {
-    TransportType.train: [50000, 15000, 1000],     // 50km, 15km, 1km
-    TransportType.bus: [20000, 5000, 500],          // 20km, 5km, 500m
-    TransportType.metro: [5000, 2000, 300],         // 5km, 2km, 300m
-    TransportType.localTrain: [10000, 3000, 500],   // 10km, 3km, 500m
+    TransportType.train: [50000, 15000, 1000], // 50km, 15km, 1km
+    TransportType.bus: [20000, 5000, 500], // 20km, 5km, 500m
+    TransportType.metro: [5000, 2000, 300], // 5km, 2km, 300m
+    TransportType.localTrain: [10000, 3000, 500], // 10km, 3km, 500m
   };
 
   static double alertFar(TransportType type) => alertThresholds[type]![0];
@@ -27,10 +27,10 @@ class AppConstants {
 
   // Average speeds (meters per second)
   static const Map<TransportType, double> avgSpeedMps = {
-    TransportType.train: 55000 / 3600,       // 55 km/h
-    TransportType.bus: 30000 / 3600,          // 30 km/h
-    TransportType.metro: 35000 / 3600,        // 35 km/h
-    TransportType.localTrain: 40000 / 3600,   // 40 km/h
+    TransportType.train: 55000 / 3600, // 55 km/h
+    TransportType.bus: 30000 / 3600, // 30 km/h
+    TransportType.metro: 35000 / 3600, // 35 km/h
+    TransportType.localTrain: 40000 / 3600, // 40 km/h
   };
 
   // Location tracking intervals (in seconds) per transport
